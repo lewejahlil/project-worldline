@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Policy",
+  "type": "object",
+  "required": ["version","min_count","min_distinct_families",
+               "required_families","allowlist_provers"],
+  "properties": {
+    "version": { "type": "string" },
+    "min_count": { "type": "integer", "minimum": 1 },
+    "min_distinct_families": { "type": "integer", "minimum": 1 },
+    "required_families": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "allowlist_provers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "fallback_tiers": {
+      "type": "array",
+      "items": { "$ref": "#" }
+    }
+  },
+  "additionalProperties": false
+}
