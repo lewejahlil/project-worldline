@@ -1,8 +1,0 @@
-[profile.default]
-src = "contracts/src"
-test = "contracts/test"
-script = "devnet"
-libs = ["contracts/lib"]
-
-[fmt]
-line_length = 100
