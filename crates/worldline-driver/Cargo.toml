@@ -1,0 +1,16 @@
+[package]
+name = "worldline-driver"
+version = "1.0.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Command-line driver that syncs the Worldline registry"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+worldline-registry = { path = "../worldline-registry" }
+worldline-compat = { path = "../worldline-compat" }

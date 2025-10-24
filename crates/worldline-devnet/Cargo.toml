@@ -1,0 +1,13 @@
+[package]
+name = "worldline-devnet"
+version = "1.0.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Helpers for bootstrapping the Worldline devnet"
+
+[dependencies]
+anyhow = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+worldline-registry = { path = "../worldline-registry" }

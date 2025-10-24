@@ -1,0 +1,23 @@
+# General
+node_modules/
+target/
+.DS_Store
+.env
+.cache/
+coverage/
+dist/
+
+# Circom artifacts
+circuits/build/
+circuits/artifacts/*.r1cs
+circuits/artifacts/*.wasm
+circuits/artifacts/*.zkey
+circuits/ptau/
+
+# Hardhat
+artifacts/
+cache/
+
+# Rust
+Cargo.lock
+
