@@ -7,6 +7,36 @@ on:
     branches: [main]
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+      - name: Install npm deps
+        run: npm ci
+      - name: Clean circuit artifacts
+        run: npm run c:clean
+      - name: Download Powers of Tau
+        run: npm run c:ptau
+      - name: Compile circuit
+        run: npm run c:compile
+      - name: Setup circuit
+        run: npm run c:setup
+      - name: Export verifier
+        run: npm run c:export
+      - name: Copy verifier into contracts
+        run: cp circuits/artifacts/Verifier.sol contracts/src/zk/Verifier.sol
+      - name: Upload circuit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: circuit-artifacts
+          path: |
+            circuits/build/**
+            circuits/artifacts/**
+
   build:
     runs-on: ubuntu-latest
     steps:

@@ -1,25 +1,38 @@
-pragma circom 2.1.6;
+pragma circom 2.1.9;
 
-// The Worldline v1.0 circuit implements a simple proof-of-presence primitive:
-// given a private secret, the prover demonstrates knowledge of the secret that
-// squares to a publicly known commitment. The circuit structure is intentionally
-// small to keep proving times fast while exercising the workflow for larger
-// circuits.
+/*
+Public signals (order):
+ 0: stfCommitment
+ 1: programVKey
+ 2: policyHash
+ 3: proverSetDigest
+Private inputs: abi0..abi4 (160B ABI), plus the three metadata inputs.
+Constraint: stfCommitment equals abi0 (bind outer proof to ABI).
+*/
+template Wordline() {
+    // 160B ABI chunks
+    signal input abi0;
+    signal input abi1;
+    signal input abi2;
+    signal input abi3;
+    signal input abi4;
 
-template SquareHash() {
-    signal input secret;
-    signal input publicHash;
-    signal output isValid;
+    // metadata provided by the aggregator (private inputs)
+    signal input programVKey_in;
+    signal input policyHash_in;
+    signal input proverSetDigest_in;
 
-    signal computed;
-    computed <== secret * secret;
+    // public signals
+    signal output stfCommitment;
+    signal output programVKey;
+    signal output policyHash;
+    signal output proverSetDigest;
 
-    // Enforce equality between the computed value and the provided commitment.
-    computed === publicHash;
-
-    // Expose a boolean-ish output that downstream tooling can use to assert
-    // correctness without parsing constraints directly.
-    isValid <== 1;
+    // constraints / copy-through
+    stfCommitment <== abi0;
+    programVKey   <== programVKey_in;
+    policyHash    <== policyHash_in;
+    proverSetDigest <== proverSetDigest_in;
 }
 
-component main = SquareHash();
+component main = Wordline();
