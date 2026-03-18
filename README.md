@@ -1,8 +1,11 @@
 # Worldline v1.0
 
-Worldline is a modular proof-of-presence stack that combines zero-knowledge
-circuits, Ethereum smart contracts, a Rust driver, and pluggable SDKs. This
-repository bundles all components necessary to run the protocol locally.
+Worldline is a multi-ZK-prover architecture for rollups on EVM L1s. An
+off-chain aggregator selects provers via a signed directory, optionally
+performs recursion over inner proofs, and produces a single Groth16/BN254
+proof per window that the on-chain finalizer verifies. This repository
+bundles the circuits, contracts, Rust driver, and pluggable SDKs needed to
+run the full stack locally.
 
 ## Packages
 
