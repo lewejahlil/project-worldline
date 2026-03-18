@@ -123,10 +123,12 @@ contract WorldlineRegistry is Ownable {
 
     function verify(bytes32 circuitId, uint256 secret, uint256 publicHash) external view {
         Circuit memory circuit = circuits[circuitId];
+        require(bytes(circuit.description).length != 0, "circuit missing");
         address verifier = circuit.verifier;
         if (verifier == address(0)) {
             verifier = address(defaultVerifier);
         }
+        require(verifier != address(0), "no verifier configured");
         Verifier(verifier).verifyProof(secret, publicHash);
     }
 }
