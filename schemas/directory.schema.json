@@ -14,7 +14,14 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["prover_id", "family", "version", "endpoints", "vkey_commitment", "image_digest"],
+        "required": [
+          "prover_id",
+          "family",
+          "version",
+          "endpoints",
+          "vkey_commitment",
+          "image_digest"
+        ],
         "properties": {
           "prover_id": { "type": "string", "minLength": 1 },
           "family": { "type": "string", "minLength": 1 },

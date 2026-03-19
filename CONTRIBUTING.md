@@ -30,16 +30,16 @@ npm run devnet
 
 ## Project Structure
 
-| Directory     | Description                                           |
-|---------------|-------------------------------------------------------|
-| `circuits/`   | Circom circuits and ZK tooling                        |
-| `contracts/`  | Solidity smart contracts (Hardhat + Foundry)          |
-| `crates/`     | Rust workspace (driver, registry, compat, devnet)     |
-| `devnet/`     | Local Anvil orchestration script                      |
-| `docs/`       | Design docs, specs, and threat model                  |
-| `plugins/`    | Reference prover plugin implementations               |
-| `schemas/`    | JSON schemas for configuration formats                |
-| `test/`       | Solidity integration tests                            |
+| Directory    | Description                                       |
+| ------------ | ------------------------------------------------- |
+| `circuits/`  | Circom circuits and ZK tooling                    |
+| `contracts/` | Solidity smart contracts (Hardhat + Foundry)      |
+| `crates/`    | Rust workspace (driver, registry, compat, devnet) |
+| `devnet/`    | Local Anvil orchestration script                  |
+| `docs/`      | Design docs, specs, and threat model              |
+| `plugins/`   | Reference prover plugin implementations           |
+| `schemas/`   | JSON schemas for configuration formats            |
+| `test/`      | Solidity integration tests                        |
 
 ## Coding Standards
 

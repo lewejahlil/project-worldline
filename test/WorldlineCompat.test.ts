@@ -33,13 +33,15 @@ describe("WorldlineCompat", function () {
 
     it("reverts if deployed with zero registry address", async function () {
       const Compat = await ethers.getContractFactory("WorldlineCompat");
-      await expect(Compat.deploy(ethers.ZeroAddress)).to.be.revertedWithCustomError(
-        await Compat.deploy(ethers.ZeroAddress).catch(() => Compat),
-        "RegistryZero"
-      ).catch(async () => {
-        // fallback: just check it reverts
-        await expect(Compat.deploy(ethers.ZeroAddress)).to.be.reverted;
-      });
+      await expect(Compat.deploy(ethers.ZeroAddress))
+        .to.be.revertedWithCustomError(
+          await Compat.deploy(ethers.ZeroAddress).catch(() => Compat),
+          "RegistryZero"
+        )
+        .catch(async () => {
+          // fallback: just check it reverts
+          await expect(Compat.deploy(ethers.ZeroAddress)).to.be.reverted;
+        });
     });
   });
 

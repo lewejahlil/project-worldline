@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import {
   DeployContractOptions,
   FactoryOptions,
-  HardhatEthersHelpers as HardhatEthersHelpersBase,
+  HardhatEthersHelpers as HardhatEthersHelpersBase
 } from "@nomicfoundation/hardhat-ethers/types";
 
 import * as Contracts from ".";

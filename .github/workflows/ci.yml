@@ -59,18 +59,3 @@ jobs:
         run: npx hardhat compile
       - name: Contract tests
         run: npx hardhat test
-
-  circuits:
-    name: Circuits
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          cache: "npm"
-      - run: npm ci
-      - name: Download PTAU
-        run: npm run c:ptau
-      - name: Compile circuit
-        run: npm run c:compile

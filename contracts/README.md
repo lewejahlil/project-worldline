@@ -5,16 +5,16 @@ compatibility facade for the Worldline protocol.
 
 ## Contracts
 
-| Contract                    | Description                                                     |
-|-----------------------------|-----------------------------------------------------------------|
-| `WorldlineRegistry`        | Stores registered plugins, circuits, and driver metadata        |
-| `WorldlineCompat`          | Thin facade for stable method signatures over the registry      |
-| `WorldlineFinalizer`       | Accepts one ZK proof per contiguous window, verifies via adapter |
-| `WorldlineOutputsRegistry` | Timelocked two-step schedule/activate for domain configurations |
-| `zk/Verifier`              | Dev-only demo verifier (secret² == publicHash)                  |
-| `zk/Groth16ZkAdapter`      | Adapter pinning programVKey and policyHash for Groth16 proofs   |
-| `interfaces/IZkAggregatorVerifier` | Interface for pluggable ZK verification adapters        |
-| `utils/Ownable`            | Minimal ownership pattern                                       |
+| Contract                           | Description                                                      |
+| ---------------------------------- | ---------------------------------------------------------------- |
+| `WorldlineRegistry`                | Stores registered plugins, circuits, and driver metadata         |
+| `WorldlineCompat`                  | Thin facade for stable method signatures over the registry       |
+| `WorldlineFinalizer`               | Accepts one ZK proof per contiguous window, verifies via adapter |
+| `WorldlineOutputsRegistry`         | Timelocked two-step schedule/activate for domain configurations  |
+| `zk/Verifier`                      | Dev-only demo verifier (secret² == publicHash)                   |
+| `zk/Groth16ZkAdapter`              | Adapter pinning programVKey and policyHash for Groth16 proofs    |
+| `interfaces/IZkAggregatorVerifier` | Interface for pluggable ZK verification adapters                 |
+| `utils/Ownable`                    | Minimal ownership pattern                                        |
 
 ## Building
 

@@ -12,7 +12,7 @@ import type {
   AddressLike,
   ContractRunner,
   ContractMethod,
-  Listener,
+  Listener
 } from "ethers";
 import type {
   TypedContractEvent,
@@ -20,7 +20,7 @@ import type {
   TypedEventLog,
   TypedLogDescription,
   TypedListener,
-  TypedContractMethod,
+  TypedContractMethod
 } from "./common";
 
 export interface WorldlineFinalizerInterface extends Interface {
@@ -48,60 +48,24 @@ export interface WorldlineFinalizerInterface extends Interface {
   ): FunctionFragment;
 
   getEvent(
-    nameOrSignatureOrTopic:
-      | "OutputProposed"
-      | "OwnershipTransferred"
-      | "ZkProofAccepted"
+    nameOrSignatureOrTopic: "OutputProposed" | "OwnershipTransferred" | "ZkProofAccepted"
   ): EventFragment;
 
   encodeFunctionData(functionFragment: "adapter", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "domainSeparator",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "lastL2EndBlock",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "maxAcceptanceDelay",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "nextWindowIndex",
-    values?: undefined
-  ): string;
+  encodeFunctionData(functionFragment: "domainSeparator", values?: undefined): string;
+  encodeFunctionData(functionFragment: "lastL2EndBlock", values?: undefined): string;
+  encodeFunctionData(functionFragment: "maxAcceptanceDelay", values?: undefined): string;
+  encodeFunctionData(functionFragment: "nextWindowIndex", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "permissionless",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "proposers",
-    values: [AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "setAdapter",
-    values: [AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "setMaxAcceptanceDelay",
-    values: [BigNumberish]
-  ): string;
+  encodeFunctionData(functionFragment: "permissionless", values?: undefined): string;
+  encodeFunctionData(functionFragment: "proposers", values: [AddressLike]): string;
+  encodeFunctionData(functionFragment: "setAdapter", values: [AddressLike]): string;
+  encodeFunctionData(functionFragment: "setMaxAcceptanceDelay", values: [BigNumberish]): string;
   encodeFunctionData(functionFragment: "setPaused", values: [boolean]): string;
-  encodeFunctionData(
-    functionFragment: "setPermissionless",
-    values: [boolean]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "setProposer",
-    values: [AddressLike, boolean]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "setSubmitter",
-    values: [AddressLike, boolean]
-  ): string;
+  encodeFunctionData(functionFragment: "setPermissionless", values: [boolean]): string;
+  encodeFunctionData(functionFragment: "setProposer", values: [AddressLike, boolean]): string;
+  encodeFunctionData(functionFragment: "setSubmitter", values: [AddressLike, boolean]): string;
   encodeFunctionData(
     functionFragment: "submitZkValidityProof",
     values: [BytesLike, BytesLike]
@@ -110,70 +74,28 @@ export interface WorldlineFinalizerInterface extends Interface {
     functionFragment: "submitZkValidityProofWithMeta",
     values: [BytesLike, BytesLike, BytesLike]
   ): string;
-  encodeFunctionData(
-    functionFragment: "submitters",
-    values: [AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "transferOwnership",
-    values: [AddressLike]
-  ): string;
+  encodeFunctionData(functionFragment: "submitters", values: [AddressLike]): string;
+  encodeFunctionData(functionFragment: "transferOwnership", values: [AddressLike]): string;
 
   decodeFunctionResult(functionFragment: "adapter", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "domainSeparator",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "lastL2EndBlock",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "maxAcceptanceDelay",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "nextWindowIndex",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "domainSeparator", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "lastL2EndBlock", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "maxAcceptanceDelay", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "nextWindowIndex", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "permissionless",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "permissionless", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "proposers", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "setAdapter", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "setMaxAcceptanceDelay",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "setMaxAcceptanceDelay", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "setPaused", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "setPermissionless",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "setProposer",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "setSubmitter",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "submitZkValidityProof",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "submitZkValidityProofWithMeta",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "setPermissionless", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "setProposer", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "setSubmitter", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "submitZkValidityProof", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "submitZkValidityProofWithMeta", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "submitters", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "transferOwnership",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "transferOwnership", data: BytesLike): Result;
 }
 
 export namespace OutputProposedEvent {
@@ -281,9 +203,7 @@ export interface WorldlineFinalizer extends BaseContract {
     event: TCEvent
   ): Promise<Array<TypedListener<TCEvent>>>;
   listeners(eventName?: string): Promise<Array<Listener>>;
-  removeAllListeners<TCEvent extends TypedContractEvent>(
-    event?: TCEvent
-  ): Promise<this>;
+  removeAllListeners<TCEvent extends TypedContractEvent>(event?: TCEvent): Promise<this>;
 
   adapter: TypedContractMethod<[], [string], "view">;
 
@@ -303,37 +223,17 @@ export interface WorldlineFinalizer extends BaseContract {
 
   proposers: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
 
-  setAdapter: TypedContractMethod<
-    [_adapter: AddressLike],
-    [void],
-    "nonpayable"
-  >;
+  setAdapter: TypedContractMethod<[_adapter: AddressLike], [void], "nonpayable">;
 
-  setMaxAcceptanceDelay: TypedContractMethod<
-    [_delay: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
+  setMaxAcceptanceDelay: TypedContractMethod<[_delay: BigNumberish], [void], "nonpayable">;
 
   setPaused: TypedContractMethod<[_paused: boolean], [void], "nonpayable">;
 
-  setPermissionless: TypedContractMethod<
-    [_permissionless: boolean],
-    [void],
-    "nonpayable"
-  >;
+  setPermissionless: TypedContractMethod<[_permissionless: boolean], [void], "nonpayable">;
 
-  setProposer: TypedContractMethod<
-    [account: AddressLike, allowed: boolean],
-    [void],
-    "nonpayable"
-  >;
+  setProposer: TypedContractMethod<[account: AddressLike, allowed: boolean], [void], "nonpayable">;
 
-  setSubmitter: TypedContractMethod<
-    [account: AddressLike, allowed: boolean],
-    [void],
-    "nonpayable"
-  >;
+  setSubmitter: TypedContractMethod<[account: AddressLike, allowed: boolean], [void], "nonpayable">;
 
   submitZkValidityProof: TypedContractMethod<
     [proof: BytesLike, publicInputs: BytesLike],
@@ -349,40 +249,18 @@ export interface WorldlineFinalizer extends BaseContract {
 
   submitters: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
 
-  transferOwnership: TypedContractMethod<
-    [newOwner: AddressLike],
-    [void],
-    "nonpayable"
-  >;
+  transferOwnership: TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
 
-  getFunction<T extends ContractMethod = ContractMethod>(
-    key: string | FunctionFragment
-  ): T;
+  getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
 
-  getFunction(
-    nameOrSignature: "adapter"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "domainSeparator"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "lastL2EndBlock"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "maxAcceptanceDelay"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "nextWindowIndex"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "owner"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "paused"
-  ): TypedContractMethod<[], [boolean], "view">;
-  getFunction(
-    nameOrSignature: "permissionless"
-  ): TypedContractMethod<[], [boolean], "view">;
+  getFunction(nameOrSignature: "adapter"): TypedContractMethod<[], [string], "view">;
+  getFunction(nameOrSignature: "domainSeparator"): TypedContractMethod<[], [string], "view">;
+  getFunction(nameOrSignature: "lastL2EndBlock"): TypedContractMethod<[], [bigint], "view">;
+  getFunction(nameOrSignature: "maxAcceptanceDelay"): TypedContractMethod<[], [bigint], "view">;
+  getFunction(nameOrSignature: "nextWindowIndex"): TypedContractMethod<[], [bigint], "view">;
+  getFunction(nameOrSignature: "owner"): TypedContractMethod<[], [string], "view">;
+  getFunction(nameOrSignature: "paused"): TypedContractMethod<[], [boolean], "view">;
+  getFunction(nameOrSignature: "permissionless"): TypedContractMethod<[], [boolean], "view">;
   getFunction(
     nameOrSignature: "proposers"
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
@@ -400,25 +278,13 @@ export interface WorldlineFinalizer extends BaseContract {
   ): TypedContractMethod<[_permissionless: boolean], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "setProposer"
-  ): TypedContractMethod<
-    [account: AddressLike, allowed: boolean],
-    [void],
-    "nonpayable"
-  >;
+  ): TypedContractMethod<[account: AddressLike, allowed: boolean], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "setSubmitter"
-  ): TypedContractMethod<
-    [account: AddressLike, allowed: boolean],
-    [void],
-    "nonpayable"
-  >;
+  ): TypedContractMethod<[account: AddressLike, allowed: boolean], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "submitZkValidityProof"
-  ): TypedContractMethod<
-    [proof: BytesLike, publicInputs: BytesLike],
-    [void],
-    "nonpayable"
-  >;
+  ): TypedContractMethod<[proof: BytesLike, publicInputs: BytesLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "submitZkValidityProofWithMeta"
   ): TypedContractMethod<

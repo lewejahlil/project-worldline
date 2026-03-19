@@ -47,12 +47,7 @@ describe("E2E Integration", function () {
     await registry.registerDriver(driverId, "1.0.0", "http://localhost:8545");
 
     // Register plugin
-    await registry.registerPlugin(
-      pluginId,
-      "1.0.0",
-      deployer.address,
-      circuitId
-    );
+    await registry.registerPlugin(pluginId, "1.0.0", deployer.address, circuitId);
 
     // Verify: 7² = 49
     const result = await registry.verify(circuitId, 7n, 49n);
@@ -88,12 +83,7 @@ describe("E2E Integration", function () {
       "ipfs://compat"
     );
 
-    await compat.registerPlugin(
-      pluginId,
-      "2.0.0",
-      deployer.address,
-      circuitId
-    );
+    await compat.registerPlugin(pluginId, "2.0.0", deployer.address, circuitId);
 
     // Verify through compat
     const result = await compat.verify(circuitId, 5n, 25n);
@@ -108,17 +98,13 @@ describe("E2E Integration", function () {
     const { verifier, registry } = await loadFixture(deployFullStack);
 
     const circuitId = ethers.encodeBytes32String("revert-test");
-    await registry.registerCircuit(
-      circuitId,
-      "Revert test",
-      await verifier.getAddress(),
-      ""
-    );
+    await registry.registerCircuit(circuitId, "Revert test", await verifier.getAddress(), "");
 
     // 7² ≠ 50
-    await expect(
-      registry.verify(circuitId, 7n, 50n)
-    ).to.be.revertedWithCustomError(verifier, "InvalidProof");
+    await expect(registry.verify(circuitId, 7n, 50n)).to.be.revertedWithCustomError(
+      verifier,
+      "InvalidProof"
+    );
   });
 
   it("deprecating a plugin marks it but keeps it queryable", async function () {

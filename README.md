@@ -9,16 +9,16 @@ run the full stack locally.
 
 ## Packages
 
-| Directory     | Description                                                   |
-|---------------|---------------------------------------------------------------|
-| `circuits/`   | Circom circuits and tooling for generating zk-SNARK artifacts |
-| `contracts/`  | Solidity smart contracts plus Hardhat configuration and tests |
-| `crates/`     | Rust workspace: driver, registry, compat facade, devnet utils |
-| `devnet/`     | Node.js orchestration script for local Anvil deployments      |
-| `docs/`       | Design docs, technical specification, and threat model        |
-| `plugins/`    | Reference plugin implementation showcasing the SDK surface    |
-| `schemas/`    | JSON schemas defining configuration formats                   |
-| `test/`       | Solidity integration and E2E tests                            |
+| Directory    | Description                                                   |
+| ------------ | ------------------------------------------------------------- |
+| `circuits/`  | Circom circuits and tooling for generating zk-SNARK artifacts |
+| `contracts/` | Solidity smart contracts plus Hardhat configuration and tests |
+| `crates/`    | Rust workspace: driver, registry, compat facade, devnet utils |
+| `devnet/`    | Node.js orchestration script for local Anvil deployments      |
+| `docs/`      | Design docs, technical specification, and threat model        |
+| `plugins/`   | Reference plugin implementation showcasing the SDK surface    |
+| `schemas/`   | JSON schemas defining configuration formats                   |
+| `test/`      | Solidity integration and E2E tests                            |
 
 ## Quick start
 

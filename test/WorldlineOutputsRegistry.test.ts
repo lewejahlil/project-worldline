@@ -30,10 +30,7 @@ describe("WorldlineOutputsRegistry", function () {
 
     it("reverts if timelock is zero", async function () {
       const Registry = await ethers.getContractFactory("WorldlineOutputsRegistry");
-      await expect(Registry.deploy(0)).to.be.revertedWithCustomError(
-        Registry,
-        "TimelockTooShort"
-      );
+      await expect(Registry.deploy(0)).to.be.revertedWithCustomError(Registry, "TimelockTooShort");
     });
   });
 
@@ -123,9 +120,10 @@ describe("WorldlineOutputsRegistry", function () {
 
     it("reverts if set to zero", async function () {
       const { registry, owner } = await loadFixture(deployFixture);
-      await expect(
-        registry.connect(owner).setMinTimelock(0)
-      ).to.be.revertedWithCustomError(registry, "TimelockTooShort");
+      await expect(registry.connect(owner).setMinTimelock(0)).to.be.revertedWithCustomError(
+        registry,
+        "TimelockTooShort"
+      );
     });
   });
 });

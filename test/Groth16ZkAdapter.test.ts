@@ -13,11 +13,7 @@ describe("Groth16ZkAdapter", function () {
     const verifier = await Verifier.deploy();
 
     const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
-    const adapter = await Adapter.deploy(
-      await verifier.getAddress(),
-      PROGRAM_VKEY,
-      POLICY_HASH
-    );
+    const adapter = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
 
     return { adapter, verifier, owner };
   }
@@ -67,12 +63,11 @@ describe("Groth16ZkAdapter", function () {
         ["bytes32", "bytes32", "bytes32", "bytes32"],
         [ethers.ZeroHash, wrongVKey, POLICY_HASH, ethers.ZeroHash]
       );
-      const publicInputs = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["uint256", "uint256"],
-        [3, 9]
+      const publicInputs = ethers.AbiCoder.defaultAbiCoder().encode(["uint256", "uint256"], [3, 9]);
+      await expect(adapter.verify(proof, publicInputs)).to.be.revertedWithCustomError(
+        adapter,
+        "ProgramVKeyMismatch"
       );
-      await expect(adapter.verify(proof, publicInputs))
-        .to.be.revertedWithCustomError(adapter, "ProgramVKeyMismatch");
     });
 
     it("reverts when policyHash does not match pinned value", async function () {
@@ -82,12 +77,11 @@ describe("Groth16ZkAdapter", function () {
         ["bytes32", "bytes32", "bytes32", "bytes32"],
         [ethers.ZeroHash, PROGRAM_VKEY, wrongPolicy, ethers.ZeroHash]
       );
-      const publicInputs = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["uint256", "uint256"],
-        [3, 9]
+      const publicInputs = ethers.AbiCoder.defaultAbiCoder().encode(["uint256", "uint256"], [3, 9]);
+      await expect(adapter.verify(proof, publicInputs)).to.be.revertedWithCustomError(
+        adapter,
+        "PolicyHashMismatch"
       );
-      await expect(adapter.verify(proof, publicInputs))
-        .to.be.revertedWithCustomError(adapter, "PolicyHashMismatch");
     });
 
     it("reverts when underlying proof is invalid (secret² != publicHash)", async function () {
@@ -101,8 +95,10 @@ describe("Groth16ZkAdapter", function () {
         ["uint256", "uint256"],
         [3, 10]
       );
-      await expect(adapter.verify(proof, publicInputs))
-        .to.be.revertedWithCustomError(verifier, "InvalidProof");
+      await expect(adapter.verify(proof, publicInputs)).to.be.revertedWithCustomError(
+        verifier,
+        "InvalidProof"
+      );
     });
   });
 });

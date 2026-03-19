@@ -19,18 +19,12 @@ async function main(): Promise<void> {
 
   const templates = {
     groth16: fs.readFileSync(
-      path.resolve(
-        __dirname,
-        "../../node_modules/snarkjs/templates/verifier_groth16.sol.ejs"
-      ),
+      path.resolve(__dirname, "../../node_modules/snarkjs/templates/verifier_groth16.sol.ejs"),
       "utf-8"
     )
   };
 
-  const solidityCode: string = await snarkjs.zKey.exportSolidityVerifier(
-    ZKEY_PATH,
-    templates
-  );
+  const solidityCode: string = await snarkjs.zKey.exportSolidityVerifier(ZKEY_PATH, templates);
 
   const outputDir = path.dirname(OUTPUT_PATH);
   if (!fs.existsSync(outputDir)) {

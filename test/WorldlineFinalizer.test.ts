@@ -17,19 +17,11 @@ describe("WorldlineFinalizer", function () {
 
     // Deploy the Groth16ZkAdapter
     const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
-    const adapter = await Adapter.deploy(
-      await verifier.getAddress(),
-      PROGRAM_VKEY,
-      POLICY_HASH
-    );
+    const adapter = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
 
     // Deploy the Finalizer with 1-hour max acceptance delay
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-    const finalizer = await Finalizer.deploy(
-      await adapter.getAddress(),
-      DOMAIN,
-      3600
-    );
+    const finalizer = await Finalizer.deploy(await adapter.getAddress(), DOMAIN, 3600);
 
     // Grant submitter role
     await finalizer.connect(owner).setSubmitter(submitter.address, true);
@@ -89,8 +81,17 @@ describe("WorldlineFinalizer", function () {
       const ts = BigInt(await time.latest()) + 100n;
       const stf = ethers.keccak256(ethers.toUtf8Bytes("stf-1"));
       const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
-      const inputs = encodePublicInputs(stf, 0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
-      await expect(finalizer.connect(owner).submitZkValidityProof(proof, inputs)).to.not.be.reverted;
+      const inputs = encodePublicInputs(
+        stf,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      await expect(finalizer.connect(owner).submitZkValidityProof(proof, inputs)).to.not.be
+        .reverted;
     });
 
     it("authorized submitter can submit", async function () {
@@ -98,8 +99,17 @@ describe("WorldlineFinalizer", function () {
       const ts = BigInt(await time.latest()) + 100n;
       const stf = ethers.keccak256(ethers.toUtf8Bytes("stf-2"));
       const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
-      const inputs = encodePublicInputs(stf, 0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
-      await expect(finalizer.connect(submitter).submitZkValidityProof(proof, inputs)).to.not.be.reverted;
+      const inputs = encodePublicInputs(
+        stf,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      await expect(finalizer.connect(submitter).submitZkValidityProof(proof, inputs)).to.not.be
+        .reverted;
     });
 
     it("unauthorized caller cannot submit", async function () {
@@ -107,7 +117,15 @@ describe("WorldlineFinalizer", function () {
       const ts = BigInt(await time.latest()) + 100n;
       const stf = ethers.keccak256(ethers.toUtf8Bytes("stf-3"));
       const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
-      const inputs = encodePublicInputs(stf, 0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
+      const inputs = encodePublicInputs(
+        stf,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
       await expect(
         finalizer.connect(stranger).submitZkValidityProof(proof, inputs)
       ).to.be.revertedWithCustomError(finalizer, "NotAuthorized");
@@ -119,8 +137,17 @@ describe("WorldlineFinalizer", function () {
       const ts = BigInt(await time.latest()) + 100n;
       const stf = ethers.keccak256(ethers.toUtf8Bytes("stf-4"));
       const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
-      const inputs = encodePublicInputs(stf, 0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
-      await expect(finalizer.connect(stranger).submitZkValidityProof(proof, inputs)).to.not.be.reverted;
+      const inputs = encodePublicInputs(
+        stf,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      await expect(finalizer.connect(stranger).submitZkValidityProof(proof, inputs)).to.not.be
+        .reverted;
     });
   });
 
@@ -131,7 +158,15 @@ describe("WorldlineFinalizer", function () {
       const ts = BigInt(await time.latest()) + 100n;
       const stf = ethers.keccak256(ethers.toUtf8Bytes("stf"));
       const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
-      const inputs = encodePublicInputs(stf, 0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
+      const inputs = encodePublicInputs(
+        stf,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
       await expect(
         finalizer.connect(owner).submitZkValidityProof(proof, inputs)
       ).to.be.revertedWithCustomError(finalizer, "Paused");
@@ -153,7 +188,15 @@ describe("WorldlineFinalizer", function () {
       const stf = ethers.keccak256(ethers.toUtf8Bytes("stf"));
       const wrongDomain = ethers.keccak256(ethers.toUtf8Bytes("wrong-domain"));
       const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
-      const inputs = encodePublicInputs(stf, 0n, 100n, ethers.ZeroHash, ethers.ZeroHash, wrongDomain, ts);
+      const inputs = encodePublicInputs(
+        stf,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        wrongDomain,
+        ts
+      );
       await expect(
         finalizer.connect(owner).submitZkValidityProof(proof, inputs)
       ).to.be.revertedWithCustomError(finalizer, "DomainMismatch");
@@ -185,19 +228,44 @@ describe("WorldlineFinalizer", function () {
       // Window 0: l2Start=0, l2End=100
       const stf1 = ethers.keccak256(ethers.toUtf8Bytes("stf-c1"));
       const proof1 = encodeProof(stf1, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
-      const inputs1 = encodePublicInputs(stf1, 0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
+      const inputs1 = encodePublicInputs(
+        stf1,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
       await finalizer.connect(owner).submitZkValidityProof(proof1, inputs1);
 
       // Window 1: l2Start=100, l2End=200 — should succeed
       const stf2 = ethers.keccak256(ethers.toUtf8Bytes("stf-c2"));
       const proof2 = encodeProof(stf2, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
-      const inputs2 = encodePublicInputs(stf2, 100n, 200n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
-      await expect(finalizer.connect(owner).submitZkValidityProof(proof2, inputs2)).to.not.be.reverted;
+      const inputs2 = encodePublicInputs(
+        stf2,
+        100n,
+        200n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      await expect(finalizer.connect(owner).submitZkValidityProof(proof2, inputs2)).to.not.be
+        .reverted;
 
       // Window 2: l2Start=0 — should fail (not contiguous)
       const stf3 = ethers.keccak256(ethers.toUtf8Bytes("stf-c3"));
       const proof3 = encodeProof(stf3, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
-      const inputs3 = encodePublicInputs(stf3, 0n, 300n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
+      const inputs3 = encodePublicInputs(
+        stf3,
+        0n,
+        300n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
       await expect(
         finalizer.connect(owner).submitZkValidityProof(proof3, inputs3)
       ).to.be.revertedWithCustomError(finalizer, "NotContiguous");

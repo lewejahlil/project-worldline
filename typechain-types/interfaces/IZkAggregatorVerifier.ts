@@ -9,23 +9,20 @@ import type {
   Interface,
   ContractRunner,
   ContractMethod,
-  Listener,
+  Listener
 } from "ethers";
 import type {
   TypedContractEvent,
   TypedDeferredTopicFilter,
   TypedEventLog,
   TypedListener,
-  TypedContractMethod,
+  TypedContractMethod
 } from "../common";
 
 export interface IZkAggregatorVerifierInterface extends Interface {
   getFunction(nameOrSignature: "verify"): FunctionFragment;
 
-  encodeFunctionData(
-    functionFragment: "verify",
-    values: [BytesLike, BytesLike]
-  ): string;
+  encodeFunctionData(functionFragment: "verify", values: [BytesLike, BytesLike]): string;
 
   decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
 }
@@ -69,9 +66,7 @@ export interface IZkAggregatorVerifier extends BaseContract {
     event: TCEvent
   ): Promise<Array<TypedListener<TCEvent>>>;
   listeners(eventName?: string): Promise<Array<Listener>>;
-  removeAllListeners<TCEvent extends TypedContractEvent>(
-    event?: TCEvent
-  ): Promise<this>;
+  removeAllListeners<TCEvent extends TypedContractEvent>(event?: TCEvent): Promise<this>;
 
   verify: TypedContractMethod<
     [proof: BytesLike, publicInputs: BytesLike],
@@ -87,13 +82,9 @@ export interface IZkAggregatorVerifier extends BaseContract {
     "view"
   >;
 
-  getFunction<T extends ContractMethod = ContractMethod>(
-    key: string | FunctionFragment
-  ): T;
+  getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
 
-  getFunction(
-    nameOrSignature: "verify"
-  ): TypedContractMethod<
+  getFunction(nameOrSignature: "verify"): TypedContractMethod<
     [proof: BytesLike, publicInputs: BytesLike],
     [
       [boolean, string, string, string, string] & {

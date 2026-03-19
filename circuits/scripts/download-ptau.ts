@@ -3,8 +3,7 @@ import { get } from "https";
 import { IncomingMessage } from "http";
 import { join } from "path";
 
-const PTAU_URL =
-  "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_10.ptau";
+const PTAU_URL = "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_10.ptau";
 const OUTPUT_DIR = join(process.cwd(), "circuits", "ptau");
 const OUTPUT_FILE = join(OUTPUT_DIR, "powersOfTau28_hez_final_10.ptau");
 
@@ -16,7 +15,7 @@ const EXIT_CODES = {
   SUCCESS: 0,
   UNEXPECTED: 1,
   NETWORK: 2,
-  HTTP: 3,
+  HTTP: 3
 } as const;
 
 function cleanupPartialFile(): void {

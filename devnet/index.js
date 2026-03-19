@@ -16,8 +16,7 @@ const path = require("path");
 
 const ANVIL_PORT = process.env.DEVNET_PORT || "8545";
 const PRIVATE_KEY =
-  process.env.PRIVATE_KEY ||
-  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+  process.env.PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
 function loadArtifact(name) {
   const artifactPath = path.resolve(

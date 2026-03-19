@@ -29,10 +29,7 @@ export interface PluginConfig {
 /**
  * Generate a Groth16 proof for the SquareHash circuit.
  */
-export async function prove(
-  config: PluginConfig,
-  input: ProofInput
-): Promise<ProofResult> {
+export async function prove(config: PluginConfig, input: ProofInput): Promise<ProofResult> {
   const { proof, publicSignals } = await snarkjs.groth16.fullProve(
     { secret: input.secret.toString(), publicHash: input.publicHash.toString() },
     config.wasmPath,
