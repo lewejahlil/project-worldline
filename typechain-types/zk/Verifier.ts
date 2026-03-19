@@ -10,28 +10,22 @@ import type {
   Interface,
   ContractRunner,
   ContractMethod,
-  Listener,
+  Listener
 } from "ethers";
 import type {
   TypedContractEvent,
   TypedDeferredTopicFilter,
   TypedEventLog,
   TypedListener,
-  TypedContractMethod,
+  TypedContractMethod
 } from "../common";
 
 export interface VerifierInterface extends Interface {
   getFunction(nameOrSignature: "verifyProof"): FunctionFragment;
 
-  encodeFunctionData(
-    functionFragment: "verifyProof",
-    values: [BigNumberish, BigNumberish]
-  ): string;
+  encodeFunctionData(functionFragment: "verifyProof", values: [BigNumberish, BigNumberish]): string;
 
-  decodeFunctionResult(
-    functionFragment: "verifyProof",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "verifyProof", data: BytesLike): Result;
 }
 
 export interface Verifier extends BaseContract {
@@ -73,9 +67,7 @@ export interface Verifier extends BaseContract {
     event: TCEvent
   ): Promise<Array<TypedListener<TCEvent>>>;
   listeners(eventName?: string): Promise<Array<Listener>>;
-  removeAllListeners<TCEvent extends TypedContractEvent>(
-    event?: TCEvent
-  ): Promise<this>;
+  removeAllListeners<TCEvent extends TypedContractEvent>(event?: TCEvent): Promise<this>;
 
   verifyProof: TypedContractMethod<
     [secret: BigNumberish, publicHash: BigNumberish],
@@ -83,17 +75,11 @@ export interface Verifier extends BaseContract {
     "view"
   >;
 
-  getFunction<T extends ContractMethod = ContractMethod>(
-    key: string | FunctionFragment
-  ): T;
+  getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
 
   getFunction(
     nameOrSignature: "verifyProof"
-  ): TypedContractMethod<
-    [secret: BigNumberish, publicHash: BigNumberish],
-    [void],
-    "view"
-  >;
+  ): TypedContractMethod<[secret: BigNumberish, publicHash: BigNumberish], [void], "view">;
 
   filters: {};
 }

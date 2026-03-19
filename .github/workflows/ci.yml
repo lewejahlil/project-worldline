@@ -2,29 +2,60 @@ name: CI
 
 on:
   push:
-    branches: [ main, restore-project ]
+    branches: [main, restore-project]
   pull_request:
-    branches: [ main, restore-project ]
+    branches: [main, restore-project]
 
 jobs:
-  build:
+  lint:
+    name: Lint & Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      - uses: actions-rs/toolchain@v1
+          node-version: "18"
+          cache: "npm"
+      - run: npm ci
+      - name: ESLint
+        run: npm run lint
+      - name: Prettier check
+        run: npm run format:check
+
+  rust:
+    name: Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-      - name: Install dependencies
-        run: npm install
-      - name: Run type checks and lint
-        run: |
-          npm run lint || true
-      - name: Run tests
-        run: |
-          npm test || true
-      - name: Build circuits
-        run: |
-          npm run build:circuits || true
+          components: clippy, rustfmt
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+      - name: Format check
+        run: cargo fmt --check
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Tests
+        run: cargo test
+
+  solidity:
+    name: Solidity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+      - run: npm ci
+      - name: Compile contracts
+        run: npx hardhat compile
+      - name: Contract tests
+        run: npx hardhat test

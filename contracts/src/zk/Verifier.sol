@@ -2,10 +2,14 @@
 pragma solidity ^0.8.20;
 
 /// @title Worldline Demo Verifier
+/// @author Worldline Contributors
 /// @notice Lightweight verifier that mirrors the behaviour of the Circom
 ///         `SquareHash` circuit. It is intentionally simple so the Solidity
 ///         integration tests and devnet can exercise the call flow without a
 ///         heavy proving setup.
+/// @dev DEV-ONLY — This contract is a placeholder for development and testing.
+///      In production, replace this with a fully fledged SNARK verifier
+///      generated from the circuit artifacts via `snarkjs`.
 contract Verifier {
     error InvalidProof();
 

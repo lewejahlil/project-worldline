@@ -35,20 +35,26 @@ describe("Verifier", function () {
     it("reverts with InvalidProof when secret² != publicHash", async function () {
       const { verifier } = await loadFixture(deployVerifierFixture);
       // 3² = 9, but we pass 10
-      await expect(verifier.verifyProof(3n, 10n))
-        .to.be.revertedWithCustomError(verifier, "InvalidProof");
+      await expect(verifier.verifyProof(3n, 10n)).to.be.revertedWithCustomError(
+        verifier,
+        "InvalidProof"
+      );
     });
 
     it("reverts when secret is correct but publicHash is off by one", async function () {
       const { verifier } = await loadFixture(deployVerifierFixture);
-      await expect(verifier.verifyProof(5n, 24n))
-        .to.be.revertedWithCustomError(verifier, "InvalidProof");
+      await expect(verifier.verifyProof(5n, 24n)).to.be.revertedWithCustomError(
+        verifier,
+        "InvalidProof"
+      );
     });
 
     it("reverts when secret=0 but publicHash is non-zero", async function () {
       const { verifier } = await loadFixture(deployVerifierFixture);
-      await expect(verifier.verifyProof(0n, 1n))
-        .to.be.revertedWithCustomError(verifier, "InvalidProof");
+      await expect(verifier.verifyProof(0n, 1n)).to.be.revertedWithCustomError(
+        verifier,
+        "InvalidProof"
+      );
     });
 
     it("handles a large valid pair within uint256 bounds", async function () {

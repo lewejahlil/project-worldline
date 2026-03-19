@@ -9,13 +9,16 @@ run the full stack locally.
 
 ## Packages
 
-- `circuits/` – Circom circuits and tooling used to generate zk-SNARK artifacts.
-- `contracts/` – Solidity smart contracts plus Hardhat configuration and tests.
-- `crates/` – Rust workspace containing the driver, registry, and compatibility façade.
-- `devnet/` – Node.js orchestration script that deploys the stack against a local Anvil network.
-- `plugins/` – Reference plugin implementation showcasing the SDK surface area.
-- `schemas/` – JSON schemas defining configuration formats shared across components.
-- `tests/` – Cross-language integration tests.
+| Directory    | Description                                                   |
+| ------------ | ------------------------------------------------------------- |
+| `circuits/`  | Circom circuits and tooling for generating zk-SNARK artifacts |
+| `contracts/` | Solidity smart contracts plus Hardhat configuration and tests |
+| `crates/`    | Rust workspace: driver, registry, compat facade, devnet utils |
+| `devnet/`    | Node.js orchestration script for local Anvil deployments      |
+| `docs/`      | Design docs, technical specification, and threat model        |
+| `plugins/`   | Reference plugin implementation showcasing the SDK surface    |
+| `schemas/`   | JSON schemas defining configuration formats                   |
+| `test/`      | Solidity integration and E2E tests                            |
 
 ## Quick start
 
@@ -23,7 +26,16 @@ run the full stack locally.
 npm ci
 npm run contracts:build
 cargo test
+npx hardhat test
 npm run devnet
 ```
 
-Refer to the documentation in each package for details on advanced usage.
+## Architecture
+
+See `docs/design/system-design.md` for the full architecture and
+`docs/specs/technical-specification.md` for the protocol specification.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding standards,
+and the PR process.

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldline.dev/schemas/policy.schema.json",
+  "title": "Policy",
+  "description": "Canonical JSON policy describing multi-prover diversity and recursion requirements.",
+  "type": "object",
+  "required": ["version", "min_count", "min_distinct_families"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semver version of this policy format."
+    },
+    "min_count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Minimum number of provers that must be selected."
+    },
+    "min_distinct_families": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Minimum number of distinct prover families required."
+    },
+    "required_families": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Prover families that must be included in the selected set."
+    },
+    "allowlist_provers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional allowlist of prover IDs. If set, only these provers may be selected."
+    },
+    "fallback_tiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["families"],
+        "properties": {
+          "families": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "description": "Optional fallback tiers for degraded selection."
+    },
+    "min_inclusion_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Minimum ratio of selected/eligible provers."
+    },
+    "recursion": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["none", "snark-accum", "snark-miniverifier"]
+        },
+        "max_inner": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "k_in_proof": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        }
+      },
+      "description": "Optional recursion/aggregation configuration."
+    }
+  },
+  "additionalProperties": false
+}

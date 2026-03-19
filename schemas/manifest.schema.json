@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldline.dev/schemas/manifest.schema.json",
+  "title": "Manifest",
+  "description": "Canonical JSON manifest of selected provers for a given window. Entries are sorted by (family, prover_id, version).",
+  "type": "array",
+  "maxItems": 8,
+  "items": {
+    "type": "object",
+    "required": ["prover_id", "family", "version", "vkey_commitment", "image_digest"],
+    "properties": {
+      "prover_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Unique identifier of the prover."
+      },
+      "family": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Proof system family (e.g. groth16, plonk, halo2)."
+      },
+      "version": {
+        "type": "string",
+        "pattern": "^\\d+\\.\\d+\\.\\d+$",
+        "description": "Semver version of the prover implementation."
+      },
+      "vkey_commitment": {
+        "type": "string",
+        "pattern": "^0x[0-9a-fA-F]{64}$",
+        "description": "Hex-encoded commitment to the prover's verifying key."
+      },
+      "image_digest": {
+        "type": "string",
+        "pattern": "^0x[0-9a-fA-F]{64}$",
+        "description": "Hex-encoded digest of the prover binary/image for supply-chain verification."
+      }
+    },
+    "additionalProperties": false
+  }
+}

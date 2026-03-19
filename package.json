@@ -28,6 +28,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
     "hardhat": "^2.19.0",
+    "hardhat-gas-reporter": "^1.0.10",
     "prettier": "^3.1.1",
     "snarkjs": "^0.7.0",
     "ts-node": "^10.9.1",

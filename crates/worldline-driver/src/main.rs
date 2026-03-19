@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use tracing::info;
 
 #[derive(Parser)]
 #[command(name = "worldline-driver", about = "Worldline aggregator driver CLI")]
@@ -40,20 +41,30 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
+        .init();
+
     let cli = Cli::parse();
 
     match cli.command {
         Commands::Sync { url, output } => {
+            info!(url = %url, output = %output.display(), "syncing registry");
             worldline_driver::sync_registry(&url, &output).await?;
-            println!("Registry synced to {}", output.display());
+            info!(output = %output.display(), "registry synced successfully");
         }
         Commands::Export { input } => {
+            info!(input = %input.display(), "exporting compat snapshot");
             let json = worldline_driver::export_compat(&input)?;
             println!("{json}");
         }
         Commands::Check { input, plugin } => {
+            info!(input = %input.display(), plugin = %plugin, "checking plugin");
             worldline_driver::check_plugin(&input, &plugin)?;
-            println!("Plugin '{plugin}' found in registry.");
+            info!(plugin = %plugin, "plugin found in registry");
         }
     }
 
