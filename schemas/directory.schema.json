@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldline.dev/schemas/directory.schema.json",
+  "title": "ZKProverDirectory",
+  "description": "Signed, content-addressed registry of available ZK provers.",
+  "type": "object",
+  "required": ["version", "entries", "signature"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["prover_id", "family", "version", "endpoints", "vkey_commitment", "image_digest"],
+        "properties": {
+          "prover_id": { "type": "string", "minLength": 1 },
+          "family": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+          "endpoints": {
+            "type": "array",
+            "items": { "type": "string", "format": "uri" },
+            "minItems": 1
+          },
+          "vkey_commitment": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" },
+          "image_digest": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" },
+          "attestations": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "latency_ms": { "type": "integer", "minimum": 0 },
+          "cost_usd": { "type": "number", "minimum": 0 },
+          "health": {
+            "type": "string",
+            "enum": ["healthy", "degraded", "offline"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "signature": {
+      "type": "string",
+      "description": "Hex-encoded signature over the canonical JSON of the entries array."
+    }
+  },
+  "additionalProperties": false
+}

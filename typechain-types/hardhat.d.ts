@@ -14,28 +14,73 @@ import * as Contracts from ".";
 declare module "hardhat/types/runtime" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
     getContractFactory(
+      name: "IZkAggregatorVerifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IZkAggregatorVerifier__factory>;
+    getContractFactory(
       name: "Ownable",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Ownable__factory>;
     getContractFactory(
+      name: "WorldlineCompat",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.WorldlineCompat__factory>;
+    getContractFactory(
+      name: "WorldlineFinalizer",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.WorldlineFinalizer__factory>;
+    getContractFactory(
+      name: "WorldlineOutputsRegistry",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.WorldlineOutputsRegistry__factory>;
+    getContractFactory(
       name: "WorldlineRegistry",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.WorldlineRegistry__factory>;
+    getContractFactory(
+      name: "Groth16ZkAdapter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Groth16ZkAdapter__factory>;
     getContractFactory(
       name: "Verifier",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Verifier__factory>;
 
     getContractAt(
+      name: "IZkAggregatorVerifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IZkAggregatorVerifier>;
+    getContractAt(
       name: "Ownable",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.Ownable>;
     getContractAt(
+      name: "WorldlineCompat",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.WorldlineCompat>;
+    getContractAt(
+      name: "WorldlineFinalizer",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.WorldlineFinalizer>;
+    getContractAt(
+      name: "WorldlineOutputsRegistry",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.WorldlineOutputsRegistry>;
+    getContractAt(
       name: "WorldlineRegistry",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.WorldlineRegistry>;
+    getContractAt(
+      name: "Groth16ZkAdapter",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Groth16ZkAdapter>;
     getContractAt(
       name: "Verifier",
       address: string | ethers.Addressable,
@@ -43,28 +88,73 @@ declare module "hardhat/types/runtime" {
     ): Promise<Contracts.Verifier>;
 
     deployContract(
+      name: "IZkAggregatorVerifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IZkAggregatorVerifier>;
+    deployContract(
       name: "Ownable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Ownable>;
     deployContract(
+      name: "WorldlineCompat",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.WorldlineCompat>;
+    deployContract(
+      name: "WorldlineFinalizer",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.WorldlineFinalizer>;
+    deployContract(
+      name: "WorldlineOutputsRegistry",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.WorldlineOutputsRegistry>;
+    deployContract(
       name: "WorldlineRegistry",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.WorldlineRegistry>;
+    deployContract(
+      name: "Groth16ZkAdapter",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Groth16ZkAdapter>;
     deployContract(
       name: "Verifier",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Verifier>;
 
     deployContract(
+      name: "IZkAggregatorVerifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IZkAggregatorVerifier>;
+    deployContract(
       name: "Ownable",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Ownable>;
     deployContract(
+      name: "WorldlineCompat",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.WorldlineCompat>;
+    deployContract(
+      name: "WorldlineFinalizer",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.WorldlineFinalizer>;
+    deployContract(
+      name: "WorldlineOutputsRegistry",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.WorldlineOutputsRegistry>;
+    deployContract(
       name: "WorldlineRegistry",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.WorldlineRegistry>;
+    deployContract(
+      name: "Groth16ZkAdapter",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Groth16ZkAdapter>;
     deployContract(
       name: "Verifier",
       args: any[],

@@ -1,20 +1,54 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
+use tracing::info;
 use worldline_compat::{build_compat_snapshot, ensure_plugin_exists};
 use worldline_registry::{self as registry};
 
+/// Maximum allowed response size for registry sync (2 MiB).
+const MAX_RESPONSE_BYTES: u64 = 2 * 1024 * 1024;
+
 /// Fetch a registry snapshot from a remote URL and save it locally.
+///
+/// Enforces a response size limit to prevent resource exhaustion from
+/// unexpectedly large payloads.
 pub async fn sync_registry(url: &str, output: &Path) -> Result<()> {
-    let body = reqwest::get(url)
+    info!(url = %url, "fetching remote registry");
+
+    let response = reqwest::get(url)
         .await
-        .context("failed to fetch registry")?
-        .text()
+        .context("failed to fetch registry")?;
+
+    // Check content-length before reading body
+    if let Some(len) = response.content_length() {
+        if len > MAX_RESPONSE_BYTES {
+            bail!("registry response too large ({len} bytes, max {MAX_RESPONSE_BYTES})");
+        }
+    }
+
+    let bytes = response
+        .bytes()
         .await
         .context("failed to read response body")?;
 
+    if bytes.len() as u64 > MAX_RESPONSE_BYTES {
+        bail!(
+            "registry response too large ({} bytes, max {MAX_RESPONSE_BYTES})",
+            bytes.len()
+        );
+    }
+
+    let body = std::str::from_utf8(&bytes).context("response is not valid UTF-8")?;
+
     let snapshot: registry::RegistrySnapshot =
-        serde_json::from_str(&body).context("failed to parse remote registry JSON")?;
+        serde_json::from_str(body).context("failed to parse remote registry JSON")?;
+
+    info!(
+        circuits = snapshot.circuits.len(),
+        plugins = snapshot.plugins.len(),
+        backends = snapshot.backends.len(),
+        "parsed registry snapshot"
+    );
 
     registry::save(output, &snapshot).context("failed to save registry snapshot")?;
 

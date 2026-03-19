@@ -1,0 +1,10 @@
+{
+  "name": "@worldline/groth16-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reference Groth16 prover plugin for the Worldline SDK",
+  "main": "index.ts",
+  "dependencies": {
+    "snarkjs": "^0.7.0"
+  }
+}
