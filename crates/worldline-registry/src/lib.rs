@@ -17,6 +17,8 @@ pub enum RegistryError {
     DuplicatePlugin { id: String, version: String },
     #[error("backend '{id}' is already registered")]
     DuplicateBackend { id: String },
+    #[error("{kind} '{id}' not found")]
+    NotFound { kind: String, id: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -87,6 +89,42 @@ impl RegistrySnapshot {
         }
         self.backends.push(backend);
         Ok(())
+    }
+
+    pub fn remove_circuit(&mut self, id: &str, version: &str) -> Result<CircuitMeta, RegistryError> {
+        let pos = self
+            .circuits
+            .iter()
+            .position(|c| c.id == id && c.version == version)
+            .ok_or_else(|| RegistryError::NotFound {
+                kind: "circuit".to_string(),
+                id: format!("{id}@{version}"),
+            })?;
+        Ok(self.circuits.remove(pos))
+    }
+
+    pub fn remove_plugin(&mut self, id: &str, version: &str) -> Result<PluginMeta, RegistryError> {
+        let pos = self
+            .plugins
+            .iter()
+            .position(|p| p.id == id && p.version == version)
+            .ok_or_else(|| RegistryError::NotFound {
+                kind: "plugin".to_string(),
+                id: format!("{id}@{version}"),
+            })?;
+        Ok(self.plugins.remove(pos))
+    }
+
+    pub fn remove_backend(&mut self, id: &str) -> Result<BackendMeta, RegistryError> {
+        let pos = self
+            .backends
+            .iter()
+            .position(|b| b.id == id)
+            .ok_or_else(|| RegistryError::NotFound {
+                kind: "backend".to_string(),
+                id: id.to_string(),
+            })?;
+        Ok(self.backends.remove(pos))
     }
 }
 
@@ -203,6 +241,51 @@ mod tests {
             })
             .unwrap_err();
         assert!(matches!(err, RegistryError::DuplicatePlugin { .. }));
+    }
+
+    #[test]
+    fn remove_circuit_succeeds() {
+        let mut snapshot = sample_snapshot();
+        let removed = snapshot.remove_circuit("sum2", "1.0.0").unwrap();
+        assert_eq!(removed.id, "sum2");
+        assert!(snapshot.circuits.is_empty());
+    }
+
+    #[test]
+    fn remove_circuit_not_found() {
+        let mut snapshot = sample_snapshot();
+        let err = snapshot.remove_circuit("missing", "1.0.0").unwrap_err();
+        assert!(matches!(err, RegistryError::NotFound { .. }));
+    }
+
+    #[test]
+    fn remove_plugin_succeeds() {
+        let mut snapshot = sample_snapshot();
+        let removed = snapshot.remove_plugin("sum2-groth16", "1.0.0").unwrap();
+        assert_eq!(removed.id, "sum2-groth16");
+        assert!(snapshot.plugins.is_empty());
+    }
+
+    #[test]
+    fn remove_plugin_not_found() {
+        let mut snapshot = sample_snapshot();
+        let err = snapshot.remove_plugin("missing", "1.0.0").unwrap_err();
+        assert!(matches!(err, RegistryError::NotFound { .. }));
+    }
+
+    #[test]
+    fn remove_backend_succeeds() {
+        let mut snapshot = sample_snapshot();
+        let removed = snapshot.remove_backend("groth16-default").unwrap();
+        assert_eq!(removed.id, "groth16-default");
+        assert!(snapshot.backends.is_empty());
+    }
+
+    #[test]
+    fn remove_backend_not_found() {
+        let mut snapshot = sample_snapshot();
+        let err = snapshot.remove_backend("missing").unwrap_err();
+        assert!(matches!(err, RegistryError::NotFound { .. }));
     }
 
     #[test]

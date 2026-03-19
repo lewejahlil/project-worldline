@@ -1,15 +1,9 @@
 import { HardhatUserConfig } from "hardhat/config";
-import "@nomiclabs/hardhat-ethers";
-import "@nomiclabs/hardhat-waffle";
-import "@typechain/hardhat";
-import "@nomiclabs/hardhat-etherscan";
-import * as dotenv from "dotenv";
-
-dotenv.config();
+import "@nomicfoundation/hardhat-toolbox";
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.19",
+    version: "0.8.20",
     settings: {
       optimizer: {
         enabled: true,
@@ -21,7 +15,7 @@ const config: HardhatUserConfig = {
     hardhat: {}
   },
   mocha: {
-    timeout: 100000000
+    timeout: 120000
   }
 };
 
