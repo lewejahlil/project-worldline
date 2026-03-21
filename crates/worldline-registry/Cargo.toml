@@ -12,5 +12,11 @@ thiserror = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.4"
 tempfile = "3.8"
+worldline-compat = { path = "../worldline-compat" }
+
+[[bench]]
+name = "registry_bench"
+harness = false

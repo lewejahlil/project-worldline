@@ -1,0 +1,222 @@
+
+  Groth16ZkAdapter
+    deployment
+      ✔ stores pinned programVKey
+      ✔ stores pinned policyHash
+    verify
+      ✔ returns valid=true for correct proof with matching pinned values
+      ✔ reverts when programVKey does not match pinned value
+      ✔ reverts when policyHash does not match pinned value
+      ✔ reverts when underlying proof is invalid (secret² != publicHash)
+      ✔ returns valid=true for 224-byte publicInputs without invoking demo verifier (dev-only behavior)
+
+  Verifier
+    verifyProof
+      ✔ succeeds when secret² == publicHash
+      ✔ succeeds for secret=5, publicHash=25
+      ✔ succeeds for zero: secret=0, publicHash=0
+      ✔ succeeds for secret=1, publicHash=1
+      ✔ reverts with InvalidProof when secret² != publicHash
+      ✔ reverts when secret is correct but publicHash is off by one
+      ✔ reverts when secret=0 but publicHash is non-zero
+      ✔ handles a large valid pair within uint256 bounds
+      ✔ reverts with overflow panic when secret² exceeds uint256 (Solidity 0.8 checked math)
+
+  WorldlineCompat
+    deployment
+      ✔ stores the registry address
+      ✔ reverts if deployed with zero registry address
+(node:11556) PromiseRejectionHandledWarning: Promise rejection was handled asynchronously (rejection id: 1)
+(Use `node --trace-warnings ...` to show where the warning was created)
+    registerCircuit
+      ✔ owner can register a circuit through the facade
+      ✔ non-owner cannot register a circuit through the facade
+    registerDriver
+      ✔ owner can register a driver through the facade
+    registerPlugin
+      ✔ owner can register a plugin through the facade
+    deprecatePlugin
+      ✔ owner can deprecate a plugin through the facade
+    view functions
+      ✔ getCircuit reads through to registry
+      ✔ getDriver reads through to registry
+      ✔ getPlugin reads through to registry
+      ✔ verify delegates to registry
+
+  WorldlineFinalizer
+    deployment
+      ✔ sets the adapter
+      ✔ sets the domain separator
+      ✔ reverts if deployed with zero adapter
+      ✔ reverts if deployed with zero maxAcceptanceDelay
+    access control
+      ✔ owner can submit
+      ✔ authorized submitter can submit
+      ✔ unauthorized caller cannot submit
+      ✔ permissionless mode allows anyone
+    paused
+      ✔ reverts when paused
+    validation
+      ✔ reverts on wrong input length
+      ✔ reverts on domain mismatch
+      ✔ reverts when l2End <= l2Start
+      ✔ reverts when l2End == l2Start (empty window)
+      ✔ reverts when proof is too old (TooOld)
+      ✔ reverts when metaLocator exceeds 96 bytes
+    admin events
+      ✔ setPaused emits PausedSet
+      ✔ setPermissionless emits PermissionlessSet
+      ✔ setSubmitter emits SubmitterSet
+      ✔ setMaxAcceptanceDelay emits MaxAcceptanceDelaySet
+      ✔ setMaxAcceptanceDelay reverts on zero
+      ✔ setAdapter emits AdapterSet
+      ✔ setAdapter reverts on zero address
+    events
+      ✔ emits OutputProposed and ZkProofAccepted on success
+    contiguity
+      ✔ enforces contiguous windows
+
+  WorldlineOutputsRegistry
+    deployment
+      ✔ sets minimum timelock
+      ✔ reverts if timelock is zero
+    domainKey
+      ✔ computes deterministic key
+    schedule
+      ✔ owner can schedule an entry
+      ✔ non-owner cannot schedule
+      ✔ emits OutputRescheduled when overwriting a pending entry
+    activate
+      ✔ reverts if no pending entry
+      ✔ reverts if timelock has not elapsed
+      ✔ activates after timelock elapses
+      ✔ anyone can activate after timelock (permissionless)
+    getActiveEntry
+      ✔ reverts if no active entry
+    setMinTimelock
+      ✔ owner can update timelock
+      ✔ reverts if set to zero
+
+  WorldlineRegistry
+    deployment
+      ✔ sets the deployer as owner
+      ✔ stores the default verifier address
+      ✔ reverts if deployed with zero verifier address
+    Ownable
+      ✔ owner() returns the current owner
+      ✔ owner can transfer ownership
+      ✔ new owner can exercise ownership after transfer
+      ✔ non-owner cannot transfer ownership
+      ✔ transferring ownership to zero address reverts
+    setCompatFacade
+      ✔ owner can set the compat facade
+      ✔ non-owner cannot set the compat facade
+      ✔ compat facade address can be set to zero (disabled)
+      ✔ compat facade gains admin rights after being set
+    registerCircuit
+      ✔ admin can register a circuit
+      ✔ non-admin cannot register a circuit
+      ✔ reverts on duplicate circuit ID
+      ✔ reverts when circuit ID is zero bytes32
+      ✔ registers with address(0) verifier (falls back to defaultVerifier)
+    getCircuit
+      ✔ returns correct metadata for a registered circuit
+      ✔ reverts for an unknown circuit ID
+    registerDriver
+      ✔ admin can register a driver
+      ✔ non-admin cannot register a driver
+      ✔ reverts on duplicate driver ID
+      ✔ reverts when driver ID is zero bytes32
+    getDriver
+      ✔ returns correct metadata for a registered driver
+      ✔ reverts for an unknown driver ID
+    registerPlugin
+      ✔ admin can register a plugin linked to an existing circuit
+      ✔ non-admin cannot register a plugin
+      ✔ reverts on duplicate plugin ID
+      ✔ reverts when plugin ID is zero bytes32
+      ✔ reverts when implementation address is zero
+      ✔ reverts when referenced circuit does not exist
+    deprecatePlugin
+      ✔ admin can deprecate a registered plugin
+      ✔ deprecated flag is set to true after deprecation
+      ✔ non-admin cannot deprecate a plugin
+      ✔ reverts when deprecating a non-existent plugin
+    getPlugin
+      ✔ returns correct metadata for a registered plugin
+      ✔ returns deprecated=true after deprecation
+      ✔ reverts for an unknown plugin ID
+    verify
+      ✔ returns true for a valid proof using the defaultVerifier (circuit verifier=0)
+      ✔ returns true for a valid proof using a circuit-specific verifier
+      ✔ reverts with InvalidProof for an invalid proof
+      ✔ reverts when circuit ID is not registered
+
+  E2E Integration
+    ✔ full lifecycle: deploy → register → verify via registry
+    ✔ full lifecycle via compat facade
+    ✔ invalid proof reverts
+    ✔ deprecating a plugin marks it but keeps it queryable
+
+·------------------------------------------------------|---------------------------|-------------|-----------------------------·
+|                 Solc version: 0.8.20                 ·  Optimizer enabled: true  ·  Runs: 200  ·  Block limit: 60000000 gas  │
+·······················································|···························|·············|······························
+|  Methods                                                                                                                     │
+·····························|·························|·············|·············|·············|···············|··············
+|  Contract                  ·  Method                 ·  Min        ·  Max        ·  Avg        ·  # calls      ·  usd (avg)  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineCompat           ·  deprecatePlugin        ·          -  ·          -  ·      56811  ·            1  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineCompat           ·  registerCircuit        ·     107145  ·     147795  ·     121597  ·            7  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineCompat           ·  registerDriver         ·     125269  ·     125365  ·     125317  ·            2  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineCompat           ·  registerPlugin         ·     150665  ·     150785  ·     150695  ·            4  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineFinalizer        ·  setAdapter             ·          -  ·          -  ·      30256  ·            2  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineFinalizer        ·  setMaxAcceptanceDelay  ·          -  ·          -  ·      29853  ·            2  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineFinalizer        ·  setPaused              ·          -  ·          -  ·      46813  ·            3  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineFinalizer        ·  setPermissionless      ·          -  ·          -  ·      46870  ·            3  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineFinalizer        ·  setSubmitter           ·      47762  ·      47774  ·      47766  ·            3  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineFinalizer        ·  submitZkValidityProof  ·      57885  ·      92431  ·      85366  ·           12  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineOutputsRegistry  ·  activate               ·          -  ·          -  ·      92530  ·            4  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineOutputsRegistry  ·  schedule               ·      47068  ·     140980  ·     117502  ·            8  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineOutputsRegistry  ·  setMinTimelock         ·          -  ·          -  ·      29693  ·            2  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineRegistry         ·  deprecatePlugin        ·      49267  ·      49291  ·      49272  ·            5  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineRegistry         ·  registerCircuit        ·      98911  ·     139594  ·     112318  ·           23  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineRegistry         ·  registerDriver         ·     117211  ·     117415  ·     117348  ·            5  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineRegistry         ·  registerPlugin         ·     142715  ·     142895  ·     142739  ·           10  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineRegistry         ·  setCompatFacade        ·      25189  ·      47329  ·      42894  ·           10  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  WorldlineRegistry         ·  transferOwnership      ·          -  ·          -  ·      28536  ·            3  ·          -  │
+·····························|·························|·············|·············|·············|···············|··············
+|  Deployments                                         ·                                         ·  % of limit   ·             │
+·······················································|·············|·············|·············|···············|··············
+|  Groth16ZkAdapter                                    ·          -  ·          -  ·     231403  ·        0.4 %  ·          -  │
+·······················································|·············|·············|·············|···············|··············
+|  Verifier                                            ·          -  ·          -  ·      91891  ·        0.2 %  ·          -  │
+·······················································|·············|·············|·············|···············|··············
+|  WorldlineCompat                                     ·     786368  ·     786380  ·     786374  ·        1.3 %  ·          -  │
+·······················································|·············|·············|·············|···············|··············
+|  WorldlineFinalizer                                  ·          -  ·          -  ·     728610  ·        1.2 %  ·          -  │
+·······················································|·············|·············|·············|···············|··············
+|  WorldlineOutputsRegistry                            ·          -  ·          -  ·     534906  ·        0.9 %  ·          -  │
+·······················································|·············|·············|·············|···············|··············
+|  WorldlineRegistry                                   ·          -  ·          -  ·    1215343  ·          2 %  ·          -  │
+·------------------------------------------------------|-------------|-------------|-------------|---------------|-------------·
+
+  110 passing (2s)
+
