@@ -100,5 +100,23 @@ describe("Groth16ZkAdapter", function () {
         "InvalidProof"
       );
     });
+
+    it("returns valid=true for 224-byte publicInputs without invoking demo verifier (dev-only behavior)", async function () {
+      const { adapter } = await loadFixture(deployFixture);
+      const stf = ethers.keccak256(ethers.toUtf8Bytes("stf-224"));
+      const proverDigest = ethers.keccak256(ethers.toUtf8Bytes("provers"));
+      const proof = ethers.AbiCoder.defaultAbiCoder().encode(
+        ["bytes32", "bytes32", "bytes32", "bytes32"],
+        [stf, PROGRAM_VKEY, POLICY_HASH, proverDigest]
+      );
+      // 224-byte payload simulating Finalizer public inputs
+      const publicInputs = ethers.AbiCoder.defaultAbiCoder().encode(
+        ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
+        [stf, 0, 100, ethers.ZeroHash, ethers.ZeroHash, ethers.ZeroHash, 0]
+      );
+      const result = await adapter.verify(proof, publicInputs);
+      expect(result.valid).to.be.true;
+      expect(result.stfCommitment).to.equal(stf);
+    });
   });
 });

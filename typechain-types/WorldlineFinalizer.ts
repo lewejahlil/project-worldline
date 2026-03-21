@@ -12,7 +12,7 @@ import type {
   AddressLike,
   ContractRunner,
   ContractMethod,
-  Listener
+  Listener,
 } from "ethers";
 import type {
   TypedContractEvent,
@@ -20,7 +20,7 @@ import type {
   TypedEventLog,
   TypedLogDescription,
   TypedListener,
-  TypedContractMethod
+  TypedContractMethod,
 } from "./common";
 
 export interface WorldlineFinalizerInterface extends Interface {
@@ -34,12 +34,10 @@ export interface WorldlineFinalizerInterface extends Interface {
       | "owner"
       | "paused"
       | "permissionless"
-      | "proposers"
       | "setAdapter"
       | "setMaxAcceptanceDelay"
       | "setPaused"
       | "setPermissionless"
-      | "setProposer"
       | "setSubmitter"
       | "submitZkValidityProof"
       | "submitZkValidityProofWithMeta"
@@ -48,24 +46,57 @@ export interface WorldlineFinalizerInterface extends Interface {
   ): FunctionFragment;
 
   getEvent(
-    nameOrSignatureOrTopic: "OutputProposed" | "OwnershipTransferred" | "ZkProofAccepted"
+    nameOrSignatureOrTopic:
+      | "AdapterSet"
+      | "MaxAcceptanceDelaySet"
+      | "OutputProposed"
+      | "OwnershipTransferred"
+      | "PausedSet"
+      | "PermissionlessSet"
+      | "SubmitterSet"
+      | "ZkProofAccepted"
   ): EventFragment;
 
   encodeFunctionData(functionFragment: "adapter", values?: undefined): string;
-  encodeFunctionData(functionFragment: "domainSeparator", values?: undefined): string;
-  encodeFunctionData(functionFragment: "lastL2EndBlock", values?: undefined): string;
-  encodeFunctionData(functionFragment: "maxAcceptanceDelay", values?: undefined): string;
-  encodeFunctionData(functionFragment: "nextWindowIndex", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "domainSeparator",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "lastL2EndBlock",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "maxAcceptanceDelay",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "nextWindowIndex",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
-  encodeFunctionData(functionFragment: "permissionless", values?: undefined): string;
-  encodeFunctionData(functionFragment: "proposers", values: [AddressLike]): string;
-  encodeFunctionData(functionFragment: "setAdapter", values: [AddressLike]): string;
-  encodeFunctionData(functionFragment: "setMaxAcceptanceDelay", values: [BigNumberish]): string;
+  encodeFunctionData(
+    functionFragment: "permissionless",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setAdapter",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setMaxAcceptanceDelay",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "setPaused", values: [boolean]): string;
-  encodeFunctionData(functionFragment: "setPermissionless", values: [boolean]): string;
-  encodeFunctionData(functionFragment: "setProposer", values: [AddressLike, boolean]): string;
-  encodeFunctionData(functionFragment: "setSubmitter", values: [AddressLike, boolean]): string;
+  encodeFunctionData(
+    functionFragment: "setPermissionless",
+    values: [boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setSubmitter",
+    values: [AddressLike, boolean]
+  ): string;
   encodeFunctionData(
     functionFragment: "submitZkValidityProof",
     values: [BytesLike, BytesLike]
@@ -74,28 +105,89 @@ export interface WorldlineFinalizerInterface extends Interface {
     functionFragment: "submitZkValidityProofWithMeta",
     values: [BytesLike, BytesLike, BytesLike]
   ): string;
-  encodeFunctionData(functionFragment: "submitters", values: [AddressLike]): string;
-  encodeFunctionData(functionFragment: "transferOwnership", values: [AddressLike]): string;
+  encodeFunctionData(
+    functionFragment: "submitters",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferOwnership",
+    values: [AddressLike]
+  ): string;
 
   decodeFunctionResult(functionFragment: "adapter", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "domainSeparator", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "lastL2EndBlock", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "maxAcceptanceDelay", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "nextWindowIndex", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "domainSeparator",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "lastL2EndBlock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "maxAcceptanceDelay",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "nextWindowIndex",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "permissionless", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "proposers", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "permissionless",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "setAdapter", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "setMaxAcceptanceDelay", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setMaxAcceptanceDelay",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "setPaused", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "setPermissionless", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "setProposer", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "setSubmitter", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "submitZkValidityProof", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "submitZkValidityProofWithMeta", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setPermissionless",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setSubmitter",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "submitZkValidityProof",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "submitZkValidityProofWithMeta",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "submitters", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "transferOwnership", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+}
+
+export namespace AdapterSetEvent {
+  export type InputTuple = [adapter: AddressLike];
+  export type OutputTuple = [adapter: string];
+  export interface OutputObject {
+    adapter: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace MaxAcceptanceDelaySetEvent {
+  export type InputTuple = [delay: BigNumberish];
+  export type OutputTuple = [delay: bigint];
+  export interface OutputObject {
+    delay: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
 }
 
 export namespace OutputProposedEvent {
@@ -132,6 +224,43 @@ export namespace OwnershipTransferredEvent {
   export interface OutputObject {
     previousOwner: string;
     newOwner: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace PausedSetEvent {
+  export type InputTuple = [paused: boolean];
+  export type OutputTuple = [paused: boolean];
+  export interface OutputObject {
+    paused: boolean;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace PermissionlessSetEvent {
+  export type InputTuple = [permissionless: boolean];
+  export type OutputTuple = [permissionless: boolean];
+  export interface OutputObject {
+    permissionless: boolean;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace SubmitterSetEvent {
+  export type InputTuple = [account: AddressLike, allowed: boolean];
+  export type OutputTuple = [account: string, allowed: boolean];
+  export interface OutputObject {
+    account: string;
+    allowed: boolean;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -203,7 +332,9 @@ export interface WorldlineFinalizer extends BaseContract {
     event: TCEvent
   ): Promise<Array<TypedListener<TCEvent>>>;
   listeners(eventName?: string): Promise<Array<Listener>>;
-  removeAllListeners<TCEvent extends TypedContractEvent>(event?: TCEvent): Promise<this>;
+  removeAllListeners<TCEvent extends TypedContractEvent>(
+    event?: TCEvent
+  ): Promise<this>;
 
   adapter: TypedContractMethod<[], [string], "view">;
 
@@ -221,19 +352,31 @@ export interface WorldlineFinalizer extends BaseContract {
 
   permissionless: TypedContractMethod<[], [boolean], "view">;
 
-  proposers: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+  setAdapter: TypedContractMethod<
+    [_adapter: AddressLike],
+    [void],
+    "nonpayable"
+  >;
 
-  setAdapter: TypedContractMethod<[_adapter: AddressLike], [void], "nonpayable">;
-
-  setMaxAcceptanceDelay: TypedContractMethod<[_delay: BigNumberish], [void], "nonpayable">;
+  setMaxAcceptanceDelay: TypedContractMethod<
+    [_delay: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
 
   setPaused: TypedContractMethod<[_paused: boolean], [void], "nonpayable">;
 
-  setPermissionless: TypedContractMethod<[_permissionless: boolean], [void], "nonpayable">;
+  setPermissionless: TypedContractMethod<
+    [_permissionless: boolean],
+    [void],
+    "nonpayable"
+  >;
 
-  setProposer: TypedContractMethod<[account: AddressLike, allowed: boolean], [void], "nonpayable">;
-
-  setSubmitter: TypedContractMethod<[account: AddressLike, allowed: boolean], [void], "nonpayable">;
+  setSubmitter: TypedContractMethod<
+    [account: AddressLike, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
 
   submitZkValidityProof: TypedContractMethod<
     [proof: BytesLike, publicInputs: BytesLike],
@@ -249,21 +392,40 @@ export interface WorldlineFinalizer extends BaseContract {
 
   submitters: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
 
-  transferOwnership: TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+  transferOwnership: TypedContractMethod<
+    [newOwner: AddressLike],
+    [void],
+    "nonpayable"
+  >;
 
-  getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
+  getFunction<T extends ContractMethod = ContractMethod>(
+    key: string | FunctionFragment
+  ): T;
 
-  getFunction(nameOrSignature: "adapter"): TypedContractMethod<[], [string], "view">;
-  getFunction(nameOrSignature: "domainSeparator"): TypedContractMethod<[], [string], "view">;
-  getFunction(nameOrSignature: "lastL2EndBlock"): TypedContractMethod<[], [bigint], "view">;
-  getFunction(nameOrSignature: "maxAcceptanceDelay"): TypedContractMethod<[], [bigint], "view">;
-  getFunction(nameOrSignature: "nextWindowIndex"): TypedContractMethod<[], [bigint], "view">;
-  getFunction(nameOrSignature: "owner"): TypedContractMethod<[], [string], "view">;
-  getFunction(nameOrSignature: "paused"): TypedContractMethod<[], [boolean], "view">;
-  getFunction(nameOrSignature: "permissionless"): TypedContractMethod<[], [boolean], "view">;
   getFunction(
-    nameOrSignature: "proposers"
-  ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+    nameOrSignature: "adapter"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "domainSeparator"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "lastL2EndBlock"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "maxAcceptanceDelay"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "nextWindowIndex"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "owner"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "paused"
+  ): TypedContractMethod<[], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "permissionless"
+  ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
     nameOrSignature: "setAdapter"
   ): TypedContractMethod<[_adapter: AddressLike], [void], "nonpayable">;
@@ -277,14 +439,19 @@ export interface WorldlineFinalizer extends BaseContract {
     nameOrSignature: "setPermissionless"
   ): TypedContractMethod<[_permissionless: boolean], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "setProposer"
-  ): TypedContractMethod<[account: AddressLike, allowed: boolean], [void], "nonpayable">;
-  getFunction(
     nameOrSignature: "setSubmitter"
-  ): TypedContractMethod<[account: AddressLike, allowed: boolean], [void], "nonpayable">;
+  ): TypedContractMethod<
+    [account: AddressLike, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "submitZkValidityProof"
-  ): TypedContractMethod<[proof: BytesLike, publicInputs: BytesLike], [void], "nonpayable">;
+  ): TypedContractMethod<
+    [proof: BytesLike, publicInputs: BytesLike],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "submitZkValidityProofWithMeta"
   ): TypedContractMethod<
@@ -300,6 +467,20 @@ export interface WorldlineFinalizer extends BaseContract {
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
 
   getEvent(
+    key: "AdapterSet"
+  ): TypedContractEvent<
+    AdapterSetEvent.InputTuple,
+    AdapterSetEvent.OutputTuple,
+    AdapterSetEvent.OutputObject
+  >;
+  getEvent(
+    key: "MaxAcceptanceDelaySet"
+  ): TypedContractEvent<
+    MaxAcceptanceDelaySetEvent.InputTuple,
+    MaxAcceptanceDelaySetEvent.OutputTuple,
+    MaxAcceptanceDelaySetEvent.OutputObject
+  >;
+  getEvent(
     key: "OutputProposed"
   ): TypedContractEvent<
     OutputProposedEvent.InputTuple,
@@ -314,6 +495,27 @@ export interface WorldlineFinalizer extends BaseContract {
     OwnershipTransferredEvent.OutputObject
   >;
   getEvent(
+    key: "PausedSet"
+  ): TypedContractEvent<
+    PausedSetEvent.InputTuple,
+    PausedSetEvent.OutputTuple,
+    PausedSetEvent.OutputObject
+  >;
+  getEvent(
+    key: "PermissionlessSet"
+  ): TypedContractEvent<
+    PermissionlessSetEvent.InputTuple,
+    PermissionlessSetEvent.OutputTuple,
+    PermissionlessSetEvent.OutputObject
+  >;
+  getEvent(
+    key: "SubmitterSet"
+  ): TypedContractEvent<
+    SubmitterSetEvent.InputTuple,
+    SubmitterSetEvent.OutputTuple,
+    SubmitterSetEvent.OutputObject
+  >;
+  getEvent(
     key: "ZkProofAccepted"
   ): TypedContractEvent<
     ZkProofAcceptedEvent.InputTuple,
@@ -322,6 +524,28 @@ export interface WorldlineFinalizer extends BaseContract {
   >;
 
   filters: {
+    "AdapterSet(address)": TypedContractEvent<
+      AdapterSetEvent.InputTuple,
+      AdapterSetEvent.OutputTuple,
+      AdapterSetEvent.OutputObject
+    >;
+    AdapterSet: TypedContractEvent<
+      AdapterSetEvent.InputTuple,
+      AdapterSetEvent.OutputTuple,
+      AdapterSetEvent.OutputObject
+    >;
+
+    "MaxAcceptanceDelaySet(uint256)": TypedContractEvent<
+      MaxAcceptanceDelaySetEvent.InputTuple,
+      MaxAcceptanceDelaySetEvent.OutputTuple,
+      MaxAcceptanceDelaySetEvent.OutputObject
+    >;
+    MaxAcceptanceDelaySet: TypedContractEvent<
+      MaxAcceptanceDelaySetEvent.InputTuple,
+      MaxAcceptanceDelaySetEvent.OutputTuple,
+      MaxAcceptanceDelaySetEvent.OutputObject
+    >;
+
     "OutputProposed(uint256,bytes32,uint256,uint256,bytes32)": TypedContractEvent<
       OutputProposedEvent.InputTuple,
       OutputProposedEvent.OutputTuple,
@@ -342,6 +566,39 @@ export interface WorldlineFinalizer extends BaseContract {
       OwnershipTransferredEvent.InputTuple,
       OwnershipTransferredEvent.OutputTuple,
       OwnershipTransferredEvent.OutputObject
+    >;
+
+    "PausedSet(bool)": TypedContractEvent<
+      PausedSetEvent.InputTuple,
+      PausedSetEvent.OutputTuple,
+      PausedSetEvent.OutputObject
+    >;
+    PausedSet: TypedContractEvent<
+      PausedSetEvent.InputTuple,
+      PausedSetEvent.OutputTuple,
+      PausedSetEvent.OutputObject
+    >;
+
+    "PermissionlessSet(bool)": TypedContractEvent<
+      PermissionlessSetEvent.InputTuple,
+      PermissionlessSetEvent.OutputTuple,
+      PermissionlessSetEvent.OutputObject
+    >;
+    PermissionlessSet: TypedContractEvent<
+      PermissionlessSetEvent.InputTuple,
+      PermissionlessSetEvent.OutputTuple,
+      PermissionlessSetEvent.OutputObject
+    >;
+
+    "SubmitterSet(address,bool)": TypedContractEvent<
+      SubmitterSetEvent.InputTuple,
+      SubmitterSetEvent.OutputTuple,
+      SubmitterSetEvent.OutputObject
+    >;
+    SubmitterSet: TypedContractEvent<
+      SubmitterSetEvent.InputTuple,
+      SubmitterSetEvent.OutputTuple,
+      SubmitterSetEvent.OutputObject
     >;
 
     "ZkProofAccepted(uint256,bytes32,bytes32,bytes32)": TypedContractEvent<

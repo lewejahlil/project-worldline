@@ -79,8 +79,8 @@ The aggregator MUST refuse to build if any bound is exceeded【351724319320624�
 
 Only `windowIndex` is indexed to minimize gas usage.
 
-- `OutputProposed(uint256 indexed windowIndex, bytes32 outputRoot, uint256 l2Start, uint256 l2End, bytes32 l1BlockHash)`
-- `ZkProofAccepted(uint256 indexed windowIndex, bytes32 policyHash, bytes32 programVKey, bytes32 proverSetDigest)`
+- `OutputProposed(uint256 indexed windowIndex, bytes32 outputRoot, uint256 l2Start, uint256 l2End, bytes32 stfCommitment)`
+- `ZkProofAccepted(uint256 indexed windowIndex, bytes32 programVKey, bytes32 policyHash, bytes32 proverSetDigest)`
 - `ManifestAnnounced(bytes32 proverSetDigest, bytes locator)` (optional; default disabled)
 - `ZkProofMeta(uint256 indexed windowIndex, uint8 recursionMode, uint8 kInProof, uint8 selectedCount)` (optional; default disabled)
 
@@ -99,11 +99,11 @@ For Groth16/BN254, verify gas is ~207,700 + 7,160 × (public signals) ≈ 2
 
 ### WorldlineFinalizer (on‑chain)
 
-Constructor: `(address adapter, uint64 l1FinalityMinDepth, bytes32 domainSeparator, uint64 maxAcceptanceDelay)`.
+Constructor: `(address adapter, bytes32 domainSeparator, uint256 maxAcceptanceDelay)`. The `maxAcceptanceDelay` must be non-zero.
 
-State: adapter; permissionless (boolean); proposers; submitters; `nextWindowIndex` (0); `lastL2EndBlock` (0); paused; `l1FinalityMinDepth`; `DOMAIN_SEPARATOR` (immutable); `maxAcceptanceDelay`.
+State: adapter; permissionless (boolean); submitters; `nextWindowIndex` (0); `lastL2EndBlock` (0); paused; `domainSeparator`; `maxAcceptanceDelay`.
 
-Errors: `Paused()`, `BadInputsLen()`, `NotAuthorized()`, `NotContiguous()`, `AdapterZero()`, `LocatorTooLong()`, `DomainMismatch()`, `TooOld()`.
+Errors: `Paused()`, `BadInputsLen()`, `NotAuthorized()`, `NotContiguous()`, `AdapterZero()`, `DomainMismatch()`, `TooOld()`, `InvalidWindowRange()`, `MaxAcceptanceDelayZero()`, `LocatorTooLong()`, `ProofInvalid()`, `StfMismatch()`.
 
 `submitZkValidityProofWithMeta(bytes proof, bytes publicInputs224, uint8 recursionMode, uint8 kInProof, uint8 selectedCount, bytes locator)`
 

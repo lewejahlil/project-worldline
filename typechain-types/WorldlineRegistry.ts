@@ -12,7 +12,7 @@ import type {
   AddressLike,
   ContractRunner,
   ContractMethod,
-  Listener
+  Listener,
 } from "ethers";
 import type {
   TypedContractEvent,
@@ -20,7 +20,7 @@ import type {
   TypedEventLog,
   TypedLogDescription,
   TypedListener,
-  TypedContractMethod
+  TypedContractMethod,
 } from "./common";
 
 export declare namespace WorldlineRegistry {
@@ -44,11 +44,11 @@ export declare namespace WorldlineRegistry {
     endpoint: string;
   };
 
-  export type DriverStructOutput = [id: string, version: string, endpoint: string] & {
-    id: string;
-    version: string;
-    endpoint: string;
-  };
+  export type DriverStructOutput = [
+    id: string,
+    version: string,
+    endpoint: string
+  ] & { id: string; version: string; endpoint: string };
 
   export type PluginStruct = {
     id: BytesLike;
@@ -101,12 +101,30 @@ export interface WorldlineRegistryInterface extends Interface {
       | "PluginRegistered"
   ): EventFragment;
 
-  encodeFunctionData(functionFragment: "compatFacade", values?: undefined): string;
-  encodeFunctionData(functionFragment: "defaultVerifier", values?: undefined): string;
-  encodeFunctionData(functionFragment: "deprecatePlugin", values: [BytesLike]): string;
-  encodeFunctionData(functionFragment: "getCircuit", values: [BytesLike]): string;
-  encodeFunctionData(functionFragment: "getDriver", values: [BytesLike]): string;
-  encodeFunctionData(functionFragment: "getPlugin", values: [BytesLike]): string;
+  encodeFunctionData(
+    functionFragment: "compatFacade",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "defaultVerifier",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "deprecatePlugin",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getCircuit",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDriver",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getPlugin",
+    values: [BytesLike]
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "registerCircuit",
@@ -120,25 +138,55 @@ export interface WorldlineRegistryInterface extends Interface {
     functionFragment: "registerPlugin",
     values: [BytesLike, string, AddressLike, BytesLike]
   ): string;
-  encodeFunctionData(functionFragment: "setCompatFacade", values: [AddressLike]): string;
-  encodeFunctionData(functionFragment: "transferOwnership", values: [AddressLike]): string;
+  encodeFunctionData(
+    functionFragment: "setCompatFacade",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferOwnership",
+    values: [AddressLike]
+  ): string;
   encodeFunctionData(
     functionFragment: "verify",
     values: [BytesLike, BigNumberish, BigNumberish]
   ): string;
 
-  decodeFunctionResult(functionFragment: "compatFacade", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "defaultVerifier", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "deprecatePlugin", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "compatFacade",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "defaultVerifier",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "deprecatePlugin",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "getCircuit", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getDriver", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getPlugin", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "registerCircuit", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "registerDriver", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "registerPlugin", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "setCompatFacade", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "transferOwnership", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "registerCircuit",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "registerDriver",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "registerPlugin",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setCompatFacade",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
 }
 
@@ -257,7 +305,9 @@ export interface WorldlineRegistry extends BaseContract {
     event: TCEvent
   ): Promise<Array<TypedListener<TCEvent>>>;
   listeners(eventName?: string): Promise<Array<Listener>>;
-  removeAllListeners<TCEvent extends TypedContractEvent>(event?: TCEvent): Promise<this>;
+  removeAllListeners<TCEvent extends TypedContractEvent>(
+    event?: TCEvent
+  ): Promise<this>;
 
   compatFacade: TypedContractMethod<[], [string], "view">;
 
@@ -265,11 +315,23 @@ export interface WorldlineRegistry extends BaseContract {
 
   deprecatePlugin: TypedContractMethod<[id: BytesLike], [void], "nonpayable">;
 
-  getCircuit: TypedContractMethod<[id: BytesLike], [WorldlineRegistry.CircuitStructOutput], "view">;
+  getCircuit: TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.CircuitStructOutput],
+    "view"
+  >;
 
-  getDriver: TypedContractMethod<[id: BytesLike], [WorldlineRegistry.DriverStructOutput], "view">;
+  getDriver: TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.DriverStructOutput],
+    "view"
+  >;
 
-  getPlugin: TypedContractMethod<[id: BytesLike], [WorldlineRegistry.PluginStructOutput], "view">;
+  getPlugin: TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.PluginStructOutput],
+    "view"
+  >;
 
   owner: TypedContractMethod<[], [string], "view">;
 
@@ -286,14 +348,27 @@ export interface WorldlineRegistry extends BaseContract {
   >;
 
   registerPlugin: TypedContractMethod<
-    [id: BytesLike, version: string, implementation: AddressLike, circuitId: BytesLike],
+    [
+      id: BytesLike,
+      version: string,
+      implementation: AddressLike,
+      circuitId: BytesLike
+    ],
     [void],
     "nonpayable"
   >;
 
-  setCompatFacade: TypedContractMethod<[compat: AddressLike], [void], "nonpayable">;
+  setCompatFacade: TypedContractMethod<
+    [compat: AddressLike],
+    [void],
+    "nonpayable"
+  >;
 
-  transferOwnership: TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+  transferOwnership: TypedContractMethod<
+    [newOwner: AddressLike],
+    [void],
+    "nonpayable"
+  >;
 
   verify: TypedContractMethod<
     [circuitId: BytesLike, secret: BigNumberish, publicHash: BigNumberish],
@@ -301,23 +376,43 @@ export interface WorldlineRegistry extends BaseContract {
     "view"
   >;
 
-  getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
+  getFunction<T extends ContractMethod = ContractMethod>(
+    key: string | FunctionFragment
+  ): T;
 
-  getFunction(nameOrSignature: "compatFacade"): TypedContractMethod<[], [string], "view">;
-  getFunction(nameOrSignature: "defaultVerifier"): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "compatFacade"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "defaultVerifier"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "deprecatePlugin"
   ): TypedContractMethod<[id: BytesLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "getCircuit"
-  ): TypedContractMethod<[id: BytesLike], [WorldlineRegistry.CircuitStructOutput], "view">;
+  ): TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.CircuitStructOutput],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getDriver"
-  ): TypedContractMethod<[id: BytesLike], [WorldlineRegistry.DriverStructOutput], "view">;
+  ): TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.DriverStructOutput],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getPlugin"
-  ): TypedContractMethod<[id: BytesLike], [WorldlineRegistry.PluginStructOutput], "view">;
-  getFunction(nameOrSignature: "owner"): TypedContractMethod<[], [string], "view">;
+  ): TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.PluginStructOutput],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "owner"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "registerCircuit"
   ): TypedContractMethod<
@@ -327,11 +422,20 @@ export interface WorldlineRegistry extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "registerDriver"
-  ): TypedContractMethod<[id: BytesLike, version: string, endpoint: string], [void], "nonpayable">;
+  ): TypedContractMethod<
+    [id: BytesLike, version: string, endpoint: string],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "registerPlugin"
   ): TypedContractMethod<
-    [id: BytesLike, version: string, implementation: AddressLike, circuitId: BytesLike],
+    [
+      id: BytesLike,
+      version: string,
+      implementation: AddressLike,
+      circuitId: BytesLike
+    ],
     [void],
     "nonpayable"
   >;

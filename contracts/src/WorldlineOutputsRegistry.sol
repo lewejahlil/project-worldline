@@ -13,7 +13,7 @@ contract WorldlineOutputsRegistry is Ownable {
     error TimelockNotElapsed();
     error NoPendingEntry();
     error TimelockTooShort();
-    error EntryAlreadyActive();
+    error NoActiveEntry();
 
     // ── Events ──────────────────────────────────────────────────────────────────
 
@@ -31,6 +31,16 @@ contract WorldlineOutputsRegistry is Ownable {
         bytes32 policyHash,
         address oracle
     );
+
+    event OutputRescheduled(
+        bytes32 indexed domainKey,
+        bytes32 programVKey,
+        bytes32 policyHash,
+        address oracle,
+        uint256 activationTime
+    );
+
+    event MinTimelockSet(uint256 minTimelock);
 
     // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,6 +84,7 @@ contract WorldlineOutputsRegistry is Ownable {
     function setMinTimelock(uint256 _minTimelock) external onlyOwner {
         if (_minTimelock == 0) revert TimelockTooShort();
         minTimelock = _minTimelock;
+        emit MinTimelockSet(_minTimelock);
     }
 
     // ── Domain key helper ───────────────────────────────────────────────────────
@@ -101,6 +112,7 @@ contract WorldlineOutputsRegistry is Ownable {
         address oracle
     ) external onlyOwner {
         uint256 activationTime = block.timestamp + minTimelock;
+        bool overwriting = pendingEntries[_domainKey].exists;
 
         pendingEntries[_domainKey] = PendingEntry({
             programVKey: programVKey,
@@ -110,7 +122,11 @@ contract WorldlineOutputsRegistry is Ownable {
             exists: true
         });
 
-        emit OutputScheduled(_domainKey, programVKey, policyHash, oracle, activationTime);
+        if (overwriting) {
+            emit OutputRescheduled(_domainKey, programVKey, policyHash, oracle, activationTime);
+        } else {
+            emit OutputScheduled(_domainKey, programVKey, policyHash, oracle, activationTime);
+        }
     }
 
     // ── Activate ────────────────────────────────────────────────────────────────
@@ -122,21 +138,21 @@ contract WorldlineOutputsRegistry is Ownable {
         if (!pending.exists) revert NoPendingEntry();
         if (block.timestamp < pending.activationTime) revert TimelockNotElapsed();
 
+        // Cache values before delete to avoid redundant storage reads
+        bytes32 vkey = pending.programVKey;
+        bytes32 policy = pending.policyHash;
+        address oracleAddr = pending.oracle;
+
         activeEntries[_domainKey] = OutputEntry({
-            programVKey: pending.programVKey,
-            policyHash: pending.policyHash,
-            oracle: pending.oracle,
+            programVKey: vkey,
+            policyHash: policy,
+            oracle: oracleAddr,
             active: true
         });
 
         delete pendingEntries[_domainKey];
 
-        emit OutputActivated(
-            _domainKey,
-            activeEntries[_domainKey].programVKey,
-            activeEntries[_domainKey].policyHash,
-            activeEntries[_domainKey].oracle
-        );
+        emit OutputActivated(_domainKey, vkey, policy, oracleAddr);
     }
 
     // ── View ────────────────────────────────────────────────────────────────────
@@ -150,7 +166,7 @@ contract WorldlineOutputsRegistry is Ownable {
     function getActiveEntry(
         bytes32 _domainKey
     ) external view returns (OutputEntry memory) {
-        require(activeEntries[_domainKey].active, "no active entry");
+        if (!activeEntries[_domainKey].active) revert NoActiveEntry();
         return activeEntries[_domainKey];
     }
 }

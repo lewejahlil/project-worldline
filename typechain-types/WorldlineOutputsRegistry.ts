@@ -12,7 +12,7 @@ import type {
   AddressLike,
   ContractRunner,
   ContractMethod,
-  Listener
+  Listener,
 } from "ethers";
 import type {
   TypedContractEvent,
@@ -20,7 +20,7 @@ import type {
   TypedEventLog,
   TypedLogDescription,
   TypedListener,
-  TypedContractMethod
+  TypedContractMethod,
 } from "./common";
 
 export declare namespace WorldlineOutputsRegistry {
@@ -61,35 +61,91 @@ export interface WorldlineOutputsRegistryInterface extends Interface {
   ): FunctionFragment;
 
   getEvent(
-    nameOrSignatureOrTopic: "OutputActivated" | "OutputScheduled" | "OwnershipTransferred"
+    nameOrSignatureOrTopic:
+      | "MinTimelockSet"
+      | "OutputActivated"
+      | "OutputRescheduled"
+      | "OutputScheduled"
+      | "OwnershipTransferred"
   ): EventFragment;
 
   encodeFunctionData(functionFragment: "activate", values: [BytesLike]): string;
-  encodeFunctionData(functionFragment: "activeEntries", values: [BytesLike]): string;
-  encodeFunctionData(functionFragment: "domainKey", values: [BytesLike, BytesLike]): string;
-  encodeFunctionData(functionFragment: "getActiveEntry", values: [BytesLike]): string;
+  encodeFunctionData(
+    functionFragment: "activeEntries",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "domainKey",
+    values: [BytesLike, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getActiveEntry",
+    values: [BytesLike]
+  ): string;
   encodeFunctionData(functionFragment: "isActive", values: [BytesLike]): string;
-  encodeFunctionData(functionFragment: "minTimelock", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "minTimelock",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
-  encodeFunctionData(functionFragment: "pendingEntries", values: [BytesLike]): string;
+  encodeFunctionData(
+    functionFragment: "pendingEntries",
+    values: [BytesLike]
+  ): string;
   encodeFunctionData(
     functionFragment: "schedule",
     values: [BytesLike, BytesLike, BytesLike, AddressLike]
   ): string;
-  encodeFunctionData(functionFragment: "setMinTimelock", values: [BigNumberish]): string;
-  encodeFunctionData(functionFragment: "transferOwnership", values: [AddressLike]): string;
+  encodeFunctionData(
+    functionFragment: "setMinTimelock",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferOwnership",
+    values: [AddressLike]
+  ): string;
 
   decodeFunctionResult(functionFragment: "activate", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "activeEntries", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "activeEntries",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "domainKey", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "getActiveEntry", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "getActiveEntry",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "isActive", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "minTimelock", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "minTimelock",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "pendingEntries", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingEntries",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "schedule", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "setMinTimelock", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "transferOwnership", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setMinTimelock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+}
+
+export namespace MinTimelockSetEvent {
+  export type InputTuple = [minTimelock: BigNumberish];
+  export type OutputTuple = [minTimelock: bigint];
+  export interface OutputObject {
+    minTimelock: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
 }
 
 export namespace OutputActivatedEvent {
@@ -110,6 +166,34 @@ export namespace OutputActivatedEvent {
     programVKey: string;
     policyHash: string;
     oracle: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OutputRescheduledEvent {
+  export type InputTuple = [
+    domainKey: BytesLike,
+    programVKey: BytesLike,
+    policyHash: BytesLike,
+    oracle: AddressLike,
+    activationTime: BigNumberish
+  ];
+  export type OutputTuple = [
+    domainKey: string,
+    programVKey: string,
+    policyHash: string,
+    oracle: string,
+    activationTime: bigint
+  ];
+  export interface OutputObject {
+    domainKey: string;
+    programVKey: string;
+    policyHash: string;
+    oracle: string;
+    activationTime: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -197,7 +281,9 @@ export interface WorldlineOutputsRegistry extends BaseContract {
     event: TCEvent
   ): Promise<Array<TypedListener<TCEvent>>>;
   listeners(eventName?: string): Promise<Array<Listener>>;
-  removeAllListeners<TCEvent extends TypedContractEvent>(event?: TCEvent): Promise<this>;
+  removeAllListeners<TCEvent extends TypedContractEvent>(
+    event?: TCEvent
+  ): Promise<this>;
 
   activate: TypedContractMethod<[_domainKey: BytesLike], [void], "nonpayable">;
 
@@ -214,7 +300,11 @@ export interface WorldlineOutputsRegistry extends BaseContract {
     "view"
   >;
 
-  domainKey: TypedContractMethod<[chainIdHash: BytesLike, domainTag: BytesLike], [string], "view">;
+  domainKey: TypedContractMethod<
+    [chainIdHash: BytesLike, domainTag: BytesLike],
+    [string],
+    "view"
+  >;
 
   getActiveEntry: TypedContractMethod<
     [_domainKey: BytesLike],
@@ -243,21 +333,38 @@ export interface WorldlineOutputsRegistry extends BaseContract {
   >;
 
   schedule: TypedContractMethod<
-    [_domainKey: BytesLike, programVKey: BytesLike, policyHash: BytesLike, oracle: AddressLike],
+    [
+      _domainKey: BytesLike,
+      programVKey: BytesLike,
+      policyHash: BytesLike,
+      oracle: AddressLike
+    ],
     [void],
     "nonpayable"
   >;
 
-  setMinTimelock: TypedContractMethod<[_minTimelock: BigNumberish], [void], "nonpayable">;
+  setMinTimelock: TypedContractMethod<
+    [_minTimelock: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
 
-  transferOwnership: TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+  transferOwnership: TypedContractMethod<
+    [newOwner: AddressLike],
+    [void],
+    "nonpayable"
+  >;
 
-  getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
+  getFunction<T extends ContractMethod = ContractMethod>(
+    key: string | FunctionFragment
+  ): T;
 
   getFunction(
     nameOrSignature: "activate"
   ): TypedContractMethod<[_domainKey: BytesLike], [void], "nonpayable">;
-  getFunction(nameOrSignature: "activeEntries"): TypedContractMethod<
+  getFunction(
+    nameOrSignature: "activeEntries"
+  ): TypedContractMethod<
     [arg0: BytesLike],
     [
       [string, string, string, boolean] & {
@@ -271,7 +378,11 @@ export interface WorldlineOutputsRegistry extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "domainKey"
-  ): TypedContractMethod<[chainIdHash: BytesLike, domainTag: BytesLike], [string], "view">;
+  ): TypedContractMethod<
+    [chainIdHash: BytesLike, domainTag: BytesLike],
+    [string],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getActiveEntry"
   ): TypedContractMethod<
@@ -282,9 +393,15 @@ export interface WorldlineOutputsRegistry extends BaseContract {
   getFunction(
     nameOrSignature: "isActive"
   ): TypedContractMethod<[_domainKey: BytesLike], [boolean], "view">;
-  getFunction(nameOrSignature: "minTimelock"): TypedContractMethod<[], [bigint], "view">;
-  getFunction(nameOrSignature: "owner"): TypedContractMethod<[], [string], "view">;
-  getFunction(nameOrSignature: "pendingEntries"): TypedContractMethod<
+  getFunction(
+    nameOrSignature: "minTimelock"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "owner"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "pendingEntries"
+  ): TypedContractMethod<
     [arg0: BytesLike],
     [
       [string, string, string, bigint, boolean] & {
@@ -300,7 +417,12 @@ export interface WorldlineOutputsRegistry extends BaseContract {
   getFunction(
     nameOrSignature: "schedule"
   ): TypedContractMethod<
-    [_domainKey: BytesLike, programVKey: BytesLike, policyHash: BytesLike, oracle: AddressLike],
+    [
+      _domainKey: BytesLike,
+      programVKey: BytesLike,
+      policyHash: BytesLike,
+      oracle: AddressLike
+    ],
     [void],
     "nonpayable"
   >;
@@ -312,11 +434,25 @@ export interface WorldlineOutputsRegistry extends BaseContract {
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
 
   getEvent(
+    key: "MinTimelockSet"
+  ): TypedContractEvent<
+    MinTimelockSetEvent.InputTuple,
+    MinTimelockSetEvent.OutputTuple,
+    MinTimelockSetEvent.OutputObject
+  >;
+  getEvent(
     key: "OutputActivated"
   ): TypedContractEvent<
     OutputActivatedEvent.InputTuple,
     OutputActivatedEvent.OutputTuple,
     OutputActivatedEvent.OutputObject
+  >;
+  getEvent(
+    key: "OutputRescheduled"
+  ): TypedContractEvent<
+    OutputRescheduledEvent.InputTuple,
+    OutputRescheduledEvent.OutputTuple,
+    OutputRescheduledEvent.OutputObject
   >;
   getEvent(
     key: "OutputScheduled"
@@ -334,6 +470,17 @@ export interface WorldlineOutputsRegistry extends BaseContract {
   >;
 
   filters: {
+    "MinTimelockSet(uint256)": TypedContractEvent<
+      MinTimelockSetEvent.InputTuple,
+      MinTimelockSetEvent.OutputTuple,
+      MinTimelockSetEvent.OutputObject
+    >;
+    MinTimelockSet: TypedContractEvent<
+      MinTimelockSetEvent.InputTuple,
+      MinTimelockSetEvent.OutputTuple,
+      MinTimelockSetEvent.OutputObject
+    >;
+
     "OutputActivated(bytes32,bytes32,bytes32,address)": TypedContractEvent<
       OutputActivatedEvent.InputTuple,
       OutputActivatedEvent.OutputTuple,
@@ -343,6 +490,17 @@ export interface WorldlineOutputsRegistry extends BaseContract {
       OutputActivatedEvent.InputTuple,
       OutputActivatedEvent.OutputTuple,
       OutputActivatedEvent.OutputObject
+    >;
+
+    "OutputRescheduled(bytes32,bytes32,bytes32,address,uint256)": TypedContractEvent<
+      OutputRescheduledEvent.InputTuple,
+      OutputRescheduledEvent.OutputTuple,
+      OutputRescheduledEvent.OutputObject
+    >;
+    OutputRescheduled: TypedContractEvent<
+      OutputRescheduledEvent.InputTuple,
+      OutputRescheduledEvent.OutputTuple,
+      OutputRescheduledEvent.OutputObject
     >;
 
     "OutputScheduled(bytes32,bytes32,bytes32,address,uint256)": TypedContractEvent<

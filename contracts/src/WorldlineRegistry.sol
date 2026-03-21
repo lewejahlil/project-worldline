@@ -7,6 +7,24 @@ import {Verifier} from "./zk/Verifier.sol";
 /// @title WorldlineRegistry
 /// @notice Stores metadata about available circuits, drivers, and plugins.
 contract WorldlineRegistry is Ownable {
+    // ── Errors ──────────────────────────────────────────────────────────────────
+
+    error InvalidVerifier();
+    error NotAuthorised();
+    error InvalidCircuitId();
+    error CircuitExists();
+    error CircuitMissing();
+    error InvalidDriverId();
+    error DriverExists();
+    error DriverMissing();
+    error InvalidPluginId();
+    error InvalidImplementation();
+    error PluginExists();
+    error PluginMissing();
+    error NoVerifierConfigured();
+
+    // ── Types ───────────────────────────────────────────────────────────────────
+
     struct Circuit {
         bytes32 id;
         string description;
@@ -47,12 +65,12 @@ contract WorldlineRegistry is Ownable {
 
     /// @param verifier Address of the default ZK verifier contract (must be non-zero).
     constructor(address verifier) {
-        require(verifier != address(0), "invalid verifier");
+        if (verifier == address(0)) revert InvalidVerifier();
         defaultVerifier = Verifier(verifier);
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == owner() || msg.sender == compatFacade, "not authorised");
+        if (msg.sender != owner() && msg.sender != compatFacade) revert NotAuthorised();
         _;
     }
 
@@ -74,8 +92,8 @@ contract WorldlineRegistry is Ownable {
         address verifier,
         string calldata abiURI
     ) external onlyAdmin {
-        require(id != bytes32(0), "invalid circuit id");
-        require(!circuitExists[id], "circuit exists");
+        if (id == bytes32(0)) revert InvalidCircuitId();
+        if (circuitExists[id]) revert CircuitExists();
 
         circuits[id] = Circuit({id: id, description: description, verifier: verifier, abiURI: abiURI});
         circuitExists[id] = true;
@@ -86,7 +104,7 @@ contract WorldlineRegistry is Ownable {
     /// @param id The circuit identifier.
     /// @return The Circuit metadata struct.
     function getCircuit(bytes32 id) external view returns (Circuit memory) {
-        require(circuitExists[id], "circuit missing");
+        if (!circuitExists[id]) revert CircuitMissing();
         return circuits[id];
     }
 
@@ -95,8 +113,8 @@ contract WorldlineRegistry is Ownable {
     /// @param version Semver version string.
     /// @param endpoint URL of the driver's RPC endpoint.
     function registerDriver(bytes32 id, string calldata version, string calldata endpoint) external onlyAdmin {
-        require(id != bytes32(0), "invalid driver id");
-        require(!driverExists[id], "driver exists");
+        if (id == bytes32(0)) revert InvalidDriverId();
+        if (driverExists[id]) revert DriverExists();
         drivers[id] = Driver({id: id, version: version, endpoint: endpoint});
         driverExists[id] = true;
         emit DriverRegistered(id, version);
@@ -106,7 +124,7 @@ contract WorldlineRegistry is Ownable {
     /// @param id The driver identifier.
     /// @return The Driver metadata struct.
     function getDriver(bytes32 id) external view returns (Driver memory) {
-        require(driverExists[id], "driver missing");
+        if (!driverExists[id]) revert DriverMissing();
         return drivers[id];
     }
 
@@ -121,10 +139,10 @@ contract WorldlineRegistry is Ownable {
         address implementation,
         bytes32 circuitId
     ) external onlyAdmin {
-        require(id != bytes32(0), "invalid plugin id");
-        require(implementation != address(0), "invalid implementation");
-        require(!pluginExists[id], "plugin exists");
-        require(circuitExists[circuitId], "circuit missing");
+        if (id == bytes32(0)) revert InvalidPluginId();
+        if (implementation == address(0)) revert InvalidImplementation();
+        if (pluginExists[id]) revert PluginExists();
+        if (!circuitExists[circuitId]) revert CircuitMissing();
 
         plugins[id] = Plugin({
             id: id,
@@ -141,7 +159,7 @@ contract WorldlineRegistry is Ownable {
     /// @notice Mark a plugin as deprecated. It remains queryable but flagged.
     /// @param id The plugin identifier.
     function deprecatePlugin(bytes32 id) external onlyAdmin {
-        require(pluginExists[id], "plugin missing");
+        if (!pluginExists[id]) revert PluginMissing();
         Plugin storage plugin = plugins[id];
         plugin.deprecated = true;
         emit PluginDeprecated(id);
@@ -151,7 +169,7 @@ contract WorldlineRegistry is Ownable {
     /// @param id The plugin identifier.
     /// @return The Plugin metadata struct.
     function getPlugin(bytes32 id) external view returns (Plugin memory) {
-        require(pluginExists[id], "plugin missing");
+        if (!pluginExists[id]) revert PluginMissing();
         return plugins[id];
     }
 
@@ -160,14 +178,16 @@ contract WorldlineRegistry is Ownable {
     /// @param secret The private input (dev-mode only).
     /// @param publicHash The expected public commitment.
     /// @return True if verification succeeds; reverts otherwise.
+    /// @dev DEV-ONLY — This function exposes the raw secret on-chain. In production,
+    ///      proof verification should go through the adapter interface, never this method.
     function verify(bytes32 circuitId, uint256 secret, uint256 publicHash) external view returns (bool) {
-        require(circuitExists[circuitId], "circuit missing");
+        if (!circuitExists[circuitId]) revert CircuitMissing();
         Circuit memory circuit = circuits[circuitId];
         address verifier = circuit.verifier;
         if (verifier == address(0)) {
             verifier = address(defaultVerifier);
         }
-        require(verifier != address(0), "no verifier configured");
+        if (verifier == address(0)) revert NoVerifierConfigured();
         Verifier(verifier).verifyProof(secret, publicHash);
         return true;
     }

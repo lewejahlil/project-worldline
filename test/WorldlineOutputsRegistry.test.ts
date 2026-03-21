@@ -58,6 +58,19 @@ describe("WorldlineOutputsRegistry", function () {
         registry.connect(stranger).schedule(dKey, PROGRAM_VKEY, POLICY_HASH, oracle.address)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
+
+    it("emits OutputRescheduled when overwriting a pending entry", async function () {
+      const { registry, owner, oracle, dKey } = await loadFixture(deployFixture);
+      const VKEY2 = ethers.keccak256(ethers.toUtf8Bytes("vkey2"));
+
+      // Schedule first
+      await registry.connect(owner).schedule(dKey, PROGRAM_VKEY, POLICY_HASH, oracle.address);
+
+      // Schedule again (overwrite) — should emit OutputRescheduled instead of OutputScheduled
+      await expect(
+        registry.connect(owner).schedule(dKey, VKEY2, POLICY_HASH, oracle.address)
+      ).to.emit(registry, "OutputRescheduled");
+    });
   });
 
   describe("activate", function () {
@@ -107,14 +120,19 @@ describe("WorldlineOutputsRegistry", function () {
   describe("getActiveEntry", function () {
     it("reverts if no active entry", async function () {
       const { registry, dKey } = await loadFixture(deployFixture);
-      await expect(registry.getActiveEntry(dKey)).to.be.revertedWith("no active entry");
+      await expect(registry.getActiveEntry(dKey)).to.be.revertedWithCustomError(
+        registry,
+        "NoActiveEntry"
+      );
     });
   });
 
   describe("setMinTimelock", function () {
     it("owner can update timelock", async function () {
       const { registry, owner } = await loadFixture(deployFixture);
-      await registry.connect(owner).setMinTimelock(7200);
+      await expect(registry.connect(owner).setMinTimelock(7200))
+        .to.emit(registry, "MinTimelockSet")
+        .withArgs(7200);
       expect(await registry.minTimelock()).to.equal(7200);
     });
 

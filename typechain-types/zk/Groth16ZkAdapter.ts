@@ -9,29 +9,54 @@ import type {
   Interface,
   ContractRunner,
   ContractMethod,
-  Listener
+  Listener,
 } from "ethers";
 import type {
   TypedContractEvent,
   TypedDeferredTopicFilter,
   TypedEventLog,
   TypedListener,
-  TypedContractMethod
+  TypedContractMethod,
 } from "../common";
 
 export interface Groth16ZkAdapterInterface extends Interface {
   getFunction(
-    nameOrSignature: "groth16Verifier" | "policyHashPinned" | "programVKeyPinned" | "verify"
+    nameOrSignature:
+      | "groth16Verifier"
+      | "policyHashPinned"
+      | "programVKeyPinned"
+      | "verify"
   ): FunctionFragment;
 
-  encodeFunctionData(functionFragment: "groth16Verifier", values?: undefined): string;
-  encodeFunctionData(functionFragment: "policyHashPinned", values?: undefined): string;
-  encodeFunctionData(functionFragment: "programVKeyPinned", values?: undefined): string;
-  encodeFunctionData(functionFragment: "verify", values: [BytesLike, BytesLike]): string;
+  encodeFunctionData(
+    functionFragment: "groth16Verifier",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "policyHashPinned",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "programVKeyPinned",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "verify",
+    values: [BytesLike, BytesLike]
+  ): string;
 
-  decodeFunctionResult(functionFragment: "groth16Verifier", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "policyHashPinned", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "programVKeyPinned", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "groth16Verifier",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "policyHashPinned",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "programVKeyPinned",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
 }
 
@@ -74,7 +99,9 @@ export interface Groth16ZkAdapter extends BaseContract {
     event: TCEvent
   ): Promise<Array<TypedListener<TCEvent>>>;
   listeners(eventName?: string): Promise<Array<Listener>>;
-  removeAllListeners<TCEvent extends TypedContractEvent>(event?: TCEvent): Promise<this>;
+  removeAllListeners<TCEvent extends TypedContractEvent>(
+    event?: TCEvent
+  ): Promise<this>;
 
   groth16Verifier: TypedContractMethod<[], [string], "view">;
 
@@ -96,12 +123,22 @@ export interface Groth16ZkAdapter extends BaseContract {
     "view"
   >;
 
-  getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
+  getFunction<T extends ContractMethod = ContractMethod>(
+    key: string | FunctionFragment
+  ): T;
 
-  getFunction(nameOrSignature: "groth16Verifier"): TypedContractMethod<[], [string], "view">;
-  getFunction(nameOrSignature: "policyHashPinned"): TypedContractMethod<[], [string], "view">;
-  getFunction(nameOrSignature: "programVKeyPinned"): TypedContractMethod<[], [string], "view">;
-  getFunction(nameOrSignature: "verify"): TypedContractMethod<
+  getFunction(
+    nameOrSignature: "groth16Verifier"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "policyHashPinned"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "programVKeyPinned"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "verify"
+  ): TypedContractMethod<
     [proof: BytesLike, publicInputs: BytesLike],
     [
       [boolean, string, string, string, string] & {

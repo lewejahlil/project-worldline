@@ -37,7 +37,10 @@ describe("WorldlineRegistry", function () {
 
     it("reverts if deployed with zero verifier address", async function () {
       const Registry = await ethers.getContractFactory("WorldlineRegistry");
-      await expect(Registry.deploy(ethers.ZeroAddress)).to.be.revertedWith("invalid verifier");
+      await expect(Registry.deploy(ethers.ZeroAddress)).to.be.revertedWithCustomError(
+        Registry,
+        "InvalidVerifier"
+      );
     });
   });
 
@@ -139,7 +142,7 @@ describe("WorldlineRegistry", function () {
         registry
           .connect(stranger)
           .registerCircuit(CIRCUIT_ID, "test circuit", ethers.ZeroAddress, "")
-      ).to.be.revertedWith("not authorised");
+      ).to.be.revertedWithCustomError(registry, "NotAuthorised");
     });
 
     it("reverts on duplicate circuit ID", async function () {
@@ -147,14 +150,14 @@ describe("WorldlineRegistry", function () {
       await registry.connect(owner).registerCircuit(CIRCUIT_ID, "first", ethers.ZeroAddress, "");
       await expect(
         registry.connect(owner).registerCircuit(CIRCUIT_ID, "second", ethers.ZeroAddress, "")
-      ).to.be.revertedWith("circuit exists");
+      ).to.be.revertedWithCustomError(registry, "CircuitExists");
     });
 
     it("reverts when circuit ID is zero bytes32", async function () {
       const { registry, owner } = await loadFixture(deployFixture);
       await expect(
         registry.connect(owner).registerCircuit(ZERO_BYTES32, "desc", ethers.ZeroAddress, "")
-      ).to.be.revertedWith("invalid circuit id");
+      ).to.be.revertedWithCustomError(registry, "InvalidCircuitId");
     });
 
     it("registers with address(0) verifier (falls back to defaultVerifier)", async function () {
@@ -184,7 +187,10 @@ describe("WorldlineRegistry", function () {
 
     it("reverts for an unknown circuit ID", async function () {
       const { registry } = await loadFixture(deployFixture);
-      await expect(registry.getCircuit(CIRCUIT_ID)).to.be.revertedWith("circuit missing");
+      await expect(registry.getCircuit(CIRCUIT_ID)).to.be.revertedWithCustomError(
+        registry,
+        "CircuitMissing"
+      );
     });
   });
 
@@ -204,7 +210,7 @@ describe("WorldlineRegistry", function () {
       const { registry, stranger } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).registerDriver(DRIVER_ID, "1.0.0", "http://localhost:8545")
-      ).to.be.revertedWith("not authorised");
+      ).to.be.revertedWithCustomError(registry, "NotAuthorised");
     });
 
     it("reverts on duplicate driver ID", async function () {
@@ -212,14 +218,14 @@ describe("WorldlineRegistry", function () {
       await registry.connect(owner).registerDriver(DRIVER_ID, "1.0.0", "http://a");
       await expect(
         registry.connect(owner).registerDriver(DRIVER_ID, "2.0.0", "http://b")
-      ).to.be.revertedWith("driver exists");
+      ).to.be.revertedWithCustomError(registry, "DriverExists");
     });
 
     it("reverts when driver ID is zero bytes32", async function () {
       const { registry, owner } = await loadFixture(deployFixture);
       await expect(
         registry.connect(owner).registerDriver(ZERO_BYTES32, "1.0.0", "http://x")
-      ).to.be.revertedWith("invalid driver id");
+      ).to.be.revertedWithCustomError(registry, "InvalidDriverId");
     });
   });
 
@@ -238,7 +244,10 @@ describe("WorldlineRegistry", function () {
 
     it("reverts for an unknown driver ID", async function () {
       const { registry } = await loadFixture(deployFixture);
-      await expect(registry.getDriver(DRIVER_ID)).to.be.revertedWith("driver missing");
+      await expect(registry.getDriver(DRIVER_ID)).to.be.revertedWithCustomError(
+        registry,
+        "DriverMissing"
+      );
     });
   });
 
@@ -265,7 +274,7 @@ describe("WorldlineRegistry", function () {
       const { registry, stranger } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).registerPlugin(PLUGIN_ID, "1.0.0", stranger.address, CIRCUIT_ID)
-      ).to.be.revertedWith("not authorised");
+      ).to.be.revertedWithCustomError(registry, "NotAuthorised");
     });
 
     it("reverts on duplicate plugin ID", async function () {
@@ -276,7 +285,7 @@ describe("WorldlineRegistry", function () {
         .registerPlugin(PLUGIN_ID, "1.0.0", stranger.address, CIRCUIT_ID);
       await expect(
         registry.connect(owner).registerPlugin(PLUGIN_ID, "2.0.0", stranger.address, CIRCUIT_ID)
-      ).to.be.revertedWith("plugin exists");
+      ).to.be.revertedWithCustomError(registry, "PluginExists");
     });
 
     it("reverts when plugin ID is zero bytes32", async function () {
@@ -284,7 +293,7 @@ describe("WorldlineRegistry", function () {
       await withCircuit(registry, owner);
       await expect(
         registry.connect(owner).registerPlugin(ZERO_BYTES32, "1.0.0", stranger.address, CIRCUIT_ID)
-      ).to.be.revertedWith("invalid plugin id");
+      ).to.be.revertedWithCustomError(registry, "InvalidPluginId");
     });
 
     it("reverts when implementation address is zero", async function () {
@@ -292,7 +301,7 @@ describe("WorldlineRegistry", function () {
       await withCircuit(registry, owner);
       await expect(
         registry.connect(owner).registerPlugin(PLUGIN_ID, "1.0.0", ethers.ZeroAddress, CIRCUIT_ID)
-      ).to.be.revertedWith("invalid implementation");
+      ).to.be.revertedWithCustomError(registry, "InvalidImplementation");
     });
 
     it("reverts when referenced circuit does not exist", async function () {
@@ -300,7 +309,7 @@ describe("WorldlineRegistry", function () {
       // circuit not registered
       await expect(
         registry.connect(owner).registerPlugin(PLUGIN_ID, "1.0.0", stranger.address, CIRCUIT_ID)
-      ).to.be.revertedWith("circuit missing");
+      ).to.be.revertedWithCustomError(registry, "CircuitMissing");
     });
   });
 
@@ -335,16 +344,16 @@ describe("WorldlineRegistry", function () {
     it("non-admin cannot deprecate a plugin", async function () {
       const { registry, owner, stranger } = await loadFixture(deployFixture);
       await withPlugin(registry, owner, stranger.address);
-      await expect(registry.connect(stranger).deprecatePlugin(PLUGIN_ID)).to.be.revertedWith(
-        "not authorised"
-      );
+      await expect(
+        registry.connect(stranger).deprecatePlugin(PLUGIN_ID)
+      ).to.be.revertedWithCustomError(registry, "NotAuthorised");
     });
 
     it("reverts when deprecating a non-existent plugin", async function () {
       const { registry, owner } = await loadFixture(deployFixture);
-      await expect(registry.connect(owner).deprecatePlugin(PLUGIN_ID)).to.be.revertedWith(
-        "plugin missing"
-      );
+      await expect(
+        registry.connect(owner).deprecatePlugin(PLUGIN_ID)
+      ).to.be.revertedWithCustomError(registry, "PluginMissing");
     });
   });
 
@@ -380,7 +389,10 @@ describe("WorldlineRegistry", function () {
 
     it("reverts for an unknown plugin ID", async function () {
       const { registry } = await loadFixture(deployFixture);
-      await expect(registry.getPlugin(PLUGIN_ID)).to.be.revertedWith("plugin missing");
+      await expect(registry.getPlugin(PLUGIN_ID)).to.be.revertedWithCustomError(
+        registry,
+        "PluginMissing"
+      );
     });
   });
 
@@ -414,7 +426,10 @@ describe("WorldlineRegistry", function () {
 
     it("reverts when circuit ID is not registered", async function () {
       const { registry } = await loadFixture(deployFixture);
-      await expect(registry.verify(CIRCUIT_ID, 3n, 9n)).to.be.revertedWith("circuit missing");
+      await expect(registry.verify(CIRCUIT_ID, 3n, 9n)).to.be.revertedWithCustomError(
+        registry,
+        "CircuitMissing"
+      );
     });
   });
 });

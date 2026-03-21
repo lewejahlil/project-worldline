@@ -24,7 +24,7 @@ contract WorldlineRegistryFuzzTest is Test {
         registry.registerCircuit(id, desc, address(0), "");
 
         // Second registration should revert
-        vm.expectRevert("circuit exists");
+        vm.expectRevert(WorldlineRegistry.CircuitExists.selector);
         registry.registerCircuit(id, desc, address(0), "");
     }
 
@@ -74,7 +74,7 @@ contract WorldlineRegistryFuzzTest is Test {
 
         registry.registerDriver(id, version, endpoint);
 
-        vm.expectRevert("driver exists");
+        vm.expectRevert(WorldlineRegistry.DriverExists.selector);
         registry.registerDriver(id, version, endpoint);
     }
 }

@@ -18,6 +18,11 @@ contract WorldlineFinalizer is Ownable {
     error AdapterZero();
     error DomainMismatch();
     error TooOld();
+    error InvalidWindowRange();
+    error MaxAcceptanceDelayZero();
+    error LocatorTooLong();
+    error ProofInvalid();
+    error StfMismatch();
 
     // ── Events ──────────────────────────────────────────────────────────────────
 
@@ -38,6 +43,12 @@ contract WorldlineFinalizer is Ownable {
         bytes32 proverSetDigest
     );
 
+    event PausedSet(bool paused);
+    event PermissionlessSet(bool permissionless);
+    event SubmitterSet(address indexed account, bool allowed);
+    event MaxAcceptanceDelaySet(uint256 delay);
+    event AdapterSet(address indexed adapter);
+
     // ── Constants ───────────────────────────────────────────────────────────────
 
     /// @dev Expected length of the public inputs ABI payload (7 × 32 = 224 bytes).
@@ -54,7 +65,6 @@ contract WorldlineFinalizer is Ownable {
     uint256 public nextWindowIndex;
     uint256 public lastL2EndBlock;
 
-    mapping(address => bool) public proposers;
     mapping(address => bool) public submitters;
 
     // ── Constructor ─────────────────────────────────────────────────────────────
@@ -68,6 +78,7 @@ contract WorldlineFinalizer is Ownable {
         uint256 _maxAcceptanceDelay
     ) {
         if (_adapter == address(0)) revert AdapterZero();
+        if (_maxAcceptanceDelay == 0) revert MaxAcceptanceDelayZero();
         adapter = IZkAggregatorVerifier(_adapter);
         domainSeparator = _domainSeparator;
         maxAcceptanceDelay = _maxAcceptanceDelay;
@@ -85,32 +96,33 @@ contract WorldlineFinalizer is Ownable {
     /// @notice Pause or unpause the finalizer.
     function setPaused(bool _paused) external onlyOwner {
         paused = _paused;
+        emit PausedSet(_paused);
     }
 
     /// @notice Toggle permissionless mode (anyone can submit).
     function setPermissionless(bool _permissionless) external onlyOwner {
         permissionless = _permissionless;
-    }
-
-    /// @notice Grant or revoke proposer role.
-    function setProposer(address account, bool allowed) external onlyOwner {
-        proposers[account] = allowed;
+        emit PermissionlessSet(_permissionless);
     }
 
     /// @notice Grant or revoke submitter role.
     function setSubmitter(address account, bool allowed) external onlyOwner {
         submitters[account] = allowed;
+        emit SubmitterSet(account, allowed);
     }
 
     /// @notice Update the maximum acceptance delay.
     function setMaxAcceptanceDelay(uint256 _delay) external onlyOwner {
+        if (_delay == 0) revert MaxAcceptanceDelayZero();
         maxAcceptanceDelay = _delay;
+        emit MaxAcceptanceDelaySet(_delay);
     }
 
     /// @notice Replace the adapter.
     function setAdapter(address _adapter) external onlyOwner {
         if (_adapter == address(0)) revert AdapterZero();
         adapter = IZkAggregatorVerifier(_adapter);
+        emit AdapterSet(_adapter);
     }
 
     // ── Submission ──────────────────────────────────────────────────────────────
@@ -134,7 +146,7 @@ contract WorldlineFinalizer is Ownable {
         bytes calldata publicInputs,
         bytes calldata metaLocator
     ) external whenNotPaused {
-        require(metaLocator.length <= 96, "locator too long");
+        if (metaLocator.length > 96) revert LocatorTooLong();
         _submit(proof, publicInputs);
     }
 
@@ -169,6 +181,9 @@ contract WorldlineFinalizer is Ownable {
         // Domain binding
         if (inputDomainSeparator != domainSeparator) revert DomainMismatch();
 
+        // Window range: l2End must be strictly greater than l2Start
+        if (l2End <= l2Start) revert InvalidWindowRange();
+
         // Contiguity: l2Start must equal lastL2EndBlock (except for genesis window)
         if (nextWindowIndex > 0 && l2Start != lastL2EndBlock) revert NotContiguous();
 
@@ -185,8 +200,8 @@ contract WorldlineFinalizer is Ownable {
             bytes32 policyHash,
             bytes32 proverSetDigest
         ) = adapter.verify(proof, publicInputs);
-        require(valid, "proof invalid");
-        require(verifiedStfCommitment == stfCommitment, "stf mismatch");
+        if (!valid) revert ProofInvalid();
+        if (verifiedStfCommitment != stfCommitment) revert StfMismatch();
 
         // Suppress unused variable warnings — l1BlockHash and outputRoot are
         // bound inside publicInputs and verified through the adapter's
