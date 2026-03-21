@@ -22,4 +22,4 @@ template SquareHash() {
     isValid <== 1;
 }
 
-component main = SquareHash();
+component main {public [publicHash]} = SquareHash();

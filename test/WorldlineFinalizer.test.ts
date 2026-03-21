@@ -73,6 +73,14 @@ describe("WorldlineFinalizer", function () {
         Finalizer.deploy(ethers.ZeroAddress, DOMAIN, 3600)
       ).to.be.revertedWithCustomError(Finalizer, "AdapterZero");
     });
+
+    it("reverts if deployed with zero maxAcceptanceDelay", async function () {
+      const { adapter } = await loadFixture(deployFixture);
+      const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
+      await expect(
+        Finalizer.deploy(await adapter.getAddress(), DOMAIN, 0)
+      ).to.be.revertedWithCustomError(Finalizer, "MaxAcceptanceDelayZero");
+    });
   });
 
   describe("access control", function () {
@@ -200,6 +208,139 @@ describe("WorldlineFinalizer", function () {
       await expect(
         finalizer.connect(owner).submitZkValidityProof(proof, inputs)
       ).to.be.revertedWithCustomError(finalizer, "DomainMismatch");
+    });
+
+    it("reverts when l2End <= l2Start", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      const ts = BigInt(await time.latest()) + 100n;
+      const stf = ethers.keccak256(ethers.toUtf8Bytes("stf-range"));
+      const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+      // l2End=50 < l2Start=100
+      const inputs = encodePublicInputs(
+        stf,
+        100n,
+        50n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      await expect(
+        finalizer.connect(owner).submitZkValidityProof(proof, inputs)
+      ).to.be.revertedWithCustomError(finalizer, "InvalidWindowRange");
+    });
+
+    it("reverts when l2End == l2Start (empty window)", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      const ts = BigInt(await time.latest()) + 100n;
+      const stf = ethers.keccak256(ethers.toUtf8Bytes("stf-empty"));
+      const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+      const inputs = encodePublicInputs(
+        stf,
+        100n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      await expect(
+        finalizer.connect(owner).submitZkValidityProof(proof, inputs)
+      ).to.be.revertedWithCustomError(finalizer, "InvalidWindowRange");
+    });
+
+    it("reverts when proof is too old (TooOld)", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      // Use a windowCloseTimestamp far in the past
+      const ts = BigInt(await time.latest()) - 7200n;
+      const stf = ethers.keccak256(ethers.toUtf8Bytes("stf-old"));
+      const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+      const inputs = encodePublicInputs(
+        stf,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      await expect(
+        finalizer.connect(owner).submitZkValidityProof(proof, inputs)
+      ).to.be.revertedWithCustomError(finalizer, "TooOld");
+    });
+
+    it("reverts when metaLocator exceeds 96 bytes", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      const ts = BigInt(await time.latest()) + 100n;
+      const stf = ethers.keccak256(ethers.toUtf8Bytes("stf-meta"));
+      const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+      const inputs = encodePublicInputs(
+        stf,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      const longLocator = "0x" + "ff".repeat(97); // 97 bytes > 96
+      await expect(
+        finalizer.connect(owner).submitZkValidityProofWithMeta(proof, inputs, longLocator)
+      ).to.be.revertedWithCustomError(finalizer, "LocatorTooLong");
+    });
+  });
+
+  describe("admin events", function () {
+    it("setPaused emits PausedSet", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      await expect(finalizer.connect(owner).setPaused(true))
+        .to.emit(finalizer, "PausedSet")
+        .withArgs(true);
+    });
+
+    it("setPermissionless emits PermissionlessSet", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      await expect(finalizer.connect(owner).setPermissionless(true))
+        .to.emit(finalizer, "PermissionlessSet")
+        .withArgs(true);
+    });
+
+    it("setSubmitter emits SubmitterSet", async function () {
+      const { finalizer, owner, stranger } = await loadFixture(deployFixture);
+      await expect(finalizer.connect(owner).setSubmitter(stranger.address, true))
+        .to.emit(finalizer, "SubmitterSet")
+        .withArgs(stranger.address, true);
+    });
+
+    it("setMaxAcceptanceDelay emits MaxAcceptanceDelaySet", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      await expect(finalizer.connect(owner).setMaxAcceptanceDelay(7200))
+        .to.emit(finalizer, "MaxAcceptanceDelaySet")
+        .withArgs(7200);
+    });
+
+    it("setMaxAcceptanceDelay reverts on zero", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      await expect(finalizer.connect(owner).setMaxAcceptanceDelay(0)).to.be.revertedWithCustomError(
+        finalizer,
+        "MaxAcceptanceDelayZero"
+      );
+    });
+
+    it("setAdapter emits AdapterSet", async function () {
+      const { finalizer, owner, verifier } = await loadFixture(deployFixture);
+      const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
+      const adapter2 = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
+      await expect(finalizer.connect(owner).setAdapter(await adapter2.getAddress()))
+        .to.emit(finalizer, "AdapterSet")
+        .withArgs(await adapter2.getAddress());
+    });
+
+    it("setAdapter reverts on zero address", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      await expect(
+        finalizer.connect(owner).setAdapter(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(finalizer, "AdapterZero");
     });
   });
 

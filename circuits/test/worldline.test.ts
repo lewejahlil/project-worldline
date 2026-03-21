@@ -159,7 +159,8 @@ const artifactsExist =
       );
       const vk = await getVKey();
       // Attempt to verify with tampered public signals.
-      const tamperedSignals = ["10"]; // publicHash=10 instead of 9
+      // Public signals are [isValid, publicHash] after declaring publicHash as public.
+      const tamperedSignals = ["1", "10"]; // isValid=1, publicHash=10 instead of 9
       const valid = await snarkjs.groth16.verify(vk, tamperedSignals, proof);
       if (valid) {
         throw new Error("Expected tampered proof verification to fail");

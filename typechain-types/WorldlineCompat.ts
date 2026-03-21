@@ -12,7 +12,7 @@ import type {
   AddressLike,
   ContractRunner,
   ContractMethod,
-  Listener
+  Listener,
 } from "ethers";
 import type {
   TypedContractEvent,
@@ -20,7 +20,7 @@ import type {
   TypedEventLog,
   TypedLogDescription,
   TypedListener,
-  TypedContractMethod
+  TypedContractMethod,
 } from "./common";
 
 export declare namespace WorldlineRegistry {
@@ -44,11 +44,11 @@ export declare namespace WorldlineRegistry {
     endpoint: string;
   };
 
-  export type DriverStructOutput = [id: string, version: string, endpoint: string] & {
-    id: string;
-    version: string;
-    endpoint: string;
-  };
+  export type DriverStructOutput = [
+    id: string,
+    version: string,
+    endpoint: string
+  ] & { id: string; version: string; endpoint: string };
 
   export type PluginStruct = {
     id: BytesLike;
@@ -91,10 +91,22 @@ export interface WorldlineCompatInterface extends Interface {
 
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
 
-  encodeFunctionData(functionFragment: "deprecatePlugin", values: [BytesLike]): string;
-  encodeFunctionData(functionFragment: "getCircuit", values: [BytesLike]): string;
-  encodeFunctionData(functionFragment: "getDriver", values: [BytesLike]): string;
-  encodeFunctionData(functionFragment: "getPlugin", values: [BytesLike]): string;
+  encodeFunctionData(
+    functionFragment: "deprecatePlugin",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getCircuit",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDriver",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getPlugin",
+    values: [BytesLike]
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "registerCircuit",
@@ -109,22 +121,40 @@ export interface WorldlineCompatInterface extends Interface {
     values: [BytesLike, string, AddressLike, BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "registry", values?: undefined): string;
-  encodeFunctionData(functionFragment: "transferOwnership", values: [AddressLike]): string;
+  encodeFunctionData(
+    functionFragment: "transferOwnership",
+    values: [AddressLike]
+  ): string;
   encodeFunctionData(
     functionFragment: "verify",
     values: [BytesLike, BigNumberish, BigNumberish]
   ): string;
 
-  decodeFunctionResult(functionFragment: "deprecatePlugin", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "deprecatePlugin",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "getCircuit", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getDriver", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getPlugin", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "registerCircuit", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "registerDriver", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "registerPlugin", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "registerCircuit",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "registerDriver",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "registerPlugin",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "registry", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "transferOwnership", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
 }
 
@@ -180,15 +210,29 @@ export interface WorldlineCompat extends BaseContract {
     event: TCEvent
   ): Promise<Array<TypedListener<TCEvent>>>;
   listeners(eventName?: string): Promise<Array<Listener>>;
-  removeAllListeners<TCEvent extends TypedContractEvent>(event?: TCEvent): Promise<this>;
+  removeAllListeners<TCEvent extends TypedContractEvent>(
+    event?: TCEvent
+  ): Promise<this>;
 
   deprecatePlugin: TypedContractMethod<[id: BytesLike], [void], "nonpayable">;
 
-  getCircuit: TypedContractMethod<[id: BytesLike], [WorldlineRegistry.CircuitStructOutput], "view">;
+  getCircuit: TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.CircuitStructOutput],
+    "view"
+  >;
 
-  getDriver: TypedContractMethod<[id: BytesLike], [WorldlineRegistry.DriverStructOutput], "view">;
+  getDriver: TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.DriverStructOutput],
+    "view"
+  >;
 
-  getPlugin: TypedContractMethod<[id: BytesLike], [WorldlineRegistry.PluginStructOutput], "view">;
+  getPlugin: TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.PluginStructOutput],
+    "view"
+  >;
 
   owner: TypedContractMethod<[], [string], "view">;
 
@@ -205,14 +249,23 @@ export interface WorldlineCompat extends BaseContract {
   >;
 
   registerPlugin: TypedContractMethod<
-    [id: BytesLike, version: string, implementation: AddressLike, circuitId: BytesLike],
+    [
+      id: BytesLike,
+      version: string,
+      implementation: AddressLike,
+      circuitId: BytesLike
+    ],
     [void],
     "nonpayable"
   >;
 
   registry: TypedContractMethod<[], [string], "view">;
 
-  transferOwnership: TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+  transferOwnership: TypedContractMethod<
+    [newOwner: AddressLike],
+    [void],
+    "nonpayable"
+  >;
 
   verify: TypedContractMethod<
     [circuitId: BytesLike, secret: BigNumberish, publicHash: BigNumberish],
@@ -220,21 +273,37 @@ export interface WorldlineCompat extends BaseContract {
     "view"
   >;
 
-  getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
+  getFunction<T extends ContractMethod = ContractMethod>(
+    key: string | FunctionFragment
+  ): T;
 
   getFunction(
     nameOrSignature: "deprecatePlugin"
   ): TypedContractMethod<[id: BytesLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "getCircuit"
-  ): TypedContractMethod<[id: BytesLike], [WorldlineRegistry.CircuitStructOutput], "view">;
+  ): TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.CircuitStructOutput],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getDriver"
-  ): TypedContractMethod<[id: BytesLike], [WorldlineRegistry.DriverStructOutput], "view">;
+  ): TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.DriverStructOutput],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getPlugin"
-  ): TypedContractMethod<[id: BytesLike], [WorldlineRegistry.PluginStructOutput], "view">;
-  getFunction(nameOrSignature: "owner"): TypedContractMethod<[], [string], "view">;
+  ): TypedContractMethod<
+    [id: BytesLike],
+    [WorldlineRegistry.PluginStructOutput],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "owner"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "registerCircuit"
   ): TypedContractMethod<
@@ -244,15 +313,26 @@ export interface WorldlineCompat extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "registerDriver"
-  ): TypedContractMethod<[id: BytesLike, version: string, endpoint: string], [void], "nonpayable">;
-  getFunction(
-    nameOrSignature: "registerPlugin"
   ): TypedContractMethod<
-    [id: BytesLike, version: string, implementation: AddressLike, circuitId: BytesLike],
+    [id: BytesLike, version: string, endpoint: string],
     [void],
     "nonpayable"
   >;
-  getFunction(nameOrSignature: "registry"): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "registerPlugin"
+  ): TypedContractMethod<
+    [
+      id: BytesLike,
+      version: string,
+      implementation: AddressLike,
+      circuitId: BytesLike
+    ],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "registry"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;

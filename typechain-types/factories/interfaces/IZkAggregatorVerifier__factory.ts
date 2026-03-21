@@ -5,7 +5,7 @@
 import { Contract, Interface, type ContractRunner } from "ethers";
 import type {
   IZkAggregatorVerifier,
-  IZkAggregatorVerifierInterface
+  IZkAggregatorVerifierInterface,
 } from "../../interfaces/IZkAggregatorVerifier";
 
 const _abi = [
@@ -14,45 +14,45 @@ const _abi = [
       {
         internalType: "bytes",
         name: "proof",
-        type: "bytes"
+        type: "bytes",
       },
       {
         internalType: "bytes",
         name: "publicInputs",
-        type: "bytes"
-      }
+        type: "bytes",
+      },
     ],
     name: "verify",
     outputs: [
       {
         internalType: "bool",
         name: "valid",
-        type: "bool"
+        type: "bool",
       },
       {
         internalType: "bytes32",
         name: "stfCommitment",
-        type: "bytes32"
+        type: "bytes32",
       },
       {
         internalType: "bytes32",
         name: "programVKey",
-        type: "bytes32"
+        type: "bytes32",
       },
       {
         internalType: "bytes32",
         name: "policyHash",
-        type: "bytes32"
+        type: "bytes32",
       },
       {
         internalType: "bytes32",
         name: "proverSetDigest",
-        type: "bytes32"
-      }
+        type: "bytes32",
+      },
     ],
     stateMutability: "view",
-    type: "function"
-  }
+    type: "function",
+  },
 ] as const;
 
 export class IZkAggregatorVerifier__factory {
@@ -60,7 +60,14 @@ export class IZkAggregatorVerifier__factory {
   static createInterface(): IZkAggregatorVerifierInterface {
     return new Interface(_abi) as IZkAggregatorVerifierInterface;
   }
-  static connect(address: string, runner?: ContractRunner | null): IZkAggregatorVerifier {
-    return new Contract(address, _abi, runner) as unknown as IZkAggregatorVerifier;
+  static connect(
+    address: string,
+    runner?: ContractRunner | null
+  ): IZkAggregatorVerifier {
+    return new Contract(
+      address,
+      _abi,
+      runner
+    ) as unknown as IZkAggregatorVerifier;
   }
 }
