@@ -22,14 +22,15 @@ import type {
 export interface Groth16ZkAdapterInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "groth16Verifier"
+      | "IS_DEV_MODE"
       | "policyHashPinned"
       | "programVKeyPinned"
+      | "verifierAddress"
       | "verify"
   ): FunctionFragment;
 
   encodeFunctionData(
-    functionFragment: "groth16Verifier",
+    functionFragment: "IS_DEV_MODE",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -38,6 +39,10 @@ export interface Groth16ZkAdapterInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "programVKeyPinned",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "verifierAddress",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -46,7 +51,7 @@ export interface Groth16ZkAdapterInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "groth16Verifier",
+    functionFragment: "IS_DEV_MODE",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -55,6 +60,10 @@ export interface Groth16ZkAdapterInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "programVKeyPinned",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "verifierAddress",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
@@ -103,11 +112,13 @@ export interface Groth16ZkAdapter extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  groth16Verifier: TypedContractMethod<[], [string], "view">;
+  IS_DEV_MODE: TypedContractMethod<[], [boolean], "view">;
 
   policyHashPinned: TypedContractMethod<[], [string], "view">;
 
   programVKeyPinned: TypedContractMethod<[], [string], "view">;
+
+  verifierAddress: TypedContractMethod<[], [string], "view">;
 
   verify: TypedContractMethod<
     [proof: BytesLike, publicInputs: BytesLike],
@@ -128,13 +139,16 @@ export interface Groth16ZkAdapter extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "groth16Verifier"
-  ): TypedContractMethod<[], [string], "view">;
+    nameOrSignature: "IS_DEV_MODE"
+  ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
     nameOrSignature: "policyHashPinned"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "programVKeyPinned"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "verifierAddress"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "verify"

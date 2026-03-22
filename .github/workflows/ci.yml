@@ -59,3 +59,73 @@ jobs:
         run: npx hardhat compile
       - name: Contract tests
         run: npx hardhat test
+
+  canonical-conformance:
+    name: Canonical JSON Conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── TypeScript conformance ──────────────────────────────────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+      - run: npm ci
+      - name: TypeScript canonical JSON conformance
+        run: |
+          npx ts-node --project tsconfig.json -e "
+          const { canonicalJson, canonicalKeccak } = require('./scripts/canonical-json');
+          const fs = require('fs');
+          const vectors = JSON.parse(fs.readFileSync('schemas/canonical-test-vectors.json', 'utf-8'));
+          let pass = 0, fail = 0;
+          for (const v of vectors) {
+            const got = canonicalJson(v.input);
+            if (got !== v.canonical) {
+              console.error('FAIL [' + v.description + ']: expected ' + v.canonical + ' got ' + got);
+              fail++;
+            } else {
+              const hash = canonicalKeccak(v.input);
+              if (hash.toLowerCase() !== v.keccak256.toLowerCase()) {
+                console.error('FAIL hash [' + v.description + ']: expected ' + v.keccak256 + ' got ' + hash);
+                fail++;
+              } else {
+                pass++;
+              }
+            }
+          }
+          console.log('TypeScript canonical conformance: ' + pass + ' passed, ' + fail + ' failed');
+          if (fail > 0) process.exit(1);
+          "
+
+      # ── Rust conformance ────────────────────────────────────────────────────
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+      - name: Rust canonical JSON conformance (via cargo test)
+        run: cargo test -p worldline-registry -- canonical::tests::shared_test_vectors
+
+  foundry-fuzz:
+    name: Foundry Fuzz Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+      - run: npm ci
+      - name: Compile (Foundry)
+        run: forge build
+      - name: Fuzz tests
+        run: forge test --match-contract Fuzz -v

@@ -1,3 +1,7 @@
+pub mod canonical;
+pub mod directory;
+pub mod selection;
+
 use std::collections::HashSet;
 use std::fs;
 use std::io::Write;

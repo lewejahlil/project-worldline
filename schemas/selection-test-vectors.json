@@ -1,0 +1,204 @@
+[
+  {
+    "description": "basic selection — 3 families, min_count=2, min_distinct_families=2",
+    "directory": [
+      {
+        "prover_id": "g1",
+        "family": "groth16",
+        "version": "1.0.0",
+        "vkey_commitment": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "image_digest": "0x1111111111111111111111111111111111111111111111111111111111111111",
+        "latency_ms": 100,
+        "cost_usd": 10,
+        "health": "healthy"
+      },
+      {
+        "prover_id": "p1",
+        "family": "plonk",
+        "version": "1.0.0",
+        "vkey_commitment": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "image_digest": "0x3333333333333333333333333333333333333333333333333333333333333333",
+        "latency_ms": 300,
+        "cost_usd": 30,
+        "health": "healthy"
+      },
+      {
+        "prover_id": "s1",
+        "family": "sp1",
+        "version": "1.0.0",
+        "vkey_commitment": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "image_digest": "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "latency_ms": 200,
+        "cost_usd": 20,
+        "health": "healthy"
+      }
+    ],
+    "policy": {
+      "version": "1.0.0",
+      "min_count": 2,
+      "min_distinct_families": 2,
+      "required_families": [],
+      "min_inclusion_ratio": 0.0
+    },
+    "expected_selected_prover_ids": ["g1", "p1"],
+    "expected_prover_set_digest": "0xe131d9fd726ec81b8874138babdf055ae702cec953ece01325d0da5486401602"
+  },
+  {
+    "description": "required family enforcement — groth16 must be present",
+    "directory": [
+      {
+        "prover_id": "g1",
+        "family": "groth16",
+        "version": "1.0.0",
+        "vkey_commitment": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "image_digest": "0x1111111111111111111111111111111111111111111111111111111111111111",
+        "latency_ms": 100,
+        "cost_usd": 10,
+        "health": "healthy"
+      },
+      {
+        "prover_id": "s1",
+        "family": "sp1",
+        "version": "1.0.0",
+        "vkey_commitment": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "image_digest": "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "latency_ms": 200,
+        "cost_usd": 20,
+        "health": "healthy"
+      }
+    ],
+    "policy": {
+      "version": "1.0.0",
+      "min_count": 1,
+      "min_distinct_families": 1,
+      "required_families": ["groth16"],
+      "min_inclusion_ratio": 0.0
+    },
+    "expected_selected_prover_ids": ["g1"],
+    "expected_prover_set_digest": "0x3b2e707167c3659039d4666a99dc68cefddb908e0cc5e5df47e86e498bf906f1"
+  },
+  {
+    "description": "allowlist filtering — only g1 and p1 eligible",
+    "directory": [
+      {
+        "prover_id": "g1",
+        "family": "groth16",
+        "version": "1.0.0",
+        "vkey_commitment": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "image_digest": "0x1111111111111111111111111111111111111111111111111111111111111111",
+        "latency_ms": 100,
+        "cost_usd": 10,
+        "health": "healthy"
+      },
+      {
+        "prover_id": "p1",
+        "family": "plonk",
+        "version": "1.0.0",
+        "vkey_commitment": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "image_digest": "0x3333333333333333333333333333333333333333333333333333333333333333",
+        "latency_ms": 300,
+        "cost_usd": 30,
+        "health": "healthy"
+      },
+      {
+        "prover_id": "s1",
+        "family": "sp1",
+        "version": "1.0.0",
+        "vkey_commitment": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "image_digest": "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "latency_ms": 200,
+        "cost_usd": 20,
+        "health": "healthy"
+      }
+    ],
+    "policy": {
+      "version": "1.0.0",
+      "min_count": 2,
+      "min_distinct_families": 2,
+      "required_families": [],
+      "allowlist_provers": ["g1", "p1"],
+      "min_inclusion_ratio": 0.0
+    },
+    "expected_selected_prover_ids": ["g1", "p1"],
+    "expected_prover_set_digest": "0xe131d9fd726ec81b8874138babdf055ae702cec953ece01325d0da5486401602"
+  },
+  {
+    "description": "fallback tier activation — required family missing, fallback selects groth16",
+    "directory": [
+      {
+        "prover_id": "g1",
+        "family": "groth16",
+        "version": "1.0.0",
+        "vkey_commitment": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "image_digest": "0x1111111111111111111111111111111111111111111111111111111111111111",
+        "latency_ms": 100,
+        "cost_usd": 10,
+        "health": "healthy"
+      },
+      {
+        "prover_id": "s1",
+        "family": "sp1",
+        "version": "1.0.0",
+        "vkey_commitment": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "image_digest": "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "latency_ms": 200,
+        "cost_usd": 20,
+        "health": "healthy"
+      }
+    ],
+    "policy": {
+      "version": "1.0.0",
+      "min_count": 1,
+      "min_distinct_families": 1,
+      "required_families": ["nonexistent-family"],
+      "min_inclusion_ratio": 0.0,
+      "fallback_tiers": [{ "families": ["groth16"] }]
+    },
+    "expected_selected_prover_ids": ["g1"],
+    "expected_prover_set_digest": "0x3b2e707167c3659039d4666a99dc68cefddb908e0cc5e5df47e86e498bf906f1"
+  },
+  {
+    "description": "tie-breaking by latency — g_fast (100ms) selected before g_slow (500ms)",
+    "directory": [
+      {
+        "prover_id": "g_slow",
+        "family": "groth16",
+        "version": "1.0.0",
+        "vkey_commitment": "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "image_digest": "0x4444444444444444444444444444444444444444444444444444444444444444",
+        "latency_ms": 500,
+        "cost_usd": 5,
+        "health": "healthy"
+      },
+      {
+        "prover_id": "g_fast",
+        "family": "groth16",
+        "version": "1.0.0",
+        "vkey_commitment": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "image_digest": "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "latency_ms": 100,
+        "cost_usd": 10,
+        "health": "healthy"
+      },
+      {
+        "prover_id": "s1",
+        "family": "sp1",
+        "version": "1.0.0",
+        "vkey_commitment": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "image_digest": "0x3333333333333333333333333333333333333333333333333333333333333333",
+        "latency_ms": 200,
+        "cost_usd": 20,
+        "health": "healthy"
+      }
+    ],
+    "policy": {
+      "version": "1.0.0",
+      "min_count": 2,
+      "min_distinct_families": 2,
+      "required_families": [],
+      "min_inclusion_ratio": 0.0
+    },
+    "expected_selected_prover_ids": ["g_fast", "s1"],
+    "expected_prover_set_digest": "0x7f92b88565335e07004db5501e57edb751c665a6d342c348aa64e9e514b7f805"
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "min_count": 2,
+  "min_distinct_families": 2,
+  "required_families": ["groth16"],
+  "min_inclusion_ratio": 0.0,
+  "fallback_tiers": [
+    {
+      "families": ["groth16", "sp1"]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+[
+  {
+    "description": "simple key reordering",
+    "input": { "z": 1, "a": 2 },
+    "canonical": "{\"a\":2,\"z\":1}",
+    "keccak256": "0xdae6267db5994da55c63d71c49e689bcf1eec0e360f1c0c45a4cd1b6785968b9"
+  },
+  {
+    "description": "nested objects with out-of-order keys",
+    "input": { "b": { "d": 1, "c": 2 }, "a": 3 },
+    "canonical": "{\"a\":3,\"b\":{\"c\":2,\"d\":1}}",
+    "keccak256": "0x1ce8d7dab24e1a358c730a35acf0a1070e7ec108890acd23cccfb4356d2a6543"
+  },
+  {
+    "description": "empty object",
+    "input": {},
+    "canonical": "{}",
+    "keccak256": "0xb48d38f93eaa084033fc5970bf96e559c33c4cdc07d889ab00b4d63f9590739d"
+  },
+  {
+    "description": "empty array",
+    "input": [],
+    "canonical": "[]",
+    "keccak256": "0x518674ab2b227e5f11e9084f615d57663cde47bce1ba168b4c19c7ee22a73d70"
+  },
+  {
+    "description": "array of objects (keys sorted within each element)",
+    "input": [
+      { "b": 1, "a": 2 },
+      { "d": 3, "c": 4 }
+    ],
+    "canonical": "[{\"a\":2,\"b\":1},{\"c\":4,\"d\":3}]",
+    "keccak256": "0xb8c8b22756127a5c256a20c89c737d368fb6c11d6de4ae5c5cc3572838ff46a1"
+  },
+  {
+    "description": "null value",
+    "input": null,
+    "canonical": "null",
+    "keccak256": "0xefbde2c3aee204a69b7696d4b10ff31137fe78e3946306284f806e2dfc68b805"
+  },
+  {
+    "description": "string value",
+    "input": "hello world",
+    "canonical": "\"hello world\"",
+    "keccak256": "0xc67ad6f2890339fc1e48b639a64ef7d4b0a19670d22ec61cef1e7fc978a31ab2"
+  },
+  {
+    "description": "deep nesting with mixed types and array order preserved",
+    "input": { "z": { "y": 3, "x": 2 }, "a": 1, "m": [3, 1, 2] },
+    "canonical": "{\"a\":1,\"m\":[3,1,2],\"z\":{\"x\":2,\"y\":3}}",
+    "keccak256": "0x1081e90fd21667da28fef25fe36f8693f05e8336af7620528418911048a49105"
+  },
+  {
+    "description": "boolean true",
+    "input": true,
+    "canonical": "true",
+    "keccak256": "0x6273151f959616268004b58dbb21e5c851b7b8d04498b4aabee12291d22fc034"
+  },
+  {
+    "description": "integer number",
+    "input": 42,
+    "canonical": "42",
+    "keccak256": "0xccb1f717aa77602faf03a594761a36956b1c4cf44c6b336d1db57da799b331b8"
+  }
+]

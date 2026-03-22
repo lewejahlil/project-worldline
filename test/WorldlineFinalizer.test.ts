@@ -17,7 +17,12 @@ describe("WorldlineFinalizer", function () {
 
     // Deploy the Groth16ZkAdapter
     const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
-    const adapter = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
+    const adapter = await Adapter.deploy(
+      await verifier.getAddress(),
+      PROGRAM_VKEY,
+      POLICY_HASH,
+      true
+    );
 
     // Deploy the Finalizer with 1-hour max acceptance delay
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
@@ -330,7 +335,12 @@ describe("WorldlineFinalizer", function () {
     it("setAdapter emits AdapterSet", async function () {
       const { finalizer, owner, verifier } = await loadFixture(deployFixture);
       const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
-      const adapter2 = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
+      const adapter2 = await Adapter.deploy(
+        await verifier.getAddress(),
+        PROGRAM_VKEY,
+        POLICY_HASH,
+        true
+      );
       await expect(finalizer.connect(owner).setAdapter(await adapter2.getAddress()))
         .to.emit(finalizer, "AdapterSet")
         .withArgs(await adapter2.getAddress());
@@ -358,6 +368,71 @@ describe("WorldlineFinalizer", function () {
         .withArgs(0n, outputRoot, 0n, 50n, stf)
         .and.to.emit(finalizer, "ZkProofAccepted")
         .withArgs(0n, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+    });
+  });
+
+  describe("duplicate window", function () {
+    it("second proof for the same window index reverts (NotContiguous)", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      const ts = BigInt(await time.latest()) + 200n;
+
+      // Window 0: l2Start=0, l2End=100
+      const stf1 = ethers.keccak256(ethers.toUtf8Bytes("stf-dup1"));
+      const proof1 = encodeProof(stf1, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+      const inputs1 = encodePublicInputs(
+        stf1,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      await finalizer.connect(owner).submitZkValidityProof(proof1, inputs1);
+
+      // Attempt window 0 again: l2Start=0, l2End=100.
+      // nextWindowIndex is now 1 and lastL2EndBlock is 100, so l2Start=0 != 100 → NotContiguous.
+      const stf2 = ethers.keccak256(ethers.toUtf8Bytes("stf-dup2"));
+      const proof2 = encodeProof(stf2, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+      const inputs2 = encodePublicInputs(
+        stf2,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      await expect(
+        finalizer.connect(owner).submitZkValidityProof(proof2, inputs2)
+      ).to.be.revertedWithCustomError(finalizer, "NotContiguous");
+    });
+  });
+
+  describe("StfMismatch", function () {
+    it("reverts when adapter stfCommitment differs from publicInputs stfCommitment", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      const ts = BigInt(await time.latest()) + 200n;
+
+      // publicInputs encodes stfCommitment = "stf-correct"
+      const stfCorrect = ethers.keccak256(ethers.toUtf8Bytes("stf-correct"));
+      // proof encodes stfCommitment = "stf-wrong" (adapter will return this)
+      const stfWrong = ethers.keccak256(ethers.toUtf8Bytes("stf-wrong"));
+
+      const proof = encodeProof(stfWrong, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+      const inputs = encodePublicInputs(
+        stfCorrect,
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+
+      await expect(
+        finalizer.connect(owner).submitZkValidityProof(proof, inputs)
+      ).to.be.revertedWithCustomError(finalizer, "StfMismatch");
     });
   });
 

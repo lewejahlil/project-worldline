@@ -6,9 +6,11 @@ license = "Apache-2.0"
 description = "On-disk mirror of the Worldline smart contract registry"
 
 [dependencies]
+hex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+tiny-keccak = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]

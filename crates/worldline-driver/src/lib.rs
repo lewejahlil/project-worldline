@@ -1,3 +1,6 @@
+pub mod aggregator;
+pub mod recursion;
+
 use std::path::Path;
 
 use anyhow::{bail, Context, Result};
