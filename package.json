@@ -14,6 +14,7 @@
     "c:compile": "npx --yes circom@2.1.6 circuits/worldline.circom --wasm --r1cs --output circuits/artifacts",
     "c:setup": "snarkjs groth16 setup circuits/artifacts/worldline.r1cs circuits/ptau/powersOfTau28_hez_final_10.ptau circuits/artifacts/worldline_final.zkey",
     "c:export": "ts-node circuits/scripts/export-verifier.ts",
+    "watcher": "ts-node scripts/watcher.ts",
     "test": "npm run contracts:test && cargo test"
   },
   "devDependencies": {

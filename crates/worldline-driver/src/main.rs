@@ -37,6 +37,21 @@ enum Commands {
         #[arg(long)]
         plugin: String,
     },
+    /// Run the aggregator: load directory + policy, select provers, write manifest.
+    Aggregate {
+        /// Path to the signed directory JSON.
+        #[arg(long)]
+        directory: PathBuf,
+        /// Path to the policy JSON.
+        #[arg(long)]
+        policy: PathBuf,
+        /// Path to the local registry snapshot JSON (for future cross-checks).
+        #[arg(long)]
+        registry: PathBuf,
+        /// Where to write the canonical manifest output.
+        #[arg(long, default_value = "manifest.json")]
+        output_manifest: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -65,6 +80,28 @@ async fn main() -> Result<()> {
             info!(input = %input.display(), plugin = %plugin, "checking plugin");
             worldline_driver::check_plugin(&input, &plugin)?;
             info!(plugin = %plugin, "plugin found in registry");
+        }
+        Commands::Aggregate {
+            directory,
+            policy,
+            registry,
+            output_manifest,
+        } => {
+            info!("running aggregator");
+            let config = worldline_driver::aggregator::AggregatorConfig {
+                directory_path: directory,
+                policy_path: policy,
+                registry_path: registry,
+                output_manifest_path: output_manifest.clone(),
+            };
+            let output = worldline_driver::aggregator::run_aggregator(&config)?;
+            info!(
+                selected = output.selected_count,
+                prover_set_digest = %hex::encode(output.prover_set_digest),
+                policy_hash = %hex::encode(output.policy_hash),
+                manifest = %output_manifest.display(),
+                "aggregator complete"
+            );
         }
     }
 

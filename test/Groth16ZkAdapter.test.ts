@@ -13,7 +13,12 @@ describe("Groth16ZkAdapter", function () {
     const verifier = await Verifier.deploy();
 
     const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
-    const adapter = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
+    const adapter = await Adapter.deploy(
+      await verifier.getAddress(),
+      PROGRAM_VKEY,
+      POLICY_HASH,
+      true
+    );
 
     return { adapter, verifier, owner };
   }

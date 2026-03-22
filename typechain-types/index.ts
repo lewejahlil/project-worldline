@@ -20,6 +20,8 @@ export { WorldlineCompat__factory } from "./factories/WorldlineCompat__factory";
 export { WorldlineFinalizer__factory } from "./factories/WorldlineFinalizer__factory";
 export { WorldlineOutputsRegistry__factory } from "./factories/WorldlineOutputsRegistry__factory";
 export { WorldlineRegistry__factory } from "./factories/WorldlineRegistry__factory";
+export type { Groth16Verifier } from "./zk/Groth16Verifier";
+export { Groth16Verifier__factory } from "./factories/zk/Groth16Verifier__factory";
 export type { Groth16ZkAdapter } from "./zk/Groth16ZkAdapter";
 export { Groth16ZkAdapter__factory } from "./factories/zk/Groth16ZkAdapter__factory";
 export type { Verifier } from "./zk/Verifier";

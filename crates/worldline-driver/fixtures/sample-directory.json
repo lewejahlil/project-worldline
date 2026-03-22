@@ -1,0 +1,43 @@
+{
+  "version": "1.0.0",
+  "entries": [
+    {
+      "prover_id": "groth16-prover-alpha",
+      "family": "groth16",
+      "version": "1.0.0",
+      "endpoints": ["http://localhost:9001/prove"],
+      "vkey_commitment": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "image_digest": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "attestations": [],
+      "latency_ms": 120,
+      "cost_usd": 10,
+      "health": "healthy"
+    },
+    {
+      "prover_id": "sp1-prover-beta",
+      "family": "sp1",
+      "version": "2.0.0",
+      "endpoints": ["http://localhost:9002/prove"],
+      "vkey_commitment": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "image_digest": "0x2222222222222222222222222222222222222222222222222222222222222222",
+      "attestations": [],
+      "latency_ms": 250,
+      "cost_usd": 20,
+      "health": "healthy"
+    },
+    {
+      "prover_id": "plonk-prover-gamma",
+      "family": "plonk",
+      "version": "1.5.0",
+      "endpoints": ["http://localhost:9003/prove"],
+      "vkey_commitment": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "image_digest": "0x3333333333333333333333333333333333333333333333333333333333333333",
+      "attestations": [],
+      "latency_ms": 300,
+      "cost_usd": 15,
+      "health": "degraded"
+    }
+  ],
+  "signature": "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "signer_address": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+}
