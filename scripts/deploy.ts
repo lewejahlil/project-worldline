@@ -149,6 +149,58 @@ async function main() {
   const outPath = path.join(deploymentsDir, `${network.name}-${ts}.json`);
   fs.writeFileSync(outPath, JSON.stringify(deploymentRecord, null, 2));
   console.log(`\nDeployment record written to: ${outPath}`);
+
+  // ── Etherscan verification (optional) ────────────────────────────────────────
+  const etherscanKey = process.env["ETHERSCAN_API_KEY"];
+  if (etherscanKey && network.name !== "hardhat" && network.name !== "localhost") {
+    console.log("\n── Etherscan Verification ────────────────────────────────────────");
+    console.log("ETHERSCAN_API_KEY detected — attempting contract verification…");
+    console.log("(Waiting 30 s for block explorer to index the contracts)");
+    await new Promise((resolve) => setTimeout(resolve, 30_000));
+
+    const { run } = await import("hardhat");
+
+    const toVerify: Array<{ name: string; address: string; args: unknown[] }> = [
+      { name: "Verifier", address: verifierAddr, args: [] },
+      { name: "WorldlineRegistry", address: registryAddr, args: [verifierAddr] },
+      {
+        name: "Groth16ZkAdapter",
+        address: adapterAddr,
+        args: [verifierAddr, PROGRAM_VKEY, POLICY_HASH, IS_DEV_ADAPTER]
+      },
+      {
+        name: "WorldlineFinalizer",
+        address: finalizerAddr,
+        args: [adapterAddr, DOMAIN_SEPARATOR, MAX_ACCEPTANCE_DELAY]
+      },
+      {
+        name: "WorldlineOutputsRegistry",
+        address: outputsRegistryAddr,
+        args: [MIN_TIMELOCK]
+      },
+      { name: "WorldlineCompat", address: compatAddr, args: [registryAddr] }
+    ];
+
+    for (const { name, address, args } of toVerify) {
+      try {
+        console.log(`  Verifying ${name} at ${address}…`);
+        await run("verify:verify", { address, constructorArguments: args });
+        console.log(`  ${name}: verified ✓`);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes("Already Verified")) {
+          console.log(`  ${name}: already verified ✓`);
+        } else {
+          console.warn(`  ${name}: verification failed — ${msg}`);
+        }
+      }
+    }
+  } else if (!etherscanKey) {
+    console.log(
+      "\nSkipping Etherscan verification (ETHERSCAN_API_KEY not set). " +
+        "Set it in .env to enable automatic verification."
+    );
+  }
 }
 
 main().catch((err) => {

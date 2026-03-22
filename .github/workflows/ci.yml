@@ -45,6 +45,23 @@ jobs:
       - name: Tests
         run: cargo test
 
+  bench:
+    name: Rust Benchmarks (compile-only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-bench-
+      - name: Compile benchmarks (no-run)
+        run: cargo bench --no-run -p worldline-benches
+
   solidity:
     name: Solidity
     runs-on: ubuntu-latest
@@ -129,3 +146,20 @@ jobs:
         run: forge build
       - name: Fuzz tests
         run: forge test --match-contract Fuzz -v
+
+  devnet-smoke:
+    name: Devnet Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Foundry (Anvil)
+        uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+      - run: npm ci
+      - name: Compile contracts
+        run: npx hardhat compile
+      - name: Devnet smoke test
+        run: npm run devnet:smoke

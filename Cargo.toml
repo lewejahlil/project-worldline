@@ -3,7 +3,8 @@ members = [
     "crates/worldline-driver",
     "crates/worldline-registry",
     "crates/worldline-compat",
-    "crates/worldline-devnet"
+    "crates/worldline-devnet",
+    "crates/benches"
 ]
 resolver = "2"
 
@@ -15,6 +16,7 @@ version = "1.0.0"
 
 [workspace.dependencies]
 anyhow = "1.0"
+criterion = { version = "0.5", features = ["html_reports"] }
 hex = "0.4"
 async-trait = "0.1"
 clap = { version = "4.4", features = ["derive"] }
