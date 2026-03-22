@@ -21,6 +21,12 @@ contract WorldlineFinalizerFuzzTest is Test {
     uint256 constant MAX_DELAY = 3600;
 
     function setUp() public {
+        // Warp to a timestamp large enough that any uint32 staleness offset cannot
+        // underflow the arithmetic in testFuzz_rejectStaleProof:
+        //   block.timestamp - MAX_DELAY - uint256(delayPastMax)
+        // Needs: block.timestamp >= MAX_DELAY + type(uint32).max + 1
+        vm.warp(uint256(type(uint32).max) + MAX_DELAY + 2);
+
         verifier = new Verifier();
         // isDev=true for all fuzz tests — exercises dev behaviour.
         adapter = new Groth16ZkAdapter(address(verifier), PROGRAM_VKEY, POLICY_HASH, true);
