@@ -1,0 +1,232 @@
+   Compiling proc-macro2 v1.0.106
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.45
+   Compiling stable_deref_trait v1.2.1
+   Compiling libc v0.2.183
+   Compiling cfg-if v1.0.4
+   Compiling writeable v0.6.2
+   Compiling serde_core v1.0.228
+   Compiling zerocopy v0.8.47
+   Compiling litemap v0.8.1
+   Compiling icu_properties_data v2.1.2
+   Compiling icu_normalizer_data v2.1.1
+   Compiling getrandom v0.3.4
+   Compiling zmij v1.0.21
+   Compiling syn v2.0.117
+   Compiling crossbeam-utils v0.8.21
+   Compiling serde v1.0.228
+   Compiling serde_json v1.0.149
+   Compiling autocfg v1.5.0
+   Compiling smallvec v1.15.1
+   Compiling num-traits v0.2.19
+   Compiling memchr v2.8.0
+   Compiling getrandom v0.4.2
+   Compiling rustix v1.1.4
+   Compiling itoa v1.0.18
+   Compiling crossbeam-epoch v0.9.18
+   Compiling rand_core v0.9.5
+   Compiling bitflags v2.11.0
+   Compiling either v1.15.0
+   Compiling utf8_iter v1.0.4
+   Compiling linux-raw-sys v0.12.1
+   Compiling rayon-core v1.13.0
+   Compiling percent-encoding v2.3.2
+   Compiling thiserror v1.0.69
+   Compiling once_cell v1.21.4
+   Compiling synstructure v0.13.2
+   Compiling regex-syntax v0.8.10
+   Compiling form_urlencoded v1.2.2
+   Compiling zerofrom-derive v0.1.6
+   Compiling yoke-derive v0.8.1
+   Compiling zerofrom v0.1.6
+   Compiling zerovec-derive v0.11.2
+   Compiling yoke v0.8.1
+   Compiling displaydoc v0.2.5
+   Compiling zerocopy-derive v0.8.47
+   Compiling zerovec v0.11.5
+   Compiling zerotrie v0.2.3
+   Compiling serde_derive v1.0.228
+   Compiling tinystr v0.8.2
+   Compiling icu_locale_core v2.1.1
+   Compiling potential_utf v0.1.4
+   Compiling icu_collections v2.1.1
+   Compiling icu_provider v2.1.1
+   Compiling icu_normalizer v2.1.1
+   Compiling icu_properties v2.1.2
+   Compiling thiserror-impl v1.0.69
+   Compiling crossbeam-deque v0.8.6
+   Compiling anyhow v1.0.102
+   Compiling idna_adapter v1.2.1
+   Compiling idna v1.1.0
+   Compiling clap_lex v1.1.0
+   Compiling anstyle v1.0.14
+   Compiling plotters-backend v0.3.7
+   Compiling fastrand v2.3.0
+   Compiling ciborium-io v0.2.2
+   Compiling plotters-svg v0.3.7
+   Compiling tempfile v3.27.0
+   Compiling clap_builder v4.6.0
+   Compiling half v2.7.1
+   Compiling ciborium-ll v0.2.2
+   Compiling ppv-lite86 v0.2.21
+   Compiling url v2.5.8
+   Compiling regex-automata v0.4.14
+   Compiling itertools v0.10.5
+   Compiling wait-timeout v0.2.1
+   Compiling same-file v1.0.6
+   Compiling bit-vec v0.8.0
+   Compiling fnv v1.0.7
+   Compiling quick-error v1.2.3
+   Compiling cast v0.3.0
+   Compiling rusty-fork v0.3.1
+   Compiling criterion-plot v0.5.0
+   Compiling bit-set v0.8.0
+   Compiling walkdir v2.5.0
+   Compiling regex v1.12.3
+   Compiling clap v4.6.0
+   Compiling rayon v1.11.0
+   Compiling worldline-registry v1.0.0 (/home/user/project-worldline/crates/worldline-registry)
+   Compiling rand_chacha v0.9.0
+   Compiling ciborium v0.2.2
+   Compiling plotters v0.3.7
+   Compiling tinytemplate v1.2.1
+   Compiling rand v0.9.2
+   Compiling rand_xorshift v0.4.0
+   Compiling is-terminal v0.4.17
+   Compiling unarray v0.1.4
+   Compiling oorandom v11.1.5
+   Compiling anes v0.1.6
+   Compiling proptest v1.10.0
+   Compiling criterion v0.5.1
+   Compiling worldline-compat v0.1.0 (/home/user/project-worldline/crates/worldline-compat)
+    Finished `bench` profile [optimized] target(s) in 40.39s
+     Running unittests src/lib.rs (target/release/deps/worldline_registry-e355b69eb07e40f7)
+
+running 17 tests
+test tests::indexes_rebuilt_on_load ... ignored
+test tests::load_missing_file_returns_default ... ignored
+test tests::prevent_duplicate_backend_registration ... ignored
+test tests::prevent_duplicate_circuit_registration ... ignored
+test tests::prevent_duplicate_plugin_registration ... ignored
+test tests::proptests::duplicate_circuit_always_fails ... ignored
+test tests::proptests::remove_after_register_succeeds ... ignored
+test tests::proptests::roundtrip_any_snapshot ... ignored
+test tests::reject_future_schema_version ... ignored
+test tests::remove_backend_not_found ... ignored
+test tests::remove_backend_succeeds ... ignored
+test tests::remove_circuit_not_found ... ignored
+test tests::remove_circuit_succeeds ... ignored
+test tests::remove_plugin_not_found ... ignored
+test tests::remove_plugin_succeeds ... ignored
+test tests::save_and_load_roundtrip ... ignored
+test tests::schema_version_persisted ... ignored
+
+test result: ok. 0 passed; 0 failed; 17 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running benches/registry_bench.rs (target/release/deps/registry_bench-ac6cd488b3879fd7)
+Gnuplot not found, using plotters backend
+Benchmarking load/10
+Benchmarking load/10: Warming up for 3.0000 s
+Benchmarking load/10: Collecting 100 samples in estimated 5.1034 s (242k iterations)
+Benchmarking load/10: Analyzing
+load/10                 time:   [21.001 µs 21.121 µs 21.265 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+Benchmarking load/100
+Benchmarking load/100: Warming up for 3.0000 s
+Benchmarking load/100: Collecting 100 samples in estimated 5.6488 s (30k iterations)
+Benchmarking load/100: Analyzing
+load/100                time:   [181.47 µs 182.97 µs 184.67 µs]
+Found 5 outliers among 100 measurements (5.00%)
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+Benchmarking load/500
+Benchmarking load/500: Warming up for 3.0000 s
+Benchmarking load/500: Collecting 100 samples in estimated 8.7931 s (10k iterations)
+Benchmarking load/500: Analyzing
+load/500                time:   [874.62 µs 882.51 µs 891.64 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) high mild
+
+Benchmarking save/10
+Benchmarking save/10: Warming up for 3.0000 s
+Benchmarking save/10: Collecting 100 samples in estimated 5.1980 s (50k iterations)
+Benchmarking save/10: Analyzing
+save/10                 time:   [85.978 µs 88.492 µs 91.145 µs]
+Benchmarking save/100
+Benchmarking save/100: Warming up for 3.0000 s
+Benchmarking save/100: Collecting 100 samples in estimated 5.5130 s (45k iterations)
+Benchmarking save/100: Analyzing
+save/100                time:   [135.64 µs 138.40 µs 141.30 µs]
+Found 13 outliers among 100 measurements (13.00%)
+  2 (2.00%) low severe
+  5 (5.00%) low mild
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+Benchmarking save/500
+Benchmarking save/500: Warming up for 3.0000 s
+Benchmarking save/500: Collecting 100 samples in estimated 5.5803 s (15k iterations)
+Benchmarking save/500: Analyzing
+save/500                time:   [349.64 µs 359.45 µs 374.53 µs]
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking register_circuit/100_existing
+Benchmarking register_circuit/100_existing: Warming up for 3.0000 s
+Benchmarking register_circuit/100_existing: Collecting 100 samples in estimated 5.5370 s (35k iterations)
+Benchmarking register_circuit/100_existing: Analyzing
+register_circuit/100_existing
+                        time:   [350.35 ns 359.40 ns 368.86 ns]
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high mild
+
+Benchmarking register_plugin/100_existing
+Benchmarking register_plugin/100_existing: Warming up for 3.0000 s
+Benchmarking register_plugin/100_existing: Collecting 100 samples in estimated 5.3795 s (35k iterations)
+Benchmarking register_plugin/100_existing: Analyzing
+register_plugin/100_existing
+                        time:   [346.75 ns 353.40 ns 360.77 ns]
+Found 12 outliers among 100 measurements (12.00%)
+  8 (8.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking build_compat_snapshot/10
+Benchmarking build_compat_snapshot/10: Warming up for 3.0000 s
+Benchmarking build_compat_snapshot/10: Collecting 100 samples in estimated 5.0070 s (2.5M iterations)
+Benchmarking build_compat_snapshot/10: Analyzing
+build_compat_snapshot/10
+                        time:   [1.9574 µs 1.9697 µs 1.9840 µs]
+Found 3 outliers among 100 measurements (3.00%)
+  2 (2.00%) high mild
+  1 (1.00%) high severe
+Benchmarking build_compat_snapshot/100
+Benchmarking build_compat_snapshot/100: Warming up for 3.0000 s
+Benchmarking build_compat_snapshot/100: Collecting 100 samples in estimated 5.1329 s (177k iterations)
+Benchmarking build_compat_snapshot/100: Analyzing
+build_compat_snapshot/100
+                        time:   [28.742 µs 28.922 µs 29.108 µs]
+Found 8 outliers among 100 measurements (8.00%)
+  7 (7.00%) high mild
+  1 (1.00%) high severe
+Benchmarking build_compat_snapshot/500
+Benchmarking build_compat_snapshot/500: Warming up for 3.0000 s
+Benchmarking build_compat_snapshot/500: Collecting 100 samples in estimated 5.0561 s (35k iterations)
+Benchmarking build_compat_snapshot/500: Analyzing
+build_compat_snapshot/500
+                        time:   [145.12 µs 146.82 µs 148.72 µs]
+Found 8 outliers among 100 measurements (8.00%)
+  5 (5.00%) high mild
+  3 (3.00%) high severe
+
+Benchmarking serialization_roundtrip/100_entries
+Benchmarking serialization_roundtrip/100_entries: Warming up for 3.0000 s
+Benchmarking serialization_roundtrip/100_entries: Collecting 100 samples in estimated 5.4544 s (35k iterations)
+Benchmarking serialization_roundtrip/100_entries: Analyzing
+serialization_roundtrip/100_entries
+                        time:   [159.13 µs 160.97 µs 163.27 µs]
+Found 8 outliers among 100 measurements (8.00%)
+  5 (5.00%) high mild
+  3 (3.00%) high severe
+

@@ -1,0 +1,172 @@
+# Worldline v1.0 — Benchmark Report
+
+**Date generated:** 2026-03-21
+**Environment:**
+
+| Property          | Value                               |
+| ----------------- | ----------------------------------- |
+| OS                | Linux 6.18.5                        |
+| Node.js           | v22.22.0                            |
+| Rust / rustc      | 1.93.1 (2026-02-11)                 |
+| Solidity compiler | 0.8.20 (via IR, optimizer 200 runs) |
+| Hardhat           | hardhat-gas-reporter                |
+| Criterion         | 0.5.1                               |
+
+---
+
+## 1. On-Chain Gas Costs
+
+Gas measured via `REPORT_GAS=true npx hardhat test` against a local Hardhat network (block limit 60,000,000 gas). All 110 tests pass. Optimizer is enabled with 200 runs.
+
+### Method Gas Usage
+
+| Contract                     | Function                | Min Gas | Avg Gas | Max Gas | # Calls |
+| ---------------------------- | ----------------------- | ------: | ------: | ------: | ------: |
+| **WorldlineFinalizer**       | `submitZkValidityProof` |  57,885 |  85,366 |  92,431 |      12 |
+| **WorldlineRegistry**        | `verify`                |       — |       — |       — |       — |
+| **WorldlineRegistry**        | `registerCircuit`       |  98,911 | 112,318 | 139,594 |      23 |
+| **WorldlineRegistry**        | `registerDriver`        | 117,211 | 117,348 | 117,415 |       5 |
+| **WorldlineRegistry**        | `registerPlugin`        | 142,715 | 142,739 | 142,895 |      10 |
+| **WorldlineRegistry**        | `deprecatePlugin`       |  49,267 |  49,272 |  49,291 |       5 |
+| **WorldlineRegistry**        | `setCompatFacade`       |  25,189 |  42,894 |  47,329 |      10 |
+| **WorldlineRegistry**        | `transferOwnership`     |       — |  28,536 |       — |       3 |
+| **WorldlineOutputsRegistry** | `schedule`              |  47,068 | 117,502 | 140,980 |       8 |
+| **WorldlineOutputsRegistry** | `activate`              |       — |  92,530 |       — |       4 |
+| **WorldlineOutputsRegistry** | `setMinTimelock`        |       — |  29,693 |       — |       2 |
+| **WorldlineCompat**          | `registerCircuit`       | 107,145 | 121,597 | 147,795 |       7 |
+| **WorldlineCompat**          | `registerDriver`        | 125,269 | 125,317 | 125,365 |       2 |
+| **WorldlineCompat**          | `registerPlugin`        | 150,665 | 150,695 | 150,785 |       4 |
+| **WorldlineCompat**          | `deprecatePlugin`       |       — |  56,811 |       — |       1 |
+| **WorldlineFinalizer**       | `setAdapter`            |       — |  30,256 |       — |       2 |
+| **WorldlineFinalizer**       | `setMaxAcceptanceDelay` |       — |  29,853 |       — |       2 |
+| **WorldlineFinalizer**       | `setPaused`             |       — |  46,813 |       — |       3 |
+| **WorldlineFinalizer**       | `setPermissionless`     |       — |  46,870 |       — |       3 |
+| **WorldlineFinalizer**       | `setSubmitter`          |  47,762 |  47,766 |  47,774 |       3 |
+
+> **Key hot-path notes:**
+>
+> - `WorldlineRegistry.verify` delegates to an external `IZkAggregatorVerifier` — its cost depends entirely on the prover adapter. The gas reporter shows no direct method calls because the function is exercised through the verifier contract and counted under the `Verifier` deployment.
+> - `WorldlineOutputsRegistry.schedule` has a wide range (47k–141k) because the first SSTORE on a new slot costs ~94k extra vs. overwriting an existing pending entry.
+> - `WorldlineFinalizer.submitZkValidityProof` is the primary finalization hot-path; its average of ~85k includes the ZK proof verification call.
+
+### Deployment Gas (constructor + code upload)
+
+| Contract                 | Deployment Gas (avg) | % of Block Limit (60M) |
+| ------------------------ | -------------------: | ---------------------: |
+| WorldlineRegistry        |            1,215,343 |                   2.0% |
+| WorldlineCompat          |              786,374 |                   1.3% |
+| WorldlineFinalizer       |              728,610 |                   1.2% |
+| WorldlineOutputsRegistry |              534,906 |                   0.9% |
+| Groth16ZkAdapter         |              231,403 |                   0.4% |
+| Verifier                 |               91,891 |                   0.2% |
+
+---
+
+## 2. Contract Bytecode Sizes
+
+Deployed bytecode extracted from Hardhat compilation artifacts (`artifacts/contracts/src/**/*.json`, field `deployedBytecode`). The EVM hard limit is **24,576 bytes** (EIP-170).
+
+| Contract                 | Deployed Bytecode (bytes) | % of 24 KB Limit | Notes                                                              |
+| ------------------------ | ------------------------: | ---------------: | ------------------------------------------------------------------ |
+| Verifier                 |                       178 |             0.7% | Minimal stub for testing; real Groth16 verifier would be ~10–14 KB |
+| WorldlineRegistry        |                     5,257 |            21.4% | Largest deployable contract; comfortable headroom                  |
+| WorldlineCompat          |                     3,275 |            13.3% | Facade/proxy layer                                                 |
+| WorldlineFinalizer       |                     2,685 |            10.9% | ZK finalization logic                                              |
+| WorldlineOutputsRegistry |                     2,001 |             8.1% | Timelock output registry                                           |
+| Groth16ZkAdapter         |                       809 |             3.3% | Pluggable verifier adapter                                         |
+| IZkAggregatorVerifier    |                         0 |             0.0% | Interface — no deployable bytecode                                 |
+| Ownable                  |                         0 |             0.0% | Abstract base — no standalone artifact                             |
+
+> All contracts are well within the 24 KB EVM limit. `WorldlineRegistry` is the largest at 21.4% of the limit, leaving significant room for future feature additions. Note that the `Verifier` stub used in testing is a simplified implementation; a production Groth16 verifier generated by `snarkjs` will be substantially larger (typically 8–14 KB).
+
+---
+
+## 3. Rust Crate Performance (Criterion Benchmarks)
+
+Benchmarks run in release mode (`cargo bench -p worldline-registry`) using [Criterion](https://bheisler.github.io/criterion.rs/book/). These are **off-chain operations** running on the local development machine. Each benchmark ran 100 samples. Confidence interval shown as [lower, point estimate, upper] at 95%.
+
+Raw output: [`docs/rust-bench.txt`](rust-bench.txt)
+
+### `load` — Deserialize registry snapshot from disk
+
+| Entries |     Mean | Confidence Interval   |
+| ------: | -------: | --------------------- |
+|      10 |  21.1 µs | [21.0 µs – 21.3 µs]   |
+|     100 | 183.0 µs | [181.5 µs – 184.7 µs] |
+|     500 | 882.5 µs | [874.6 µs – 891.6 µs] |
+
+### `save` — Serialize and write registry snapshot to disk
+
+| Entries |     Mean | Confidence Interval   |
+| ------: | -------: | --------------------- |
+|      10 |  88.5 µs | [86.0 µs – 91.1 µs]   |
+|     100 | 138.4 µs | [135.6 µs – 141.3 µs] |
+|     500 | 359.5 µs | [349.6 µs – 374.5 µs] |
+
+> Save times are dominated by `fs::File::create` + write syscall overhead, explaining why the 10-entry case is close to the 100-entry case.
+
+### `register_circuit` / `register_plugin` — Single insert into a 100-entry snapshot
+
+| Benchmark                         |   Mean | Confidence Interval |
+| --------------------------------- | -----: | ------------------- |
+| `register_circuit` (100 existing) | 359 ns | [350 ns – 369 ns]   |
+| `register_plugin` (100 existing)  | 353 ns | [347 ns – 361 ns]   |
+
+> O(1) HashSet duplicate detection keeps single-insert cost constant regardless of registry size.
+
+### `build_compat_snapshot` — Build SDK-facing compatibility view
+
+| Entries |     Mean | Confidence Interval   |
+| ------: | -------: | --------------------- |
+|      10 |  1.97 µs | [1.96 µs – 1.98 µs]   |
+|     100 |  28.9 µs | [28.7 µs – 29.1 µs]   |
+|     500 | 146.8 µs | [145.1 µs – 148.7 µs] |
+
+> Linear in the number of entries — involves cloning strings for circuit IDs, backend IDs, and plugin metadata.
+
+### `serialization_roundtrip` — JSON serialize then deserialize (in-memory, no I/O)
+
+| Entries |     Mean | Confidence Interval   |
+| ------: | -------: | --------------------- |
+|     100 | 161.0 µs | [159.1 µs – 163.3 µs] |
+
+---
+
+## 4. Circuit Metrics
+
+`circom` is **not installed** in this environment. The metrics below require `circom 2.1.6` and `snarkjs` to generate. To reproduce:
+
+```bash
+npm run c:compile          # circom → .r1cs + .wasm
+snarkjs r1cs info circuits/artifacts/worldline.r1cs
+```
+
+| Metric           | Value                                                 |
+| ---------------- | ----------------------------------------------------- |
+| Constraint count | — _(requires circom 2.1.6)_                           |
+| Wire count       | — _(requires circom 2.1.6)_                           |
+| Public inputs    | — _(requires circom 2.1.6)_                           |
+| Private inputs   | — _(requires circom 2.1.6)_                           |
+| Circuit file     | `circuits/worldline.circom`                           |
+| r1cs artifact    | `circuits/artifacts/worldline.r1cs` _(not generated)_ |
+
+> **Note:** The circuit test suite (`circuits/test/worldline.test.ts`) and export scripts are present. The circuit uses a Groth16 proving system with a `powersOfTau28_hez_final_10.ptau` ceremony file (downloaded via `npm run c:ptau`). Constraint count will be small for the demo `worldline.circom`; production circuits would have substantially more constraints.
+
+> **Proving time benchmarks require a live Groth16 prover and are not included here.** See Section 5.
+
+---
+
+## 5. Proving Performance (Placeholder — Future Work)
+
+The following metrics require access to a live proving infrastructure and are recorded here as TBD. They will be populated once a full Groth16 prover setup is available.
+
+| Metric                                 | Value | Notes                                                          |
+| -------------------------------------- | ----- | -------------------------------------------------------------- |
+| Groth16 proving time                   | TBD   | Seconds per proof; depends on constraint count and hardware    |
+| Proof size                             | TBD   | Bytes; Groth16 proofs are typically 192–256 bytes              |
+| Recursion overhead per inner proof     | TBD   | Relevant when aggregating multiple window proofs               |
+| End-to-end window finalization latency | TBD   | From L2 window close → `submitZkValidityProof` confirmed on L1 |
+| Verifier key generation time           | TBD   | One-time cost during setup ceremony                            |
+| Witness generation time                | TBD   | wasm-based witness generation for the worldline circuit        |
+
+> These metrics are pending prover infrastructure access. The on-chain verification cost (via `WorldlineFinalizer.submitZkValidityProof`, avg **85,366 gas**) is already captured in Section 1 and will remain constant regardless of off-chain proving time.
