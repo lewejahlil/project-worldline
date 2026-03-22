@@ -47,5 +47,9 @@ fn bench_canonical_keccak(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_canonical_serialization, bench_canonical_keccak);
+criterion_group!(
+    benches,
+    bench_canonical_serialization,
+    bench_canonical_keccak
+);
 criterion_main!(benches);

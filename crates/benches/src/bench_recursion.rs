@@ -34,16 +34,12 @@ fn bench_recursion_depth(c: &mut Criterion) {
             k_in_proof: depth as u8,
             max_inner: 16,
         };
-        group.bench_with_input(
-            BenchmarkId::new("witness_depth", depth),
-            &depth,
-            |b, _| {
-                b.iter(|| {
-                    let _ = build_recursion_witness(&config, &manifest)
-                        .expect("witness build must succeed");
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("witness_depth", depth), &depth, |b, _| {
+            b.iter(|| {
+                let _ = build_recursion_witness(&config, &manifest)
+                    .expect("witness build must succeed");
+            });
+        });
     }
     group.finish();
 }

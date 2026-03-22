@@ -174,7 +174,7 @@ async function main(): Promise<void> {
 
   // Wait for Anvil to be ready
   await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error("Anvil startup timeout")), 15_000);
+    const timeout = setTimeout(() => reject(new Error("Anvil startup timeout")), 60_000);
     const onData = (data: Buffer) => {
       if (data.toString().includes("Listening on")) {
         clearTimeout(timeout);
