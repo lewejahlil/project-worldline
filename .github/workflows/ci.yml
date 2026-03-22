@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, restore-project]
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint & Format
@@ -48,6 +51,7 @@ jobs:
   bench:
     name: Rust Benchmarks (compile-only)
     runs-on: ubuntu-latest
+    needs: [rust]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -58,7 +62,9 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-bench-
+          restore-keys: |
+            ${{ runner.os }}-cargo-bench-
+            ${{ runner.os }}-cargo-
       - name: Compile benchmarks (no-run)
         run: cargo bench --no-run -p worldline-benches
 
@@ -150,6 +156,8 @@ jobs:
   devnet-smoke:
     name: Devnet Smoke Test
     runs-on: ubuntu-latest
+    needs: [solidity]
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Install Foundry (Anvil)
