@@ -22,22 +22,18 @@ const config: HardhatUserConfig = {
       url: process.env["SEPOLIA_RPC_URL"] ?? "",
       accounts: process.env["PRIVATE_KEY"] ? [process.env["PRIVATE_KEY"]] : []
     },
-    // OP Sepolia — Optimism testnet
-    opSepolia: {
-      url: process.env["OP_SEPOLIA_RPC_URL"] ?? "",
+    holesky: {
+      url: process.env["HOLESKY_RPC_URL"] ?? "",
       accounts: process.env["PRIVATE_KEY"] ? [process.env["PRIVATE_KEY"]] : [],
-      chainId: 11155420
-    },
-    // Arbitrum Sepolia
-    arbitrumSepolia: {
-      url: process.env["ARBITRUM_SEPOLIA_RPC_URL"] ?? "",
-      accounts: process.env["PRIVATE_KEY"] ? [process.env["PRIVATE_KEY"]] : [],
-      chainId: 421614
+      chainId: 17000
     }
   },
   gasReporter: {
     enabled: process.env["REPORT_GAS"] !== undefined,
-    currency: "USD"
+    outputFile: "gas-report.txt",
+    noColors: true,
+    currency: "USD",
+    coinmarketcap: process.env["CMC_API_KEY"] ?? undefined
   },
   mocha: {
     timeout: 120000
