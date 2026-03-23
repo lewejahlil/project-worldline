@@ -68,7 +68,7 @@ function loadArtifact(name: string): { abi: ethers.InterfaceAbi; bytecode: strin
 }
 
 async function deployContract(
-  wallet: ethers.Wallet,
+  wallet: ethers.Signer,
   name: string,
   ...args: unknown[]
 ): Promise<ethers.BaseContract> {
