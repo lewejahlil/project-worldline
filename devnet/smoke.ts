@@ -172,7 +172,7 @@ async function main(): Promise<void> {
     console.log("\n[1] Launching Anvil…");
     anvil = spawn(
       "anvil",
-      ["--port", ANVIL_PORT, "--chain-id", String(CHAIN_ID), "--deterministic"],
+      ["--port", ANVIL_PORT, "--chain-id", String(CHAIN_ID)],
       { stdio: ["ignore", "pipe", "pipe"] }
     );
 

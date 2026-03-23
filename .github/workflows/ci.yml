@@ -171,7 +171,7 @@ jobs:
         run: npx hardhat compile
       - name: Start Anvil
         run: |
-          anvil --port 8545 --chain-id 31337 --deterministic >/tmp/anvil.log 2>&1 &
+          anvil --port 8545 --chain-id 31337 >/tmp/anvil.log 2>&1 &
           echo "Anvil PID: $!"
       - name: Wait for Anvil
         run: |
