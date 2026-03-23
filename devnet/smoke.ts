@@ -20,6 +20,7 @@
  */
 
 import { spawn, ChildProcess } from "child_process";
+import * as net from "net";
 import { ethers } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
@@ -172,17 +173,45 @@ async function main(): Promise<void> {
     process.exit(1);
   });
 
-  // Wait for Anvil to be ready
+  // Wait for Anvil to be ready.
+  // Foundry 1.x writes the startup banner to stderr; we also poll the TCP port
+  // as a fallback in case output is buffered or the message changes across versions.
   await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error("Anvil startup timeout")), 60_000);
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      clearInterval(poll);
+      anvil.stdout?.off("data", onData);
+      anvil.stderr?.off("data", onData);
+      resolve();
+    };
+
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      clearInterval(poll);
+      anvil.stdout?.off("data", onData);
+      anvil.stderr?.off("data", onData);
+      reject(new Error("Anvil startup timeout"));
+    }, 60_000);
+
     const onData = (data: Buffer) => {
-      if (data.toString().includes("Listening on")) {
-        clearTimeout(timeout);
-        anvil.stdout?.off("data", onData);
-        resolve();
-      }
+      if (data.toString().includes("Listening on")) done();
     };
     anvil.stdout?.on("data", onData);
+    anvil.stderr?.on("data", onData);
+
+    // Poll the TCP port every 500 ms — works regardless of which stream Anvil uses.
+    const poll = setInterval(() => {
+      const sock = net.createConnection({ port: Number(ANVIL_PORT), host: "127.0.0.1" });
+      sock.on("connect", () => {
+        sock.destroy();
+        done();
+      });
+      sock.on("error", () => sock.destroy());
+    }, 500);
   });
   console.log("[1] Anvil ready.");
 
