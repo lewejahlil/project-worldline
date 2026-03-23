@@ -170,11 +170,9 @@ async function main(): Promise<void> {
     console.log("\n[1] Using externally-managed Anvil (SKIP_ANVIL_LAUNCH=1).");
   } else {
     console.log("\n[1] Launching Anvil…");
-    anvil = spawn(
-      "anvil",
-      ["--port", ANVIL_PORT, "--chain-id", String(CHAIN_ID)],
-      { stdio: ["ignore", "pipe", "pipe"] }
-    );
+    anvil = spawn("anvil", ["--port", ANVIL_PORT, "--chain-id", String(CHAIN_ID)], {
+      stdio: ["ignore", "pipe", "pipe"]
+    });
 
     anvil.on("error", (err: Error) => {
       console.error("Failed to start Anvil:", err.message);
@@ -226,8 +224,9 @@ async function main(): Promise<void> {
   }
 
   const provider = new ethers.JsonRpcProvider(`http://127.0.0.1:${ANVIL_PORT}`);
-  const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-  console.log(`[1] Deployer: ${wallet.address}`);
+  // NonceManager prevents nonce races when multiple deploys are sent sequentially.
+  const wallet = new ethers.NonceManager(new ethers.Wallet(PRIVATE_KEY, provider));
+  console.log(`[1] Deployer: ${await wallet.getAddress()}`);
 
   try {
     // ── Step 2: Deploy all contracts ─────────────────────────────────────────
