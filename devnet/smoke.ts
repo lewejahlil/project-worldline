@@ -29,6 +29,9 @@ const ANVIL_PORT = process.env["DEVNET_PORT"] ?? "8545";
 const PRIVATE_KEY =
   process.env["PRIVATE_KEY"] ??
   "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+// When set to "1", skip spawning Anvil (assumes one is already running on ANVIL_PORT).
+// Used by the CI job which starts Anvil in a dedicated shell step.
+const SKIP_ANVIL_LAUNCH = process.env["SKIP_ANVIL_LAUNCH"] === "1";
 const CHAIN_ID = 31337;
 const MAX_ACCEPTANCE_DELAY = 3600;
 
@@ -160,60 +163,67 @@ async function main(): Promise<void> {
   console.log("=== Worldline Devnet Smoke Test ===");
   console.log(`Anvil port: ${ANVIL_PORT}`);
 
-  // ── Step 1: Launch Anvil ──────────────────────────────────────────────────
-  console.log("\n[1] Launching Anvil…");
-  const anvil: ChildProcess = spawn(
-    "anvil",
-    ["--port", ANVIL_PORT, "--chain-id", String(CHAIN_ID), "--deterministic"],
-    { stdio: ["ignore", "pipe", "pipe"] }
-  );
+  // ── Step 1: Launch Anvil (skipped when SKIP_ANVIL_LAUNCH=1) ─────────────────
+  let anvil: ChildProcess | null = null;
 
-  anvil.on("error", (err: Error) => {
-    console.error("Failed to start Anvil:", err.message);
-    process.exit(1);
-  });
+  if (SKIP_ANVIL_LAUNCH) {
+    console.log("\n[1] Using externally-managed Anvil (SKIP_ANVIL_LAUNCH=1).");
+  } else {
+    console.log("\n[1] Launching Anvil…");
+    anvil = spawn(
+      "anvil",
+      ["--port", ANVIL_PORT, "--chain-id", String(CHAIN_ID), "--deterministic"],
+      { stdio: ["ignore", "pipe", "pipe"] }
+    );
 
-  // Wait for Anvil to be ready.
-  // Foundry 1.x writes the startup banner to stderr; we also poll the TCP port
-  // as a fallback in case output is buffered or the message changes across versions.
-  await new Promise<void>((resolve, reject) => {
-    let settled = false;
-    const done = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      clearInterval(poll);
-      anvil.stdout?.off("data", onData);
-      anvil.stderr?.off("data", onData);
-      resolve();
-    };
+    anvil.on("error", (err: Error) => {
+      console.error("Failed to start Anvil:", err.message);
+      process.exit(1);
+    });
 
-    const timeout = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      clearInterval(poll);
-      anvil.stdout?.off("data", onData);
-      anvil.stderr?.off("data", onData);
-      reject(new Error("Anvil startup timeout"));
-    }, 60_000);
+    // Wait for Anvil to be ready.
+    // Foundry 1.x writes the startup banner to stderr; we also poll the TCP port
+    // as a fallback in case output is buffered or the message changes across versions.
+    await new Promise<void>((resolve, reject) => {
+      const anvilProc = anvil!;
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        clearInterval(poll);
+        anvilProc.stdout?.off("data", onData);
+        anvilProc.stderr?.off("data", onData);
+        resolve();
+      };
 
-    const onData = (data: Buffer) => {
-      if (data.toString().includes("Listening on")) done();
-    };
-    anvil.stdout?.on("data", onData);
-    anvil.stderr?.on("data", onData);
+      const timeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        clearInterval(poll);
+        anvilProc.stdout?.off("data", onData);
+        anvilProc.stderr?.off("data", onData);
+        reject(new Error("Anvil startup timeout"));
+      }, 60_000);
 
-    // Poll the TCP port every 500 ms — works regardless of which stream Anvil uses.
-    const poll = setInterval(() => {
-      const sock = net.createConnection({ port: Number(ANVIL_PORT), host: "127.0.0.1" });
-      sock.on("connect", () => {
-        sock.destroy();
-        done();
-      });
-      sock.on("error", () => sock.destroy());
-    }, 500);
-  });
-  console.log("[1] Anvil ready.");
+      const onData = (data: Buffer) => {
+        if (data.toString().includes("Listening on")) done();
+      };
+      anvilProc.stdout?.on("data", onData);
+      anvilProc.stderr?.on("data", onData);
+
+      // Poll the TCP port every 500 ms — works regardless of which stream Anvil uses.
+      const poll = setInterval(() => {
+        const sock = net.createConnection({ port: Number(ANVIL_PORT), host: "127.0.0.1" });
+        sock.on("connect", () => {
+          sock.destroy();
+          done();
+        });
+        sock.on("error", () => sock.destroy());
+      }, 500);
+    });
+    console.log("[1] Anvil ready.");
+  }
 
   const provider = new ethers.JsonRpcProvider(`http://127.0.0.1:${ANVIL_PORT}`);
   const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
@@ -296,11 +306,11 @@ async function main(): Promise<void> {
   } catch (err) {
     console.error("\n=== Smoke test FAILED ===");
     console.error(err);
-    anvil.kill("SIGTERM");
+    anvil?.kill("SIGTERM");
     process.exit(1);
   }
 
-  anvil.kill("SIGTERM");
+  anvil?.kill("SIGTERM");
   process.exit(0);
 }
 

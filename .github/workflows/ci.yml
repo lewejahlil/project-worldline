@@ -169,5 +169,24 @@ jobs:
       - run: npm ci
       - name: Compile contracts
         run: npx hardhat compile
+      - name: Start Anvil
+        run: |
+          anvil --port 8545 --chain-id 31337 --deterministic >/tmp/anvil.log 2>&1 &
+          echo "Anvil PID: $!"
+      - name: Wait for Anvil
+        run: |
+          for i in $(seq 1 30); do
+            if cast block-number --rpc-url http://127.0.0.1:8545 2>/dev/null; then
+              echo "Anvil ready after ${i}s"
+              exit 0
+            fi
+            echo "Waiting for Anvil… ($i/30)"
+            sleep 1
+          done
+          echo "Anvil failed to start. Log:"
+          cat /tmp/anvil.log
+          exit 1
       - name: Devnet smoke test
         run: npm run devnet:smoke
+        env:
+          SKIP_ANVIL_LAUNCH: "1"
