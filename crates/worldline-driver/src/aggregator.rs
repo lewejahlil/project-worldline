@@ -7,7 +7,7 @@
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use tracing::{info, warn};
+use tracing::info;
 use worldline_registry::canonical::canonical_keccak;
 use worldline_registry::directory::{verify_directory_signature, SignedDirectory};
 use worldline_registry::selection::{select, Policy};

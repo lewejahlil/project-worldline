@@ -241,6 +241,8 @@ mod tests {
     }
 
     /// Verify keccak values in the shared test vectors match our implementation.
+    /// MED-006 remediation: all vectors must have populated keccak256 fields;
+    /// empty or placeholder values cause a test failure.
     #[test]
     fn shared_test_vectors_keccak() {
         let vectors_path = concat!(
@@ -252,11 +254,16 @@ mod tests {
             Err(_) => return,
         };
         let vectors: Vec<serde_json::Value> = serde_json::from_str(&raw).unwrap();
+        assert!(!vectors.is_empty(), "test vectors file must not be empty");
         for vector in &vectors {
-            let keccak_str = vector["keccak256"].as_str().unwrap_or("");
-            if keccak_str.is_empty() || keccak_str == "0x" {
-                continue; // placeholder not yet filled in
-            }
+            let keccak_str = vector["keccak256"]
+                .as_str()
+                .expect("every vector must have a keccak256 field");
+            assert!(
+                !keccak_str.is_empty() && keccak_str != "0x",
+                "keccak256 field must not be a placeholder for vector: {}",
+                vector["description"]
+            );
             let input = &vector["input"];
             let hash = canonical_keccak(input);
             let got_hex = format!("0x{}", hex::encode(hash));

@@ -75,10 +75,16 @@ pub struct SelectionResult {
     pub prover_set_digest: [u8; 32],
 }
 
+/// Hard bound for selection set size; protects gas and selection determinism.
+/// MED-002 remediation: enforced after prefix selection.
+pub const MAX_MANIFEST_ENTRIES: usize = 8;
+
 #[derive(Debug, Error)]
 pub enum SelectionError {
     #[error("no valid prover selection satisfies the policy constraints (and all fallback tiers)")]
     NoValidSelection,
+    #[error("selected {0} entries, exceeding MAX_MANIFEST_ENTRIES ({MAX_MANIFEST_ENTRIES})")]
+    ManifestTooLarge(usize),
 }
 
 // ── Algorithm ─────────────────────────────────────────────────────────────────
@@ -153,6 +159,11 @@ pub fn select(
         }
         fallback.ok_or(SelectionError::NoValidSelection)?
     };
+
+    // MED-002: Enforce MAX_MANIFEST_ENTRIES bound.
+    if selected.len() > MAX_MANIFEST_ENTRIES {
+        return Err(SelectionError::ManifestTooLarge(selected.len()));
+    }
 
     // Step 5: Build manifest sorted by (family, prover_id, version).
     let mut manifest: Vec<ManifestEntry> = selected
@@ -528,6 +539,41 @@ mod tests {
         // Manifest should be valid JSON.
         let parsed: serde_json::Value = serde_json::from_str(&result.manifest_json).unwrap();
         assert!(parsed.is_array());
+    }
+
+    // ── MED-002: MAX_MANIFEST_ENTRIES enforcement ──────────────────────────
+
+    #[test]
+    fn max_manifest_entries_enforced() {
+        // Create 10 entries across 10 families — exceeds MAX_MANIFEST_ENTRIES (8).
+        let entries: Vec<DirectoryEntry> = (0..10)
+            .map(|i| entry(&format!("p{i}"), &format!("f{i}"), 100, 10, HealthStatus::Healthy))
+            .collect();
+        let policy = Policy {
+            min_count: 10,
+            min_distinct_families: 10,
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy);
+        assert!(matches!(
+            result,
+            Err(SelectionError::ManifestTooLarge(10))
+        ));
+    }
+
+    #[test]
+    fn exactly_max_manifest_entries_succeeds() {
+        // 8 entries across 8 families — exactly at the limit.
+        let entries: Vec<DirectoryEntry> = (0..8)
+            .map(|i| entry(&format!("p{i}"), &format!("f{i}"), 100, 10, HealthStatus::Healthy))
+            .collect();
+        let policy = Policy {
+            min_count: 8,
+            min_distinct_families: 8,
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy).unwrap();
+        assert_eq!(result.selected.len(), 8);
     }
 
     #[test]

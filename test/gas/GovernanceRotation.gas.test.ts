@@ -29,6 +29,15 @@ const POLICY_HASH_V2 = ethers.keccak256(ethers.toUtf8Bytes("policy-hash-v2-gas")
 const PROVER_DIGEST = ethers.keccak256(ethers.toUtf8Bytes("prover-set-gas"));
 const MIN_TIMELOCK = 86400;
 
+function computeStf(l2Start: bigint, l2End: bigint, ts: bigint): string {
+  return ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ["uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
+      [l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts]
+    )
+  );
+}
+
 function encodeProof(stf: string, vkey: string, policy: string): string {
   return ethers.AbiCoder.defaultAbiCoder().encode(
     ["bytes32", "bytes32", "bytes32", "bytes32"],
@@ -36,11 +45,13 @@ function encodeProof(stf: string, vkey: string, policy: string): string {
   );
 }
 
-function encodeInputs(stf: string, l2Start: bigint, l2End: bigint, ts: bigint): string {
-  return ethers.AbiCoder.defaultAbiCoder().encode(
+function encodeInputs(l2Start: bigint, l2End: bigint, ts: bigint): { inputs: string; stf: string } {
+  const stf = computeStf(l2Start, l2End, ts);
+  const inputs = ethers.AbiCoder.defaultAbiCoder().encode(
     ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
     [stf, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts]
   );
+  return { inputs, stf };
 }
 
 describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
@@ -80,10 +91,10 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
 
     // Step 7: Submit window 0 proof
     const ts = BigInt(await time.latest()) + 3600n;
-    const stf0 = ethers.keccak256(ethers.toUtf8Bytes("stf-gov-0"));
+    const { inputs: inputs0, stf: stf0 } = encodeInputs(0n, 100n, ts);
     await finalizer.submitZkValidityProof(
       encodeProof(stf0, PROGRAM_VKEY_V1, POLICY_HASH_V1),
-      encodeInputs(stf0, 0n, 100n, ts)
+      inputs0
     );
 
     // Step 8: Schedule new VKey/policy

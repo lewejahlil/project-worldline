@@ -23,6 +23,7 @@ contract WorldlineFinalizer is Ownable {
     error LocatorTooLong();
     error ProofInvalid();
     error StfMismatch();
+    error StfBindingMismatch();
     error NoPendingAdapter();
     error TimelockActive(uint256 activationTime);
     error AdapterDelayTooShort(uint256 required, uint256 given);
@@ -220,6 +221,17 @@ contract WorldlineFinalizer is Ownable {
             publicInputs,
             (bytes32, uint256, uint256, bytes32, bytes32, bytes32, uint256)
         );
+
+        // MED-001: Defense-in-depth — verify stfCommitment binds to the decoded ABI content.
+        // stfCommitment must equal keccak256(abi.encode(l2Start, l2End, outputRoot,
+        // l1BlockHash, domainSeparator, windowCloseTimestamp)). This prevents a circuit
+        // soundness bug from allowing fabricated commitments that don't match the payload.
+        {
+            bytes32 expectedStf = keccak256(
+                abi.encode(l2Start, l2End, outputRoot, l1BlockHash, inputDomainSeparator, windowCloseTimestamp)
+            );
+            if (stfCommitment != expectedStf) revert StfBindingMismatch();
+        }
 
         // Domain binding
         if (inputDomainSeparator != domainSeparator) revert DomainMismatch();

@@ -69,25 +69,33 @@ describe("GovernanceRotation", function () {
     };
   }
 
-  function encodePublicInputs(
-    stfCommitment: string,
+  // MED-001: stfCommitment = keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domainSep, windowCloseTimestamp))
+  function computeStf(
     l2Start: bigint,
     l2End: bigint,
     domainSep: string,
     windowCloseTimestamp: bigint
   ): string {
-    return ethers.AbiCoder.defaultAbiCoder().encode(
-      ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-      [
-        stfCommitment,
-        l2Start,
-        l2End,
-        ethers.ZeroHash,
-        ethers.ZeroHash,
-        domainSep,
-        windowCloseTimestamp
-      ]
+    return ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ["uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
+        [l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, domainSep, windowCloseTimestamp]
+      )
     );
+  }
+
+  function encodePublicInputs(
+    l2Start: bigint,
+    l2End: bigint,
+    domainSep: string,
+    windowCloseTimestamp: bigint
+  ): { inputs: string; stf: string } {
+    const stf = computeStf(l2Start, l2End, domainSep, windowCloseTimestamp);
+    const inputs = ethers.AbiCoder.defaultAbiCoder().encode(
+      ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
+      [stf, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, domainSep, windowCloseTimestamp]
+    );
+    return { inputs, stf };
   }
 
   function encodeProof(
@@ -108,9 +116,8 @@ describe("GovernanceRotation", function () {
 
     // ── Step 2: Submit valid proof through the Finalizer (window 0) ────────────
     const ts = BigInt(await time.latest()) + 100n;
-    const stf0 = ethers.keccak256(ethers.toUtf8Bytes("stf-window-0"));
+    const { inputs: inputs0, stf: stf0 } = encodePublicInputs(0n, 100n, DOMAIN, ts);
     const proof0 = encodeProof(stf0, PROGRAM_VKEY_V1, POLICY_HASH_V1, PROVER_DIGEST);
-    const inputs0 = encodePublicInputs(stf0, 0n, 100n, DOMAIN, ts);
 
     await expect(finalizer.submitZkValidityProof(proof0, inputs0))
       .to.emit(finalizer, "OutputProposed")
@@ -179,22 +186,20 @@ describe("GovernanceRotation", function () {
 
     // ── Step 9: Submit proof with OLD v1 pinned values — must revert ──────────
     const ts2 = BigInt(await time.latest()) + 200n;
-    const stf1bad = ethers.keccak256(ethers.toUtf8Bytes("stf-window-1-bad"));
-    const proofBad = encodeProof(stf1bad, PROGRAM_VKEY_V1, POLICY_HASH_V1, PROVER_DIGEST);
-    const inputsBad = encodePublicInputs(stf1bad, 100n, 200n, DOMAIN, ts2);
+    const { inputs: inputsBad, stf: stfBad } = encodePublicInputs(100n, 200n, DOMAIN, ts2);
+    const proofBad = encodeProof(stfBad, PROGRAM_VKEY_V1, POLICY_HASH_V1, PROVER_DIGEST);
 
     await expect(
       finalizer.submitZkValidityProof(proofBad, inputsBad)
     ).to.be.revertedWithCustomError(adapterV2, "ProgramVKeyMismatch");
 
     // ── Step 10: Submit proof with NEW v2 pinned values — must succeed ─────────
-    const stf1good = ethers.keccak256(ethers.toUtf8Bytes("stf-window-1-good"));
-    const proofGood = encodeProof(stf1good, PROGRAM_VKEY_V2, POLICY_HASH_V2, PROVER_DIGEST);
-    const inputsGood = encodePublicInputs(stf1good, 100n, 200n, DOMAIN, ts2);
+    const { inputs: inputsGood, stf: stfGood } = encodePublicInputs(100n, 200n, DOMAIN, ts2);
+    const proofGood = encodeProof(stfGood, PROGRAM_VKEY_V2, POLICY_HASH_V2, PROVER_DIGEST);
 
     await expect(finalizer.submitZkValidityProof(proofGood, inputsGood))
       .to.emit(finalizer, "OutputProposed")
-      .withArgs(1n, ethers.ZeroHash, 100n, 200n, stf1good)
+      .withArgs(1n, ethers.ZeroHash, 100n, 200n, stfGood)
       .and.to.emit(finalizer, "ZkProofAccepted")
       .withArgs(1n, PROGRAM_VKEY_V2, POLICY_HASH_V2, PROVER_DIGEST);
 
