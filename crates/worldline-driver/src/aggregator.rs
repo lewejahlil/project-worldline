@@ -67,21 +67,24 @@ pub fn run_aggregator(config: &AggregatorConfig) -> Result<AggregatorOutput> {
     );
 
     // ── Step 2: Verify directory signature ───────────────────────────────────
+    // The aggregator MUST abort if the directory signature is invalid.
+    // An unverified directory could contain attacker-controlled prover entries.
     match verify_directory_signature(&directory) {
         Ok(true) => {
             info!("directory signature verified successfully");
         }
         Ok(false) => {
-            warn!(
-                signer = %directory.signer_address,
-                "⚠ directory signature verification FAILED — recovered address mismatch"
+            // verify_directory_signature() now returns Err on mismatch, so this
+            // branch is unreachable. Kept as a defensive guard.
+            unreachable!(
+                "verify_directory_signature returned Ok(false); \
+                 mismatch should produce Err(SignerMismatch)"
             );
         }
         Err(e) => {
-            warn!(
-                error = %e,
-                "⚠ directory signature verification error (signature recovery may be stubbed)"
-            );
+            return Err(anyhow::anyhow!(
+                "directory signature verification failed — aborting: {e}"
+            ));
         }
     }
 

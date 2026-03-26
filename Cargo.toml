@@ -18,6 +18,8 @@ version = "1.0.0"
 anyhow = "1.0"
 criterion = { version = "0.5", features = ["html_reports"] }
 hex = "0.4"
+k256 = { version = "0.13", features = ["ecdsa"] }
+sha3 = "0.10"
 async-trait = "0.1"
 clap = { version = "4.4", features = ["derive"] }
 reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
