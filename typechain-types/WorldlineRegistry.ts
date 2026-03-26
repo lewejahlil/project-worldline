@@ -76,19 +76,27 @@ export declare namespace WorldlineRegistry {
 export interface WorldlineRegistryInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "MIN_FACADE_DELAY"
       | "acceptOwnership"
+      | "activateCompatFacade"
       | "compatFacade"
       | "defaultVerifier"
       | "deprecatePlugin"
+      | "facadeChangeDelay"
+      | "facadeChangeScheduled"
       | "getCircuit"
       | "getDriver"
       | "getPlugin"
       | "owner"
+      | "pendingCompatFacade"
+      | "pendingFacadeActivation"
       | "pendingOwner"
       | "registerCircuit"
       | "registerDriver"
       | "registerPlugin"
+      | "scheduleCompatFacade"
       | "setCompatFacade"
+      | "setFacadeChangeDelay"
       | "transferOwnership"
       | "verify"
   ): FunctionFragment;
@@ -96,8 +104,10 @@ export interface WorldlineRegistryInterface extends Interface {
   getEvent(
     nameOrSignatureOrTopic:
       | "CircuitRegistered"
+      | "CompatFacadeChangeScheduled"
       | "CompatFacadeSet"
       | "DriverRegistered"
+      | "FacadeChangeDelaySet"
       | "OwnershipTransferStarted"
       | "OwnershipTransferred"
       | "PluginDeprecated"
@@ -105,7 +115,15 @@ export interface WorldlineRegistryInterface extends Interface {
   ): EventFragment;
 
   encodeFunctionData(
+    functionFragment: "MIN_FACADE_DELAY",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "acceptOwnership",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "activateCompatFacade",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -121,6 +139,14 @@ export interface WorldlineRegistryInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "facadeChangeDelay",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "facadeChangeScheduled",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "getCircuit",
     values: [BytesLike]
   ): string;
@@ -133,6 +159,14 @@ export interface WorldlineRegistryInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "pendingCompatFacade",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "pendingFacadeActivation",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "pendingOwner",
     values?: undefined
@@ -150,8 +184,16 @@ export interface WorldlineRegistryInterface extends Interface {
     values: [BytesLike, string, AddressLike, BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "scheduleCompatFacade",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setCompatFacade",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setFacadeChangeDelay",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
@@ -163,7 +205,15 @@ export interface WorldlineRegistryInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
+    functionFragment: "MIN_FACADE_DELAY",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "acceptOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "activateCompatFacade",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -178,10 +228,26 @@ export interface WorldlineRegistryInterface extends Interface {
     functionFragment: "deprecatePlugin",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "facadeChangeDelay",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "facadeChangeScheduled",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "getCircuit", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getDriver", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getPlugin", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingCompatFacade",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingFacadeActivation",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "pendingOwner",
     data: BytesLike
@@ -199,7 +265,15 @@ export interface WorldlineRegistryInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "scheduleCompatFacade",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "setCompatFacade",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setFacadeChangeDelay",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -215,6 +289,19 @@ export namespace CircuitRegisteredEvent {
   export interface OutputObject {
     id: string;
     verifier: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace CompatFacadeChangeScheduledEvent {
+  export type InputTuple = [compat: AddressLike, activationTime: BigNumberish];
+  export type OutputTuple = [compat: string, activationTime: bigint];
+  export interface OutputObject {
+    compat: string;
+    activationTime: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -240,6 +327,18 @@ export namespace DriverRegisteredEvent {
   export interface OutputObject {
     id: string;
     version: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace FacadeChangeDelaySetEvent {
+  export type InputTuple = [delay: BigNumberish];
+  export type OutputTuple = [delay: bigint];
+  export interface OutputObject {
+    delay: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -341,13 +440,21 @@ export interface WorldlineRegistry extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  MIN_FACADE_DELAY: TypedContractMethod<[], [bigint], "view">;
+
   acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
+  activateCompatFacade: TypedContractMethod<[], [void], "nonpayable">;
 
   compatFacade: TypedContractMethod<[], [string], "view">;
 
   defaultVerifier: TypedContractMethod<[], [string], "view">;
 
   deprecatePlugin: TypedContractMethod<[id: BytesLike], [void], "nonpayable">;
+
+  facadeChangeDelay: TypedContractMethod<[], [bigint], "view">;
+
+  facadeChangeScheduled: TypedContractMethod<[], [boolean], "view">;
 
   getCircuit: TypedContractMethod<
     [id: BytesLike],
@@ -368,6 +475,10 @@ export interface WorldlineRegistry extends BaseContract {
   >;
 
   owner: TypedContractMethod<[], [string], "view">;
+
+  pendingCompatFacade: TypedContractMethod<[], [string], "view">;
+
+  pendingFacadeActivation: TypedContractMethod<[], [bigint], "view">;
 
   pendingOwner: TypedContractMethod<[], [string], "view">;
 
@@ -394,8 +505,20 @@ export interface WorldlineRegistry extends BaseContract {
     "nonpayable"
   >;
 
+  scheduleCompatFacade: TypedContractMethod<
+    [compat: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   setCompatFacade: TypedContractMethod<
     [compat: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  setFacadeChangeDelay: TypedContractMethod<
+    [_delay: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -417,7 +540,13 @@ export interface WorldlineRegistry extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "MIN_FACADE_DELAY"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
     nameOrSignature: "acceptOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "activateCompatFacade"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "compatFacade"
@@ -428,6 +557,12 @@ export interface WorldlineRegistry extends BaseContract {
   getFunction(
     nameOrSignature: "deprecatePlugin"
   ): TypedContractMethod<[id: BytesLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "facadeChangeDelay"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "facadeChangeScheduled"
+  ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
     nameOrSignature: "getCircuit"
   ): TypedContractMethod<
@@ -452,6 +587,12 @@ export interface WorldlineRegistry extends BaseContract {
   getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "pendingCompatFacade"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "pendingFacadeActivation"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "pendingOwner"
   ): TypedContractMethod<[], [string], "view">;
@@ -482,8 +623,14 @@ export interface WorldlineRegistry extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "scheduleCompatFacade"
+  ): TypedContractMethod<[compat: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "setCompatFacade"
   ): TypedContractMethod<[compat: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "setFacadeChangeDelay"
+  ): TypedContractMethod<[_delay: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
@@ -503,6 +650,13 @@ export interface WorldlineRegistry extends BaseContract {
     CircuitRegisteredEvent.OutputObject
   >;
   getEvent(
+    key: "CompatFacadeChangeScheduled"
+  ): TypedContractEvent<
+    CompatFacadeChangeScheduledEvent.InputTuple,
+    CompatFacadeChangeScheduledEvent.OutputTuple,
+    CompatFacadeChangeScheduledEvent.OutputObject
+  >;
+  getEvent(
     key: "CompatFacadeSet"
   ): TypedContractEvent<
     CompatFacadeSetEvent.InputTuple,
@@ -515,6 +669,13 @@ export interface WorldlineRegistry extends BaseContract {
     DriverRegisteredEvent.InputTuple,
     DriverRegisteredEvent.OutputTuple,
     DriverRegisteredEvent.OutputObject
+  >;
+  getEvent(
+    key: "FacadeChangeDelaySet"
+  ): TypedContractEvent<
+    FacadeChangeDelaySetEvent.InputTuple,
+    FacadeChangeDelaySetEvent.OutputTuple,
+    FacadeChangeDelaySetEvent.OutputObject
   >;
   getEvent(
     key: "OwnershipTransferStarted"
@@ -557,6 +718,17 @@ export interface WorldlineRegistry extends BaseContract {
       CircuitRegisteredEvent.OutputObject
     >;
 
+    "CompatFacadeChangeScheduled(address,uint256)": TypedContractEvent<
+      CompatFacadeChangeScheduledEvent.InputTuple,
+      CompatFacadeChangeScheduledEvent.OutputTuple,
+      CompatFacadeChangeScheduledEvent.OutputObject
+    >;
+    CompatFacadeChangeScheduled: TypedContractEvent<
+      CompatFacadeChangeScheduledEvent.InputTuple,
+      CompatFacadeChangeScheduledEvent.OutputTuple,
+      CompatFacadeChangeScheduledEvent.OutputObject
+    >;
+
     "CompatFacadeSet(address)": TypedContractEvent<
       CompatFacadeSetEvent.InputTuple,
       CompatFacadeSetEvent.OutputTuple,
@@ -577,6 +749,17 @@ export interface WorldlineRegistry extends BaseContract {
       DriverRegisteredEvent.InputTuple,
       DriverRegisteredEvent.OutputTuple,
       DriverRegisteredEvent.OutputObject
+    >;
+
+    "FacadeChangeDelaySet(uint256)": TypedContractEvent<
+      FacadeChangeDelaySetEvent.InputTuple,
+      FacadeChangeDelaySetEvent.OutputTuple,
+      FacadeChangeDelaySetEvent.OutputObject
+    >;
+    FacadeChangeDelaySet: TypedContractEvent<
+      FacadeChangeDelaySetEvent.InputTuple,
+      FacadeChangeDelaySetEvent.OutputTuple,
+      FacadeChangeDelaySetEvent.OutputObject
     >;
 
     "OwnershipTransferStarted(address,address)": TypedContractEvent<

@@ -110,10 +110,16 @@ describe("WorldlineRegistry", function () {
       await expect(registry.connect(stranger).setCompatFacade(stranger.address)).to.be.revertedWithCustomError(registry, "NotOwner");
     });
 
-    it("compat facade address can be set to zero (disabled)", async function () {
+    it("compat facade can be disabled via timelocked two-step", async function () {
       const { registry, owner, stranger } = await loadFixture(deployFixture);
+      // First-time wiring (instant, since compatFacade starts as address(0))
       await registry.connect(owner).setCompatFacade(stranger.address);
-      await expect(registry.connect(owner).setCompatFacade(ethers.ZeroAddress))
+      // Now it's set — must use two-step schedule/activate to change
+      await registry.connect(owner).scheduleCompatFacade(ethers.ZeroAddress);
+      // Fast-forward past the facade change delay (1 day)
+      await ethers.provider.send("evm_increaseTime", [86401]);
+      await ethers.provider.send("evm_mine", []);
+      await expect(registry.connect(owner).activateCompatFacade())
         .to.emit(registry, "CompatFacadeSet")
         .withArgs(ethers.ZeroAddress);
       expect(await registry.compatFacade()).to.equal(ethers.ZeroAddress);

@@ -14,6 +14,9 @@ contract WorldlineOutputsRegistry is Ownable {
     error NoPendingEntry();
     error TimelockTooShort(uint256 required, uint256 given);
     error NoActiveEntry();
+    error OracleZero();
+    error VKeyZero();
+    error PolicyHashZero();
 
     // ── Events ──────────────────────────────────────────────────────────────────
 
@@ -109,15 +112,19 @@ contract WorldlineOutputsRegistry is Ownable {
     /// @notice Schedule a new output entry for a domain. Activation is delayed
     ///         by at least `minTimelock` seconds.
     /// @param _domainKey  The domain key (use `domainKey()` to compute).
-    /// @param programVKey The program verifying key.
-    /// @param policyHash  Hash of the canonical policy JSON.
-    /// @param oracle      Address of the oracle/adapter for this domain.
+    /// @param programVKey The program verifying key (must be non-zero).
+    /// @param policyHash  Hash of the canonical policy JSON (must be non-zero).
+    /// @param oracle      Address of the oracle/adapter for this domain (must be non-zero).
+    /// @dev MED-003 remediation: rejects zero-value oracle, programVKey, and policyHash.
     function schedule(
         bytes32 _domainKey,
         bytes32 programVKey,
         bytes32 policyHash,
         address oracle
     ) external onlyOwner {
+        if (oracle == address(0)) revert OracleZero();
+        if (programVKey == bytes32(0)) revert VKeyZero();
+        if (policyHash == bytes32(0)) revert PolicyHashZero();
         uint256 activationTime = block.timestamp + minTimelock;
         bool overwriting = pendingEntries[_domainKey].exists;
 
