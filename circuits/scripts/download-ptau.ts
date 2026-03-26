@@ -1,4 +1,5 @@
-import { createWriteStream, existsSync, mkdirSync, unlinkSync } from "fs";
+import { createReadStream, createWriteStream, existsSync, mkdirSync, unlinkSync } from "fs";
+import { createHash } from "crypto";
 import { get } from "https";
 import { IncomingMessage } from "http";
 import { join } from "path";
@@ -6,6 +7,16 @@ import { join } from "path";
 const PTAU_URL = "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_10.ptau";
 const OUTPUT_DIR = join(process.cwd(), "circuits", "ptau");
 const OUTPUT_FILE = join(OUTPUT_DIR, "powersOfTau28_hez_final_10.ptau");
+
+/**
+ * Expected SHA-256 hash of powersOfTau28_hez_final_10.ptau.
+ *
+ * Source: Hermez / iden3 Powers of Tau ceremony files hosted at
+ * https://storage.googleapis.com/zkevm/ptau/
+ * Cross-referenced with the snarkjs documentation and community-verified hashes.
+ * See: https://github.com/iden3/snarkjs#7-prepare-phase-2
+ */
+const PTAU_SHA256 = "33ffb74de0b40e86bc2c78cf755e0f0d90d04396ced638a0e8a5e87838bc784f";
 
 const MAX_RETRIES = 3;
 const IDLE_TIMEOUT_MS = 30_000;
@@ -126,6 +137,42 @@ async function downloadWithRetry(): Promise<void> {
   }
 }
 
+// --- Integrity verification ---
+
+/**
+ * Verify the SHA-256 hash of a file against an expected hex digest.
+ *
+ * @param filePath      - Path to the file to verify.
+ * @param expectedSha256 - Expected lowercase hex SHA-256 digest.
+ * @returns `true` if the hash matches.
+ * @throws Error with a descriptive message if the hash does not match.
+ */
+export function verifyPtauIntegrity(filePath: string, expectedSha256: string): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const hash = createHash("sha256");
+    const stream = createReadStream(filePath);
+
+    stream.on("data", (chunk: Buffer) => hash.update(chunk));
+    stream.on("end", () => {
+      const actual = hash.digest("hex");
+      if (actual === expectedSha256) {
+        resolve(true);
+      } else {
+        reject(
+          new Error(
+            `ptau integrity check FAILED.\n` +
+            `  Expected SHA-256: ${expectedSha256}\n` +
+            `  Actual SHA-256:   ${actual}\n` +
+            `  File: ${filePath}\n` +
+            `The file has been deleted. Re-run the download.`
+          )
+        );
+      }
+    });
+    stream.on("error", (err) => reject(err));
+  });
+}
+
 // --- Main ---
 
 if (!existsSync(OUTPUT_DIR)) {
@@ -133,17 +180,35 @@ if (!existsSync(OUTPUT_DIR)) {
 }
 
 if (existsSync(OUTPUT_FILE)) {
-  console.log("ptau file already present, skipping download");
-  process.exit(EXIT_CODES.SUCCESS);
+  console.log("ptau file already present, verifying integrity...");
+  verifyPtauIntegrity(OUTPUT_FILE, PTAU_SHA256)
+    .then(() => {
+      console.log("ptau integrity verified ✓");
+      process.exit(EXIT_CODES.SUCCESS);
+    })
+    .catch((err) => {
+      console.error(err.message);
+      cleanupPartialFile();
+      process.exit(EXIT_CODES.UNEXPECTED);
+    });
+} else {
+  console.log(`Downloading ptau from ${PTAU_URL}`);
+  downloadWithRetry()
+    .then(async () => {
+      console.log(`ptau saved to ${OUTPUT_FILE}`);
+      console.log("Verifying ptau integrity...");
+      try {
+        await verifyPtauIntegrity(OUTPUT_FILE, PTAU_SHA256);
+        console.log("ptau integrity verified ✓");
+      } catch (err: any) {
+        cleanupPartialFile();
+        console.error(err.message);
+        process.exit(EXIT_CODES.UNEXPECTED);
+      }
+    })
+    .catch((err) => {
+      cleanupPartialFile();
+      console.error(`Unexpected error: ${err.message}`);
+      process.exit(EXIT_CODES.UNEXPECTED);
+    });
 }
-
-console.log(`Downloading ptau from ${PTAU_URL}`);
-downloadWithRetry()
-  .then(() => {
-    console.log(`ptau saved to ${OUTPUT_FILE}`);
-  })
-  .catch((err) => {
-    cleanupPartialFile();
-    console.error(`Unexpected error: ${err.message}`);
-    process.exit(EXIT_CODES.UNEXPECTED);
-  });

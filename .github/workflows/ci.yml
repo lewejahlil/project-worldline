@@ -153,6 +153,40 @@ jobs:
       - name: Fuzz tests
         run: forge test --match-contract Fuzz -v
 
+  zk-setup-verify:
+    name: ZK Setup Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Compile circuit
+        run: npm run c:compile
+      - name: Download ptau (with integrity check)
+        run: npm run c:ptau
+      - name: Run full ceremony (dev mode)
+        run: npm run c:setup
+      - name: Verify final zkey exists
+        run: |
+          if [ ! -f circuits/artifacts/worldline_final.zkey ]; then
+            echo "ERROR: worldline_final.zkey not found after c:setup"
+            exit 1
+          fi
+          echo "worldline_final.zkey exists ✓"
+      - name: Verify zkey independently
+        run: npm run c:setup:verify
+      - name: Confirm snarkjs is pinned (no caret/tilde)
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').devDependencies.snarkjs)")
+          if echo "$VERSION" | grep -qE '[\^~]'; then
+            echo "ERROR: snarkjs version is not pinned: $VERSION"
+            exit 1
+          fi
+          echo "snarkjs pinned to $VERSION ✓"
+
   devnet-smoke:
     name: Devnet Smoke Test
     runs-on: ubuntu-latest
