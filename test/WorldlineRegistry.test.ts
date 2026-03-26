@@ -52,9 +52,20 @@ describe("WorldlineRegistry", function () {
       expect(await registry.owner()).to.equal(owner.address);
     });
 
-    it("owner can transfer ownership", async function () {
+    it("owner can initiate two-step ownership transfer", async function () {
       const { registry, owner, stranger } = await loadFixture(deployFixture);
       await expect(registry.connect(owner).transferOwnership(stranger.address))
+        .to.emit(registry, "OwnershipTransferStarted")
+        .withArgs(owner.address, stranger.address);
+      // Owner not changed yet — pending owner must accept
+      expect(await registry.owner()).to.equal(owner.address);
+      expect(await registry.pendingOwner()).to.equal(stranger.address);
+    });
+
+    it("pending owner can accept ownership", async function () {
+      const { registry, owner, stranger } = await loadFixture(deployFixture);
+      await registry.connect(owner).transferOwnership(stranger.address);
+      await expect(registry.connect(stranger).acceptOwnership())
         .to.emit(registry, "OwnershipTransferred")
         .withArgs(owner.address, stranger.address);
       expect(await registry.owner()).to.equal(stranger.address);
@@ -63,6 +74,7 @@ describe("WorldlineRegistry", function () {
     it("new owner can exercise ownership after transfer", async function () {
       const { registry, owner, stranger } = await loadFixture(deployFixture);
       await registry.connect(owner).transferOwnership(stranger.address);
+      await registry.connect(stranger).acceptOwnership();
       // stranger is now owner — they should be able to call setCompatFacade
       await expect(registry.connect(stranger).setCompatFacade(stranger.address)).to.not.be.reverted;
     });
@@ -71,14 +83,14 @@ describe("WorldlineRegistry", function () {
       const { registry, stranger } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).transferOwnership(stranger.address)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(registry, "NotOwner");
     });
 
     it("transferring ownership to zero address reverts", async function () {
       const { registry, owner } = await loadFixture(deployFixture);
       await expect(
         registry.connect(owner).transferOwnership(ethers.ZeroAddress)
-      ).to.be.revertedWith("Ownable: new owner is the zero address");
+      ).to.be.revertedWithCustomError(registry, "NewOwnerIsZero");
     });
   });
 
@@ -95,9 +107,7 @@ describe("WorldlineRegistry", function () {
 
     it("non-owner cannot set the compat facade", async function () {
       const { registry, stranger } = await loadFixture(deployFixture);
-      await expect(registry.connect(stranger).setCompatFacade(stranger.address)).to.be.revertedWith(
-        "Ownable: caller is not the owner"
-      );
+      await expect(registry.connect(stranger).setCompatFacade(stranger.address)).to.be.revertedWithCustomError(registry, "NotOwner");
     });
 
     it("compat facade address can be set to zero (disabled)", async function () {

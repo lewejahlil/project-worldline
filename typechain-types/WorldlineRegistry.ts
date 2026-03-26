@@ -76,6 +76,7 @@ export declare namespace WorldlineRegistry {
 export interface WorldlineRegistryInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "acceptOwnership"
       | "compatFacade"
       | "defaultVerifier"
       | "deprecatePlugin"
@@ -83,6 +84,7 @@ export interface WorldlineRegistryInterface extends Interface {
       | "getDriver"
       | "getPlugin"
       | "owner"
+      | "pendingOwner"
       | "registerCircuit"
       | "registerDriver"
       | "registerPlugin"
@@ -96,11 +98,16 @@ export interface WorldlineRegistryInterface extends Interface {
       | "CircuitRegistered"
       | "CompatFacadeSet"
       | "DriverRegistered"
+      | "OwnershipTransferStarted"
       | "OwnershipTransferred"
       | "PluginDeprecated"
       | "PluginRegistered"
   ): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "acceptOwnership",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "compatFacade",
     values?: undefined
@@ -127,6 +134,10 @@ export interface WorldlineRegistryInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "pendingOwner",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "registerCircuit",
     values: [BytesLike, string, AddressLike, string]
   ): string;
@@ -152,6 +163,10 @@ export interface WorldlineRegistryInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
+    functionFragment: "acceptOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "compatFacade",
     data: BytesLike
   ): Result;
@@ -167,6 +182,10 @@ export interface WorldlineRegistryInterface extends Interface {
   decodeFunctionResult(functionFragment: "getDriver", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getPlugin", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingOwner",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "registerCircuit",
     data: BytesLike
@@ -221,6 +240,19 @@ export namespace DriverRegisteredEvent {
   export interface OutputObject {
     id: string;
     version: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OwnershipTransferStartedEvent {
+  export type InputTuple = [currentOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [currentOwner: string, newOwner: string];
+  export interface OutputObject {
+    currentOwner: string;
+    newOwner: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -309,6 +341,8 @@ export interface WorldlineRegistry extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
   compatFacade: TypedContractMethod<[], [string], "view">;
 
   defaultVerifier: TypedContractMethod<[], [string], "view">;
@@ -334,6 +368,8 @@ export interface WorldlineRegistry extends BaseContract {
   >;
 
   owner: TypedContractMethod<[], [string], "view">;
+
+  pendingOwner: TypedContractMethod<[], [string], "view">;
 
   registerCircuit: TypedContractMethod<
     [id: BytesLike, description: string, verifier: AddressLike, abiURI: string],
@@ -381,6 +417,9 @@ export interface WorldlineRegistry extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "acceptOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "compatFacade"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
@@ -412,6 +451,9 @@ export interface WorldlineRegistry extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "owner"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "pendingOwner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "registerCircuit"
@@ -475,6 +517,13 @@ export interface WorldlineRegistry extends BaseContract {
     DriverRegisteredEvent.OutputObject
   >;
   getEvent(
+    key: "OwnershipTransferStarted"
+  ): TypedContractEvent<
+    OwnershipTransferStartedEvent.InputTuple,
+    OwnershipTransferStartedEvent.OutputTuple,
+    OwnershipTransferStartedEvent.OutputObject
+  >;
+  getEvent(
     key: "OwnershipTransferred"
   ): TypedContractEvent<
     OwnershipTransferredEvent.InputTuple,
@@ -528,6 +577,17 @@ export interface WorldlineRegistry extends BaseContract {
       DriverRegisteredEvent.InputTuple,
       DriverRegisteredEvent.OutputTuple,
       DriverRegisteredEvent.OutputObject
+    >;
+
+    "OwnershipTransferStarted(address,address)": TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
+    >;
+    OwnershipTransferStarted: TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
     >;
 
     "OwnershipTransferred(address,address)": TypedContractEvent<

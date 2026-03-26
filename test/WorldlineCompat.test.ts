@@ -58,7 +58,7 @@ describe("WorldlineCompat", function () {
       const { compat, stranger } = await loadFixture(deployFixture);
       await expect(
         compat.connect(stranger).registerCircuit(CIRCUIT_ID, "test", ethers.ZeroAddress, "")
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(compat, "NotOwner");
     });
   });
 

@@ -109,6 +109,9 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
       POLICY_HASH_V2,
       true
     );
-    await finalizer.setAdapter(await adapterV2.getAddress());
+    // HI-001: Two-step timelocked adapter change
+    await finalizer.scheduleAdapterChange(await adapterV2.getAddress());
+    await time.increase(86401); // past adapter change delay
+    await finalizer.activateAdapterChange();
   });
 });

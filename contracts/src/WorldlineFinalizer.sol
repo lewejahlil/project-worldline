@@ -23,6 +23,9 @@ contract WorldlineFinalizer is Ownable {
     error LocatorTooLong();
     error ProofInvalid();
     error StfMismatch();
+    error NoPendingAdapter();
+    error TimelockActive(uint256 activationTime);
+    error AdapterDelayTooShort(uint256 required, uint256 given);
 
     // ── Events ──────────────────────────────────────────────────────────────────
 
@@ -48,11 +51,19 @@ contract WorldlineFinalizer is Ownable {
     event SubmitterSet(address indexed account, bool allowed);
     event MaxAcceptanceDelaySet(uint256 delay);
     event AdapterSet(address indexed adapter);
+    event AdapterChangeScheduled(address indexed adapter, uint256 activationTime);
+    event AdapterChangeDelaySet(uint256 delay);
 
     // ── Constants ───────────────────────────────────────────────────────────────
 
     /// @dev Expected length of the public inputs ABI payload (7 × 32 = 224 bytes).
     uint256 private constant PUBLIC_INPUTS_LEN = 224;
+
+    // ── Constants ───────────────────────────────────────────────────────────────
+
+    /// @notice Minimum floor for `adapterChangeDelay`. Prevents setting a zero delay
+    ///         which would allow instant adapter swaps (HI-001 remediation).
+    uint256 public constant MIN_ADAPTER_DELAY = 1 days;
 
     // ── Storage ─────────────────────────────────────────────────────────────────
 
@@ -66,6 +77,16 @@ contract WorldlineFinalizer is Ownable {
     uint256 public lastL2EndBlock;
 
     mapping(address => bool) public submitters;
+
+    /// @notice Delay (seconds) before a scheduled adapter change can be activated.
+    ///         Initialized to 1 day; configurable by owner with a floor of MIN_ADAPTER_DELAY.
+    uint256 public adapterChangeDelay;
+
+    /// @notice Address of the pending adapter (zero if no change is scheduled).
+    address public pendingAdapter;
+
+    /// @notice Timestamp at which the pending adapter change can be activated.
+    uint256 public pendingAdapterActivation;
 
     // ── Constructor ─────────────────────────────────────────────────────────────
 
@@ -82,6 +103,7 @@ contract WorldlineFinalizer is Ownable {
         adapter = IZkAggregatorVerifier(_adapter);
         domainSeparator = _domainSeparator;
         maxAcceptanceDelay = _maxAcceptanceDelay;
+        adapterChangeDelay = 1 days;
     }
 
     // ── Modifiers ───────────────────────────────────────────────────────────────
@@ -118,11 +140,32 @@ contract WorldlineFinalizer is Ownable {
         emit MaxAcceptanceDelaySet(_delay);
     }
 
-    /// @notice Replace the adapter.
-    function setAdapter(address _adapter) external onlyOwner {
+    /// @notice Schedule a timelocked adapter change. The new adapter cannot be activated
+    ///         until `adapterChangeDelay` seconds have passed. HI-001 remediation.
+    /// @param _adapter The address of the new adapter to schedule.
+    function scheduleAdapterChange(address _adapter) external onlyOwner {
         if (_adapter == address(0)) revert AdapterZero();
-        adapter = IZkAggregatorVerifier(_adapter);
-        emit AdapterSet(_adapter);
+        pendingAdapter = _adapter;
+        pendingAdapterActivation = block.timestamp + adapterChangeDelay;
+        emit AdapterChangeScheduled(_adapter, pendingAdapterActivation);
+    }
+
+    /// @notice Activate a previously scheduled adapter change after the timelock.
+    function activateAdapterChange() external onlyOwner {
+        if (pendingAdapter == address(0)) revert NoPendingAdapter();
+        if (block.timestamp < pendingAdapterActivation) revert TimelockActive(pendingAdapterActivation);
+        adapter = IZkAggregatorVerifier(pendingAdapter);
+        emit AdapterSet(pendingAdapter);
+        pendingAdapter = address(0);
+        pendingAdapterActivation = 0;
+    }
+
+    /// @notice Update the adapter change delay. Subject to a minimum floor of MIN_ADAPTER_DELAY.
+    /// @param _delay New delay in seconds (must be >= MIN_ADAPTER_DELAY).
+    function setAdapterChangeDelay(uint256 _delay) external onlyOwner {
+        if (_delay < MIN_ADAPTER_DELAY) revert AdapterDelayTooShort(MIN_ADAPTER_DELAY, _delay);
+        adapterChangeDelay = _delay;
+        emit AdapterChangeDelaySet(_delay);
     }
 
     // ── Submission ──────────────────────────────────────────────────────────────

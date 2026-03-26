@@ -332,7 +332,7 @@ describe("WorldlineFinalizer", function () {
       );
     });
 
-    it("setAdapter emits AdapterSet", async function () {
+    it("scheduleAdapterChange + activateAdapterChange emits AdapterSet", async function () {
       const { finalizer, owner, verifier } = await loadFixture(deployFixture);
       const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
       const adapter2 = await Adapter.deploy(
@@ -341,15 +341,19 @@ describe("WorldlineFinalizer", function () {
         POLICY_HASH,
         true
       );
-      await expect(finalizer.connect(owner).setAdapter(await adapter2.getAddress()))
+      await expect(finalizer.connect(owner).scheduleAdapterChange(await adapter2.getAddress()))
+        .to.emit(finalizer, "AdapterChangeScheduled");
+      // Fast-forward past adapter change delay (1 day)
+      await time.increase(86401);
+      await expect(finalizer.connect(owner).activateAdapterChange())
         .to.emit(finalizer, "AdapterSet")
         .withArgs(await adapter2.getAddress());
     });
 
-    it("setAdapter reverts on zero address", async function () {
+    it("scheduleAdapterChange reverts on zero address", async function () {
       const { finalizer, owner } = await loadFixture(deployFixture);
       await expect(
-        finalizer.connect(owner).setAdapter(ethers.ZeroAddress)
+        finalizer.connect(owner).scheduleAdapterChange(ethers.ZeroAddress)
       ).to.be.revertedWithCustomError(finalizer, "AdapterZero");
     });
   });

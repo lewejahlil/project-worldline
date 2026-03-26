@@ -12,7 +12,7 @@ contract WorldlineOutputsRegistry is Ownable {
 
     error TimelockNotElapsed();
     error NoPendingEntry();
-    error TimelockTooShort();
+    error TimelockTooShort(uint256 required, uint256 given);
     error NoActiveEntry();
 
     // ── Events ──────────────────────────────────────────────────────────────────
@@ -61,7 +61,11 @@ contract WorldlineOutputsRegistry is Ownable {
 
     // ── Storage ─────────────────────────────────────────────────────────────────
 
-    /// @notice Minimum timelock duration in seconds (recommended 24-72 hours).
+    /// @notice Absolute minimum floor for `minTimelock`. Prevents governance from
+    ///         setting a dangerously short timelock (e.g. 1 second). HI-002 remediation.
+    uint256 public constant MIN_TIMELOCK_FLOOR = 1 days;
+
+    /// @notice Minimum timelock duration in seconds (must be >= MIN_TIMELOCK_FLOOR).
     uint256 public minTimelock;
 
     /// @notice Active entries keyed by keccak256(chainIdHash, domainTag).
@@ -73,16 +77,19 @@ contract WorldlineOutputsRegistry is Ownable {
     // ── Constructor ─────────────────────────────────────────────────────────────
 
     /// @param _minTimelock Minimum delay in seconds before a scheduled entry can be activated.
+    ///                     Must be >= MIN_TIMELOCK_FLOOR (1 day).
     constructor(uint256 _minTimelock) {
-        if (_minTimelock == 0) revert TimelockTooShort();
+        if (_minTimelock < MIN_TIMELOCK_FLOOR) revert TimelockTooShort(MIN_TIMELOCK_FLOOR, _minTimelock);
         minTimelock = _minTimelock;
     }
 
     // ── Admin ───────────────────────────────────────────────────────────────────
 
     /// @notice Update the minimum timelock duration.
+    /// @dev The new value must be >= MIN_TIMELOCK_FLOOR (1 day) to prevent
+    ///      governance from setting a dangerously short timelock. HI-002 remediation.
     function setMinTimelock(uint256 _minTimelock) external onlyOwner {
-        if (_minTimelock == 0) revert TimelockTooShort();
+        if (_minTimelock < MIN_TIMELOCK_FLOOR) revert TimelockTooShort(MIN_TIMELOCK_FLOOR, _minTimelock);
         minTimelock = _minTimelock;
         emit MinTimelockSet(_minTimelock);
     }
