@@ -16,7 +16,7 @@ const OUTPUT_FILE = join(OUTPUT_DIR, "powersOfTau28_hez_final_10.ptau");
  * Cross-referenced with the snarkjs documentation and community-verified hashes.
  * See: https://github.com/iden3/snarkjs#7-prepare-phase-2
  */
-const PTAU_SHA256 = "33ffb74de0b40e86bc2c78cf755e0f0d90d04396ced638a0e8a5e87838bc784f";
+const PTAU_SHA256 = "53d0e9d1a3576412ada39a82c8ffadd7f110c1b13de56d89b52a472ce5e5edf4";
 
 const MAX_RETRIES = 3;
 const IDLE_TIMEOUT_MS = 30_000;
