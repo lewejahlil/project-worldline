@@ -20,6 +20,7 @@
  *   PROGRAM_VKEY            bytes32 program verifying key (default: placeholder)
  *   POLICY_HASH             bytes32 policy hash (default: placeholder)
  *   IS_DEV_ADAPTER          "true" to deploy adapter in dev mode (default: "false")
+ *   MULTISIG_ADDRESS        (required on non-dev networks) multisig to transfer ownership to
  */
 
 import { ethers, network } from "hardhat";
@@ -52,6 +53,15 @@ async function main() {
 
   const GENESIS_L2_BLOCK = parseInt(process.env["GENESIS_L2_BLOCK"] ?? "0", 10);
 
+  // INF-002: Mandatory multisig address for ownership transfer on non-dev networks.
+  const MULTISIG_ADDRESS = process.env["MULTISIG_ADDRESS"] ?? "";
+  const isDevNetwork = network.name === "hardhat" || network.name === "localhost";
+  if (!MULTISIG_ADDRESS && !isDevNetwork) {
+    console.error("ERROR: MULTISIG_ADDRESS environment variable is required for non-dev deployments.");
+    console.error("Set MULTISIG_ADDRESS to the multisig that should own the deployed contracts.");
+    process.exit(1);
+  }
+
   console.log("Configuration:");
   console.log(`  DOMAIN_SEPARATOR:      ${DOMAIN_SEPARATOR}`);
   console.log(`  MAX_ACCEPTANCE_DELAY:  ${MAX_ACCEPTANCE_DELAY}s`);
@@ -60,6 +70,7 @@ async function main() {
   console.log(`  POLICY_HASH:           ${POLICY_HASH}`);
   console.log(`  IS_DEV_ADAPTER:        ${IS_DEV_ADAPTER}`);
   console.log(`  GENESIS_L2_BLOCK:      ${GENESIS_L2_BLOCK}`);
+  console.log(`  MULTISIG_ADDRESS:      ${MULTISIG_ADDRESS || "(dev — no transfer)"}`);
   console.log();
 
   // ── 1. Deploy Verifier ──────────────────────────────────────────────────────
@@ -116,6 +127,30 @@ async function main() {
   await wireTx.wait();
   console.log(`   setCompatFacade tx: ${wireTx.hash}`);
 
+  // ── 8. Transfer ownership to multisig (INF-002 remediation) ─────────────────
+  if (MULTISIG_ADDRESS) {
+    console.log(`8. Transferring ownership to multisig ${MULTISIG_ADDRESS}…`);
+
+    // WorldlineFinalizer — two-step transfer (HI-003).
+    const finalizerTx = await finalizer.transferOwnership(MULTISIG_ADDRESS);
+    await finalizerTx.wait();
+    console.log(`   WorldlineFinalizer.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`);
+
+    // WorldlineRegistry — two-step transfer (HI-003).
+    const registryTx = await registry.transferOwnership(MULTISIG_ADDRESS);
+    await registryTx.wait();
+    console.log(`   WorldlineRegistry.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`);
+
+    // WorldlineOutputsRegistry — two-step transfer (HI-003).
+    const outputsTx = await outputsRegistry.transferOwnership(MULTISIG_ADDRESS);
+    await outputsTx.wait();
+    console.log(`   WorldlineOutputsRegistry.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`);
+
+    console.log("   ⚠  Multisig must call acceptOwnership() on each contract to complete the transfer.");
+  } else {
+    console.log("8. Skipping ownership transfer (dev network).");
+  }
+
   // ── Print deployment summary ─────────────────────────────────────────────────
   const deploymentRecord = {
     network: network.name,
@@ -137,7 +172,8 @@ async function main() {
       programVKey: PROGRAM_VKEY,
       policyHash: POLICY_HASH,
       isDevAdapter: IS_DEV_ADAPTER,
-      genesisL2Block: GENESIS_L2_BLOCK
+      genesisL2Block: GENESIS_L2_BLOCK,
+      multisigAddress: MULTISIG_ADDRESS || null
     }
   };
 

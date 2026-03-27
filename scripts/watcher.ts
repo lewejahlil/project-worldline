@@ -22,7 +22,18 @@ import { canonicalKeccak } from "./canonical-json";
 
 const FINALIZER_ABI = [
   "event OutputProposed(uint256 indexed windowIndex, bytes32 outputRoot, uint256 l2Start, uint256 l2End, bytes32 stfCommitment)",
-  "event ZkProofAccepted(uint256 indexed windowIndex, bytes32 programVKey, bytes32 policyHash, bytes32 proverSetDigest)"
+  "event ZkProofAccepted(uint256 indexed windowIndex, bytes32 programVKey, bytes32 policyHash, bytes32 proverSetDigest)",
+  // INF-001: Privileged-role events for operational monitoring.
+  "event AdapterSet(address indexed adapter)",
+  "event AdapterChangeScheduled(address indexed adapter, uint256 activationTime)",
+  "event PausedSet(bool paused)",
+  "event PermissionlessSet(bool permissionless)",
+  "event SubmitterSet(address indexed account, bool allowed)",
+  "event MaxAcceptanceDelaySet(uint256 delay)",
+  "event AdapterChangeDelaySet(uint256 delay)",
+  "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
+  "event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner)",
+  "event ManifestAnnounced(bytes32 indexed proverSetDigest, bytes metaLocator)"
 ];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -149,6 +160,35 @@ async function runWatcher(opts: {
       const msg = `⚠️  Failed to load or verify manifest: ${e}`;
       console.warn(msg);
       anomalies.push(msg);
+    }
+  }
+
+  // ── INF-001: Monitor privileged-role events ──────────────────────────────
+  // These events indicate admin actions that should be reviewed for legitimacy.
+  const privilegedEvents = [
+    "AdapterSet",
+    "AdapterChangeScheduled",
+    "PausedSet",
+    "PermissionlessSet",
+    "SubmitterSet",
+    "MaxAcceptanceDelaySet",
+    "AdapterChangeDelaySet",
+    "OwnershipTransferred",
+    "OwnershipTransferStarted"
+  ];
+
+  for (const eventName of privilegedEvents) {
+    const filter = finalizer.filters[eventName]();
+    const events = await finalizer.queryFilter(filter, opts.fromBlock);
+    if (events.length > 0) {
+      for (const ev of events) {
+        const args = (ev as ethers.EventLog).args;
+        const msg = `⚠️  Privileged event ${eventName} at block ${ev.blockNumber}: ${JSON.stringify(
+          args.toArray().map(String)
+        )}`;
+        console.warn(msg);
+        anomalies.push(msg);
+      }
     }
   }
 

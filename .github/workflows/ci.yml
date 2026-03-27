@@ -25,6 +25,21 @@ jobs:
       - name: Prettier check
         run: npm run format:check
 
+  npm-audit:
+    name: NPM Audit (INF-003)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Audit all dependencies (informational)
+        run: npm audit --audit-level=critical || echo "::warning::npm audit found vulnerabilities in dev dependencies — review before mainnet"
+
   rust:
     name: Rust
     runs-on: ubuntu-latest
