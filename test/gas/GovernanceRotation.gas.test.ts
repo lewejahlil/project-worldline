@@ -77,7 +77,7 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
 
     // Step 4: Deploy WorldlineFinalizer
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-    const finalizer = await Finalizer.deploy(await adapterV1.getAddress(), DOMAIN, 3600);
+    const finalizer = await Finalizer.deploy(await adapterV1.getAddress(), DOMAIN, 3600, 0);
     await finalizer.setPermissionless(true);
 
     // Step 5: Deploy WorldlineOutputsRegistry

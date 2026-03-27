@@ -38,7 +38,7 @@ contract AccessControlTest is Test {
 
         verifier = new Verifier();
         adapter = new Groth16ZkAdapter(address(verifier), PROGRAM_VKEY, POLICY_HASH, true);
-        finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, 3600);
+        finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, 3600, 0);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

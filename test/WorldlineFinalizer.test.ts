@@ -26,7 +26,7 @@ describe("WorldlineFinalizer", function () {
 
     // Deploy the Finalizer with 1-hour max acceptance delay
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-    const finalizer = await Finalizer.deploy(await adapter.getAddress(), DOMAIN, 3600);
+    const finalizer = await Finalizer.deploy(await adapter.getAddress(), DOMAIN, 3600, 0);
 
     // Grant submitter role
     await finalizer.connect(owner).setSubmitter(submitter.address, true);
@@ -93,7 +93,7 @@ describe("WorldlineFinalizer", function () {
     it("reverts if deployed with zero adapter", async function () {
       const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
       await expect(
-        Finalizer.deploy(ethers.ZeroAddress, DOMAIN, 3600)
+        Finalizer.deploy(ethers.ZeroAddress, DOMAIN, 3600, 0)
       ).to.be.revertedWithCustomError(Finalizer, "AdapterZero");
     });
 
@@ -101,7 +101,7 @@ describe("WorldlineFinalizer", function () {
       const { adapter } = await loadFixture(deployFixture);
       const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
       await expect(
-        Finalizer.deploy(await adapter.getAddress(), DOMAIN, 0)
+        Finalizer.deploy(await adapter.getAddress(), DOMAIN, 0, 0)
       ).to.be.revertedWithCustomError(Finalizer, "MaxAcceptanceDelayZero");
     });
   });

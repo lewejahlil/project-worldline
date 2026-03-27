@@ -30,7 +30,7 @@ contract WorldlineFinalizerFuzzTest is Test {
         verifier = new Verifier();
         // isDev=true for all fuzz tests — exercises dev behaviour.
         adapter = new Groth16ZkAdapter(address(verifier), PROGRAM_VKEY, POLICY_HASH, true);
-        finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, MAX_DELAY);
+        finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, MAX_DELAY, 0);
         // Enable permissionless mode so the fuzzer address can submit.
         finalizer.setPermissionless(true);
     }

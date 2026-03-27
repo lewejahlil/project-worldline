@@ -32,6 +32,7 @@ export interface WorldlineFinalizerInterface extends Interface {
       | "adapter"
       | "adapterChangeDelay"
       | "domainSeparator"
+      | "genesisL2Block"
       | "lastL2EndBlock"
       | "maxAcceptanceDelay"
       | "nextWindowIndex"
@@ -58,6 +59,7 @@ export interface WorldlineFinalizerInterface extends Interface {
       | "AdapterChangeDelaySet"
       | "AdapterChangeScheduled"
       | "AdapterSet"
+      | "ManifestAnnounced"
       | "MaxAcceptanceDelaySet"
       | "OutputProposed"
       | "OwnershipTransferStarted"
@@ -87,6 +89,10 @@ export interface WorldlineFinalizerInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "domainSeparator",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "genesisL2Block",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -176,6 +182,10 @@ export interface WorldlineFinalizerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "domainSeparator",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "genesisL2Block",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -274,6 +284,19 @@ export namespace AdapterSetEvent {
   export type OutputTuple = [adapter: string];
   export interface OutputObject {
     adapter: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace ManifestAnnouncedEvent {
+  export type InputTuple = [proverSetDigest: BytesLike, metaLocator: BytesLike];
+  export type OutputTuple = [proverSetDigest: string, metaLocator: string];
+  export interface OutputObject {
+    proverSetDigest: string;
+    metaLocator: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -464,6 +487,8 @@ export interface WorldlineFinalizer extends BaseContract {
 
   domainSeparator: TypedContractMethod<[], [string], "view">;
 
+  genesisL2Block: TypedContractMethod<[], [bigint], "view">;
+
   lastL2EndBlock: TypedContractMethod<[], [bigint], "view">;
 
   maxAcceptanceDelay: TypedContractMethod<[], [bigint], "view">;
@@ -557,6 +582,9 @@ export interface WorldlineFinalizer extends BaseContract {
     nameOrSignature: "domainSeparator"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "genesisL2Block"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
     nameOrSignature: "lastL2EndBlock"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
@@ -648,6 +676,13 @@ export interface WorldlineFinalizer extends BaseContract {
     AdapterSetEvent.OutputObject
   >;
   getEvent(
+    key: "ManifestAnnounced"
+  ): TypedContractEvent<
+    ManifestAnnouncedEvent.InputTuple,
+    ManifestAnnouncedEvent.OutputTuple,
+    ManifestAnnouncedEvent.OutputObject
+  >;
+  getEvent(
     key: "MaxAcceptanceDelaySet"
   ): TypedContractEvent<
     MaxAcceptanceDelaySetEvent.InputTuple,
@@ -736,6 +771,17 @@ export interface WorldlineFinalizer extends BaseContract {
       AdapterSetEvent.InputTuple,
       AdapterSetEvent.OutputTuple,
       AdapterSetEvent.OutputObject
+    >;
+
+    "ManifestAnnounced(bytes32,bytes)": TypedContractEvent<
+      ManifestAnnouncedEvent.InputTuple,
+      ManifestAnnouncedEvent.OutputTuple,
+      ManifestAnnouncedEvent.OutputObject
+    >;
+    ManifestAnnounced: TypedContractEvent<
+      ManifestAnnouncedEvent.InputTuple,
+      ManifestAnnouncedEvent.OutputTuple,
+      ManifestAnnouncedEvent.OutputObject
     >;
 
     "MaxAcceptanceDelaySet(uint256)": TypedContractEvent<

@@ -43,7 +43,7 @@ describe("GovernanceRotation", function () {
 
     // 4. Deploy WorldlineFinalizer (1-hour max acceptance delay)
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-    const finalizer = await Finalizer.deploy(await adapterV1.getAddress(), DOMAIN, 3600);
+    const finalizer = await Finalizer.deploy(await adapterV1.getAddress(), DOMAIN, 3600, 0);
 
     // 5. Deploy WorldlineOutputsRegistry (24-hour minimum timelock)
     const OutputsRegistry = await ethers.getContractFactory("WorldlineOutputsRegistry");

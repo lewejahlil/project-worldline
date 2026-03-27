@@ -50,6 +50,8 @@ async function main() {
 
   const IS_DEV_ADAPTER = process.env["IS_DEV_ADAPTER"] === "true";
 
+  const GENESIS_L2_BLOCK = parseInt(process.env["GENESIS_L2_BLOCK"] ?? "0", 10);
+
   console.log("Configuration:");
   console.log(`  DOMAIN_SEPARATOR:      ${DOMAIN_SEPARATOR}`);
   console.log(`  MAX_ACCEPTANCE_DELAY:  ${MAX_ACCEPTANCE_DELAY}s`);
@@ -57,6 +59,7 @@ async function main() {
   console.log(`  PROGRAM_VKEY:          ${PROGRAM_VKEY}`);
   console.log(`  POLICY_HASH:           ${POLICY_HASH}`);
   console.log(`  IS_DEV_ADAPTER:        ${IS_DEV_ADAPTER}`);
+  console.log(`  GENESIS_L2_BLOCK:      ${GENESIS_L2_BLOCK}`);
   console.log();
 
   // ── 1. Deploy Verifier ──────────────────────────────────────────────────────
@@ -86,7 +89,7 @@ async function main() {
   // ── 4. Deploy WorldlineFinalizer ────────────────────────────────────────────
   console.log("4. Deploying WorldlineFinalizer…");
   const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-  const finalizer = await Finalizer.deploy(adapterAddr, DOMAIN_SEPARATOR, MAX_ACCEPTANCE_DELAY);
+  const finalizer = await Finalizer.deploy(adapterAddr, DOMAIN_SEPARATOR, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK);
   await finalizer.waitForDeployment();
   const finalizerAddr = await finalizer.getAddress();
   console.log(`   WorldlineFinalizer: ${finalizerAddr}`);
@@ -133,7 +136,8 @@ async function main() {
       minTimelock: MIN_TIMELOCK,
       programVKey: PROGRAM_VKEY,
       policyHash: POLICY_HASH,
-      isDevAdapter: IS_DEV_ADAPTER
+      isDevAdapter: IS_DEV_ADAPTER,
+      genesisL2Block: GENESIS_L2_BLOCK
     }
   };
 
@@ -171,7 +175,7 @@ async function main() {
       {
         name: "WorldlineFinalizer",
         address: finalizerAddr,
-        args: [adapterAddr, DOMAIN_SEPARATOR, MAX_ACCEPTANCE_DELAY]
+        args: [adapterAddr, DOMAIN_SEPARATOR, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK]
       },
       {
         name: "WorldlineOutputsRegistry",

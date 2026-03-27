@@ -52,6 +52,10 @@ pub struct Policy {
     pub min_inclusion_ratio: f64,
     #[serde(default)]
     pub fallback_tiers: Vec<FallbackTier>,
+    /// LOW-006 remediation: when false (default), `Degraded` provers are excluded
+    /// from the eligible set. Set to true to include degraded provers explicitly.
+    #[serde(default)]
+    pub allow_degraded: bool,
 }
 
 /// A compact manifest entry (subset of DirectoryEntry fields).
@@ -109,9 +113,14 @@ pub fn select(
     policy: &Policy,
 ) -> Result<SelectionResult, SelectionError> {
     // Step 1: Filter eligible entries.
+    // LOW-006 remediation: exclude Degraded provers unless allow_degraded is set.
     let mut eligible: Vec<&DirectoryEntry> = entries
         .iter()
-        .filter(|e| !matches!(e.health, HealthStatus::Offline))
+        .filter(|e| match e.health {
+            HealthStatus::Offline => false,
+            HealthStatus::Degraded => policy.allow_degraded,
+            HealthStatus::Healthy => true,
+        })
         .collect();
 
     if let Some(allowlist) = &policy.allowlist_provers {
@@ -289,6 +298,7 @@ mod tests {
             allowlist_provers: None,
             min_inclusion_ratio: 0.0,
             fallback_tiers: vec![],
+            allow_degraded: false,
         }
     }
 
@@ -589,5 +599,57 @@ mod tests {
         };
         let result = select(&entries, &policy).unwrap();
         assert_ne!(result.prover_set_digest, [0u8; 32]);
+    }
+
+    // ── LOW-006: allow_degraded policy option ─────────────────────────────────
+
+    #[test]
+    fn degraded_provers_excluded_by_default() {
+        let entries = vec![
+            entry("g1", "groth16", 100, 10, HealthStatus::Healthy),
+            entry("d1", "degraded_fam", 50, 5, HealthStatus::Degraded),
+        ];
+        let policy = Policy {
+            min_count: 1,
+            min_distinct_families: 1,
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy).unwrap();
+        // Degraded entry should be excluded.
+        for e in &result.selected {
+            assert_ne!(e.prover_id, "d1", "degraded prover should be excluded");
+        }
+    }
+
+    #[test]
+    fn degraded_provers_included_when_allowed() {
+        let entries = vec![
+            entry("g1", "groth16", 100, 10, HealthStatus::Healthy),
+            entry("d1", "degraded_fam", 50, 5, HealthStatus::Degraded),
+        ];
+        let policy = Policy {
+            min_count: 2,
+            min_distinct_families: 2,
+            allow_degraded: true,
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy).unwrap();
+        let ids: Vec<&str> = result.selected.iter().map(|e| e.prover_id.as_str()).collect();
+        assert!(ids.contains(&"d1"), "degraded prover should be included when allowed");
+    }
+
+    #[test]
+    fn degraded_only_fails_without_allow() {
+        // All provers are degraded — selection should fail with default policy.
+        let entries = vec![
+            entry("d1", "fam_a", 100, 10, HealthStatus::Degraded),
+            entry("d2", "fam_b", 200, 20, HealthStatus::Degraded),
+        ];
+        let policy = Policy {
+            min_count: 1,
+            min_distinct_families: 1,
+            ..basic_policy()
+        };
+        assert!(select(&entries, &policy).is_err());
     }
 }

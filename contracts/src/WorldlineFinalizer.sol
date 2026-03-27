@@ -27,6 +27,7 @@ contract WorldlineFinalizer is Ownable {
     error NoPendingAdapter();
     error TimelockActive(uint256 activationTime);
     error AdapterDelayTooShort(uint256 required, uint256 given);
+    error GenesisStartMismatch(uint256 expected, uint256 actual);
 
     // ── Events ──────────────────────────────────────────────────────────────────
 
@@ -55,6 +56,11 @@ contract WorldlineFinalizer is Ownable {
     event AdapterChangeScheduled(address indexed adapter, uint256 activationTime);
     event AdapterChangeDelaySet(uint256 delay);
 
+    /// @notice Emitted when a proof submission includes a manifest locator hint (LOW-004 remediation).
+    /// @param proverSetDigest The keccak256 digest of the canonical prover manifest.
+    /// @param metaLocator     Off-chain locator for the manifest data.
+    event ManifestAnnounced(bytes32 indexed proverSetDigest, bytes metaLocator);
+
     // ── Constants ───────────────────────────────────────────────────────────────
 
     /// @dev Expected length of the public inputs ABI payload (7 × 32 = 224 bytes).
@@ -77,6 +83,9 @@ contract WorldlineFinalizer is Ownable {
     uint256 public nextWindowIndex;
     uint256 public lastL2EndBlock;
 
+    /// @notice The expected l2Start for the genesis window (LOW-003 remediation).
+    uint256 public immutable genesisL2Block;
+
     mapping(address => bool) public submitters;
 
     /// @notice Delay (seconds) before a scheduled adapter change can be activated.
@@ -94,10 +103,12 @@ contract WorldlineFinalizer is Ownable {
     /// @param _adapter            Address of the ZK adapter (must be non-zero).
     /// @param _domainSeparator    Domain separator binding proofs to this chain/deployment.
     /// @param _maxAcceptanceDelay Maximum age (seconds) of a window before it is rejected.
+    /// @param _genesisL2Block     Expected l2Start for the genesis window (LOW-003 remediation).
     constructor(
         address _adapter,
         bytes32 _domainSeparator,
-        uint256 _maxAcceptanceDelay
+        uint256 _maxAcceptanceDelay,
+        uint256 _genesisL2Block
     ) {
         if (_adapter == address(0)) revert AdapterZero();
         if (_maxAcceptanceDelay == 0) revert MaxAcceptanceDelayZero();
@@ -105,6 +116,7 @@ contract WorldlineFinalizer is Ownable {
         domainSeparator = _domainSeparator;
         maxAcceptanceDelay = _maxAcceptanceDelay;
         adapterChangeDelay = 1 days;
+        genesisL2Block = _genesisL2Block;
     }
 
     // ── Modifiers ───────────────────────────────────────────────────────────────
@@ -182,6 +194,8 @@ contract WorldlineFinalizer is Ownable {
     }
 
     /// @notice Submit with optional metadata locator (for indexers/watchers).
+    ///         LOW-004 remediation: emits ManifestAnnounced with the proverSetDigest
+    ///         decoded from the proof and the caller-supplied metaLocator.
     /// @param proof         Encoded proof bytes.
     /// @param publicInputs  224-byte ABI-encoded public inputs.
     /// @param metaLocator   Optional off-chain locator (capped at 96 bytes).
@@ -191,15 +205,19 @@ contract WorldlineFinalizer is Ownable {
         bytes calldata metaLocator
     ) external whenNotPaused {
         if (metaLocator.length > 96) revert LocatorTooLong();
-        _submit(proof, publicInputs);
+        bytes32 proverSetDigest = _submit(proof, publicInputs);
+        emit ManifestAnnounced(proverSetDigest, metaLocator);
     }
 
     // ── Internal ────────────────────────────────────────────────────────────────
 
+    /// @dev Core submission logic. Returns the proverSetDigest for optional event emission.
+    ///      LOW-005 remediation: state updates occur before the external adapter.verify() call
+    ///      to follow the Checks-Effects-Interactions pattern and prevent reentrancy.
     function _submit(
         bytes calldata proof,
         bytes calldata publicInputs
-    ) internal {
+    ) internal returns (bytes32) {
         // Auth check
         if (!permissionless && !submitters[msg.sender] && msg.sender != owner()) {
             revert NotAuthorized();
@@ -239,15 +257,34 @@ contract WorldlineFinalizer is Ownable {
         // Window range: l2End must be strictly greater than l2Start
         if (l2End <= l2Start) revert InvalidWindowRange();
 
-        // Contiguity: l2Start must equal lastL2EndBlock (except for genesis window)
-        if (nextWindowIndex > 0 && l2Start != lastL2EndBlock) revert NotContiguous();
+        // Contiguity: l2Start must equal lastL2EndBlock (or genesisL2Block for the first window).
+        // LOW-003 remediation: genesis window l2Start is validated against the constructor anchor.
+        if (nextWindowIndex == 0) {
+            if (l2Start != genesisL2Block) revert GenesisStartMismatch(genesisL2Block, l2Start);
+        } else {
+            if (l2Start != lastL2EndBlock) revert NotContiguous();
+        }
 
         // Staleness
         if (maxAcceptanceDelay > 0 && block.timestamp > windowCloseTimestamp + maxAcceptanceDelay) {
             revert TooOld();
         }
 
-        // Verify via adapter
+        // Suppress unused variable warnings — l1BlockHash and outputRoot are
+        // bound inside publicInputs and verified through the adapter's
+        // stfCommitment check. We decode them to ensure the ABI is well-formed
+        // but do not need to reference them individually here.
+        l1BlockHash;
+        outputRoot;
+
+        // ── Effects (LOW-005 CEI remediation) ─────────────────────────────────
+        // Update state BEFORE the external adapter.verify() call to prevent
+        // reentrancy from replaying the same window index.
+        uint256 windowIndex = nextWindowIndex;
+        nextWindowIndex = windowIndex + 1;
+        lastL2EndBlock = l2End;
+
+        // ── Interactions ──────────────────────────────────────────────────────
         (
             bool valid,
             bytes32 verifiedStfCommitment,
@@ -258,20 +295,10 @@ contract WorldlineFinalizer is Ownable {
         if (!valid) revert ProofInvalid();
         if (verifiedStfCommitment != stfCommitment) revert StfMismatch();
 
-        // Suppress unused variable warnings — l1BlockHash and outputRoot are
-        // bound inside publicInputs and verified through the adapter's
-        // stfCommitment check. We decode them to ensure the ABI is well-formed
-        // but do not need to reference them individually here.
-        l1BlockHash;
-        outputRoot;
-
-        // Update state
-        uint256 windowIndex = nextWindowIndex;
-        nextWindowIndex = windowIndex + 1;
-        lastL2EndBlock = l2End;
-
         // Emit events
         emit OutputProposed(windowIndex, outputRoot, l2Start, l2End, stfCommitment);
         emit ZkProofAccepted(windowIndex, programVKey, policyHash, proverSetDigest);
+
+        return proverSetDigest;
     }
 }

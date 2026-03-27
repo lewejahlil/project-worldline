@@ -33,7 +33,7 @@ async function deployStack() {
   );
 
   const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-  const finalizer = await Finalizer.deploy(await adapter.getAddress(), DOMAIN, 3600);
+  const finalizer = await Finalizer.deploy(await adapter.getAddress(), DOMAIN, 3600, 0);
   await finalizer.setPermissionless(true);
 
   return { finalizer, owner };
