@@ -175,7 +175,15 @@ No references to L2BEAT, stage compliance, or stage classifications exist in the
 - `ts-prune` reports only `hardhat.config.ts:43 - default` as an unused export (the default Hardhat config export — false positive).
 - No orphaned modules detected.
 
-**Assessment: CLEAN.** No dead code or stale scaffolding.
+### Additional Findings
+
+| Finding | File | Severity | Description |
+|---------|------|----------|-------------|
+| DEAD-1 | `crates/worldline-registry/Cargo.toml` | **Low** | `url` dependency imported but never used in any `.rs` file — candidate for removal. |
+| DEAD-2 | `crates/worldline-driver/src/aggregator.rs:76-82` | **Low** | Unreachable branch: `verify_directory_signature()` can only return `Ok(true)` or `Err(...)`, so the `Ok(false)` handler is dead code. |
+| DEAD-3 | `crates/worldline-driver/fixtures/sample-directory.json` | **Medium** | JSON fixture includes `endpoints` and `attestations` fields silently dropped during deserialization (not in Rust `DirectoryEntry` struct), despite `endpoints` being REQUIRED in `schemas/directory.schema.json`. |
+
+**Assessment: Mostly clean.** Three minor items identified above.
 
 ---
 
@@ -214,7 +222,11 @@ The CI pipeline (`ci.yml` lines 181-208) includes:
 
 The `docs/security/zk-ceremony.md` documents the ceremony process.
 
-**Finding:** The current circuit (`SquareHash`) is a minimal demo. For production, a proper trusted setup ceremony with community participation would be required for any non-trivial circuit.
+**Findings:**
+- The current circuit (`SquareHash`) is a minimal demo. For production, a proper trusted setup ceremony with community participation would be required for any non-trivial circuit.
+- PTAU file: `powersOfTau28_hez_final_10.ptau` from Hermez/iden3 ceremony, verified via SHA-256 hash (`53d0e9...edf4`). **SAFE.**
+- Development ceremony uses a **single contributor** + **fixed placeholder beacon** (`0102...1f20`). This is explicitly marked "NOT safe for production" in `docs/security/zk-ceremony.md:15`. Production requires minimum 5 independent contributors with pre-committed verifiable random beacon.
+- Contribution entropy sourced from `crypto.randomBytes(32)` (Node.js CSPRNG). **SAFE for dev.**
 
 ### Rust Randomness
 
