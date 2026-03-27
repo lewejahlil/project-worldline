@@ -83,6 +83,20 @@ async function deployContract(
 
 // ── Proof encoding (matches WorldlineFinalizer test helpers) ─────────────────
 
+// MED-001: stfCommitment must equal keccak256(abi.encode(l2Start, l2End, outputRoot,
+// l1BlockHash, domainSeparator, windowCloseTimestamp)) to pass the on-chain binding check.
+function computeStfCommitment(
+  l2Start: bigint,
+  l2End: bigint,
+  windowCloseTimestamp: bigint
+): string {
+  const encoded = ethers.AbiCoder.defaultAbiCoder().encode(
+    ["uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
+    [l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, windowCloseTimestamp]
+  );
+  return ethers.keccak256(encoded);
+}
+
 function encodePublicInputs(
   stfCommitment: string,
   l2Start: bigint,
@@ -285,7 +299,9 @@ async function main(): Promise<void> {
     for (let i = 0; i < 3; i++) {
       const l2Start = l2Cursor;
       const l2End = l2Cursor + BigInt(100);
-      const stf = ethers.keccak256(ethers.toUtf8Bytes(`stf-smoke-window-${i}`));
+      // MED-001: stfCommitment must be keccak256(abi.encode(l2Start, l2End, outputRoot,
+      // l1BlockHash, domainSep, windowCloseTimestamp)) to pass on-chain binding check.
+      const stf = computeStfCommitment(l2Start, l2End, ts);
       const proof = encodeProof(stf);
       const inputs = encodePublicInputs(stf, l2Start, l2End, ts);
 

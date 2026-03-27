@@ -245,11 +245,7 @@ mod tests {
         let sk = test_signing_key();
         let dir = sign_directory(&sk, sample_entries());
         let result = verify_directory_signature(&dir);
-        assert_eq!(
-            result.unwrap(),
-            true,
-            "valid signature should return Ok(true)"
-        );
+        assert!(result.unwrap(), "valid signature should return Ok(true)");
     }
 
     #[test]
