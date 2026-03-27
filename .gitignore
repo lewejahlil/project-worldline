@@ -21,6 +21,8 @@ cache/
 # Foundry
 contracts/out/
 contracts/cache/
+out/
+lcov.info
 
 # Rust
 Cargo.lock
