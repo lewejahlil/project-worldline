@@ -142,7 +142,8 @@ No references to L2BEAT, stage compliance, or stage classifications exist in the
 |---------|----------|-------------|
 | TEST-1 | **Medium** | No test for max-size batch submission (only single proofs tested). |
 | TEST-2 | **Medium** | No test for empty batch / zero-proof submission edge case. |
-| TEST-3 | **Low** | `WorldlineCompat.sol` — tested but `propagateRegistration` and `propagateDeprecation` are the only paths. No negative-path tests for compat facade auth failures. |
+| TEST-3 | **Medium** | `WorldlineRegistry.setFacadeChangeDelay()` has no test coverage (no success, rejection, boundary, or event tests). |
+| TEST-3a | **Low** | `WorldlineCompat.sol` — tested but `propagateRegistration` and `propagateDeprecation` are the only paths. No negative-path tests for compat facade auth failures. |
 | TEST-4 | **Low** | No Plonk or Halo2 test paths (expected — those proof systems are unimplemented). |
 
 ### Rust Test Suite (91 tests across multiple crates)
