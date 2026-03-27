@@ -107,7 +107,9 @@ describe("WorldlineRegistry", function () {
 
     it("non-owner cannot set the compat facade", async function () {
       const { registry, stranger } = await loadFixture(deployFixture);
-      await expect(registry.connect(stranger).setCompatFacade(stranger.address)).to.be.revertedWithCustomError(registry, "NotOwner");
+      await expect(
+        registry.connect(stranger).setCompatFacade(stranger.address)
+      ).to.be.revertedWithCustomError(registry, "NotOwner");
     });
 
     it("compat facade can be disabled via timelocked two-step", async function () {

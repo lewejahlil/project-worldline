@@ -35,9 +35,7 @@ async function getVKey(): Promise<object> {
 // INF-005: isValid output was removed from the circuit. The witness now
 // only contains the constraint wire for `computed === publicHash`.
 // A successful return means the constraints were satisfied.
-async function computeWitness(
-  inputs: Record<string, bigint | number>
-): Promise<void> {
+async function computeWitness(inputs: Record<string, bigint | number>): Promise<void> {
   await snarkjs.wtns.calculate(inputs, WASM_PATH, {});
 }
 

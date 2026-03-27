@@ -99,9 +99,8 @@ pub fn verify_directory_signature(directory: &SignedDirectory) -> Result<bool, D
     let signature = Signature::from_slice(rs_bytes)
         .map_err(|e| DirectoryError::RecoveryFailed(format!("invalid signature bytes: {e}")))?;
     let recovery_id = RecoveryId::new(v != 0, false);
-    let verifying_key =
-        VerifyingKey::recover_from_prehash(&eth_hash, &signature, recovery_id)
-            .map_err(|e| DirectoryError::RecoveryFailed(format!("key recovery failed: {e}")))?;
+    let verifying_key = VerifyingKey::recover_from_prehash(&eth_hash, &signature, recovery_id)
+        .map_err(|e| DirectoryError::RecoveryFailed(format!("key recovery failed: {e}")))?;
 
     // Step 6: Derive the Ethereum address from the uncompressed public key.
     let recovered_address = pubkey_to_eth_address(&verifying_key);
@@ -246,7 +245,11 @@ mod tests {
         let sk = test_signing_key();
         let dir = sign_directory(&sk, sample_entries());
         let result = verify_directory_signature(&dir);
-        assert_eq!(result.unwrap(), true, "valid signature should return Ok(true)");
+        assert_eq!(
+            result.unwrap(),
+            true,
+            "valid signature should return Ok(true)"
+        );
     }
 
     #[test]
@@ -257,8 +260,10 @@ mod tests {
         dir.entries[0].prover_id = "evil-prover".to_string();
         let result = verify_directory_signature(&dir);
         assert!(
-            matches!(result, Err(DirectoryError::SignerMismatch { .. })
-                           | Err(DirectoryError::RecoveryFailed(_))),
+            matches!(
+                result,
+                Err(DirectoryError::SignerMismatch { .. }) | Err(DirectoryError::RecoveryFailed(_))
+            ),
             "tampered directory should fail verification, got: {result:?}"
         );
     }

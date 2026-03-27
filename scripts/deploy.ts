@@ -57,7 +57,9 @@ async function main() {
   const MULTISIG_ADDRESS = process.env["MULTISIG_ADDRESS"] ?? "";
   const isDevNetwork = network.name === "hardhat" || network.name === "localhost";
   if (!MULTISIG_ADDRESS && !isDevNetwork) {
-    console.error("ERROR: MULTISIG_ADDRESS environment variable is required for non-dev deployments.");
+    console.error(
+      "ERROR: MULTISIG_ADDRESS environment variable is required for non-dev deployments."
+    );
     console.error("Set MULTISIG_ADDRESS to the multisig that should own the deployed contracts.");
     process.exit(1);
   }
@@ -100,7 +102,12 @@ async function main() {
   // ── 4. Deploy WorldlineFinalizer ────────────────────────────────────────────
   console.log("4. Deploying WorldlineFinalizer…");
   const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-  const finalizer = await Finalizer.deploy(adapterAddr, DOMAIN_SEPARATOR, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK);
+  const finalizer = await Finalizer.deploy(
+    adapterAddr,
+    DOMAIN_SEPARATOR,
+    MAX_ACCEPTANCE_DELAY,
+    GENESIS_L2_BLOCK
+  );
   await finalizer.waitForDeployment();
   const finalizerAddr = await finalizer.getAddress();
   console.log(`   WorldlineFinalizer: ${finalizerAddr}`);
@@ -134,19 +141,27 @@ async function main() {
     // WorldlineFinalizer — two-step transfer (HI-003).
     const finalizerTx = await finalizer.transferOwnership(MULTISIG_ADDRESS);
     await finalizerTx.wait();
-    console.log(`   WorldlineFinalizer.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`);
+    console.log(
+      `   WorldlineFinalizer.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`
+    );
 
     // WorldlineRegistry — two-step transfer (HI-003).
     const registryTx = await registry.transferOwnership(MULTISIG_ADDRESS);
     await registryTx.wait();
-    console.log(`   WorldlineRegistry.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`);
+    console.log(
+      `   WorldlineRegistry.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`
+    );
 
     // WorldlineOutputsRegistry — two-step transfer (HI-003).
     const outputsTx = await outputsRegistry.transferOwnership(MULTISIG_ADDRESS);
     await outputsTx.wait();
-    console.log(`   WorldlineOutputsRegistry.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`);
+    console.log(
+      `   WorldlineOutputsRegistry.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`
+    );
 
-    console.log("   ⚠  Multisig must call acceptOwnership() on each contract to complete the transfer.");
+    console.log(
+      "   ⚠  Multisig must call acceptOwnership() on each contract to complete the transfer."
+    );
   } else {
     console.log("8. Skipping ownership transfer (dev network).");
   }

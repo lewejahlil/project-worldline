@@ -14,10 +14,11 @@ async function main(): Promise<void> {
   // intermediate (unfinished ceremony) key. This is a CRI-002 remediation guard.
   const zkeyFilename = path.basename(ZKEY_PATH);
   if (!zkeyFilename.endsWith("_final.zkey")) {
-    console.error( // eslint-disable-line no-console
+    console.error(
+      // eslint-disable-line no-console
       `ERROR: ZKEY_PATH must point to a *_final.zkey file, got: ${zkeyFilename}\n` +
-      "Exporting from an intermediate zkey (e.g. worldline_0000.zkey) is unsafe.\n" +
-      "Run the full ceremony: npm run c:setup"
+        "Exporting from an intermediate zkey (e.g. worldline_0000.zkey) is unsafe.\n" +
+        "Run the full ceremony: npm run c:setup"
     );
     process.exit(1);
   }
@@ -41,9 +42,10 @@ async function main(): Promise<void> {
     }
     console.log("zkey verification passed ✓"); // eslint-disable-line no-console
   } else {
-    console.warn( // eslint-disable-line no-console
+    console.warn(
+      // eslint-disable-line no-console
       "WARNING: r1cs or ptau not found — skipping zkey verify.\n" +
-      "  Run 'npm run c:setup:verify' manually to verify the zkey."
+        "  Run 'npm run c:setup:verify' manually to verify the zkey."
     );
   }
 

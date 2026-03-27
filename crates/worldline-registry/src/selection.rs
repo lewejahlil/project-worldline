@@ -557,7 +557,15 @@ mod tests {
     fn max_manifest_entries_enforced() {
         // Create 10 entries across 10 families — exceeds MAX_MANIFEST_ENTRIES (8).
         let entries: Vec<DirectoryEntry> = (0..10)
-            .map(|i| entry(&format!("p{i}"), &format!("f{i}"), 100, 10, HealthStatus::Healthy))
+            .map(|i| {
+                entry(
+                    &format!("p{i}"),
+                    &format!("f{i}"),
+                    100,
+                    10,
+                    HealthStatus::Healthy,
+                )
+            })
             .collect();
         let policy = Policy {
             min_count: 10,
@@ -565,17 +573,22 @@ mod tests {
             ..basic_policy()
         };
         let result = select(&entries, &policy);
-        assert!(matches!(
-            result,
-            Err(SelectionError::ManifestTooLarge(10))
-        ));
+        assert!(matches!(result, Err(SelectionError::ManifestTooLarge(10))));
     }
 
     #[test]
     fn exactly_max_manifest_entries_succeeds() {
         // 8 entries across 8 families — exactly at the limit.
         let entries: Vec<DirectoryEntry> = (0..8)
-            .map(|i| entry(&format!("p{i}"), &format!("f{i}"), 100, 10, HealthStatus::Healthy))
+            .map(|i| {
+                entry(
+                    &format!("p{i}"),
+                    &format!("f{i}"),
+                    100,
+                    10,
+                    HealthStatus::Healthy,
+                )
+            })
             .collect();
         let policy = Policy {
             min_count: 8,
@@ -634,8 +647,15 @@ mod tests {
             ..basic_policy()
         };
         let result = select(&entries, &policy).unwrap();
-        let ids: Vec<&str> = result.selected.iter().map(|e| e.prover_id.as_str()).collect();
-        assert!(ids.contains(&"d1"), "degraded prover should be included when allowed");
+        let ids: Vec<&str> = result
+            .selected
+            .iter()
+            .map(|e| e.prover_id.as_str())
+            .collect();
+        assert!(
+            ids.contains(&"d1"),
+            "degraded prover should be included when allowed"
+        );
     }
 
     #[test]

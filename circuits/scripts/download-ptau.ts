@@ -161,10 +161,10 @@ export function verifyPtauIntegrity(filePath: string, expectedSha256: string): P
         reject(
           new Error(
             `ptau integrity check FAILED.\n` +
-            `  Expected SHA-256: ${expectedSha256}\n` +
-            `  Actual SHA-256:   ${actual}\n` +
-            `  File: ${filePath}\n` +
-            `The file has been deleted. Re-run the download.`
+              `  Expected SHA-256: ${expectedSha256}\n` +
+              `  Actual SHA-256:   ${actual}\n` +
+              `  File: ${filePath}\n` +
+              `The file has been deleted. Re-run the download.`
           )
         );
       }

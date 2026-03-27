@@ -1048,12 +1048,12 @@ Pin to an exact version: `"snarkjs": "0.7.4"` (or whichever version is confirmed
 
 ### v1.1 Remediation Test Results
 
-| Suite | Tests | Status |
-|-------|-------|--------|
-| Foundry (forge test) | 63 | All pass |
-| Hardhat (npx hardhat test) | 119 | All pass |
-| Cargo (cargo test --all) | 91 | All pass |
-| **Total** | **273** | **All pass** |
+| Suite                      | Tests   | Status       |
+| -------------------------- | ------- | ------------ |
+| Foundry (forge test)       | 63      | All pass     |
+| Hardhat (npx hardhat test) | 119     | All pass     |
+| Cargo (cargo test --all)   | 91      | All pass     |
+| **Total**                  | **273** | **All pass** |
 
 ### Solidity
 
@@ -1132,26 +1132,26 @@ The Rust test suite (91 tests) is comprehensive. CRI-001 remediation added real 
 
 ## Appendix B — External Call Inventory
 
-| Caller               | Callee                              | Function                              | Trust Level                     | Notes                                              |
-| -------------------- | ----------------------------------- | ------------------------------------- | ------------------------------- | -------------------------------------------------- |
+| Caller               | Callee                              | Function                              | Trust Level                     | Notes                                                          |
+| -------------------- | ----------------------------------- | ------------------------------------- | ------------------------------- | -------------------------------------------------------------- |
 | `WorldlineFinalizer` | `IZkAggregatorVerifier` (adapter)   | `verify(proof, publicInputs)`         | Trusted (owner-set, timelocked) | CEI compliant — state updated before call (LOW-005 remediated) |
-| `WorldlineRegistry`  | `Verifier` (defaultVerifier)        | `verifyProof(secret, publicHash)`     | Trusted (immutable)             | Dev-only; exposes secret (HI-004)                  |
-| `WorldlineRegistry`  | Per-circuit verifier address        | `verifyProof(secret, publicHash)`     | Semi-trusted (owner-registered) | Arbitrary address; dev-only                        |
-| `WorldlineCompat`    | `WorldlineRegistry`                 | All registry mutations                | Trusted (immutable)             | Compat must be set as `compatFacade` first         |
-| `Groth16ZkAdapter`   | `Verifier` (dev mode, 64-byte path) | `verifyProof(secret, publicHash)`     | Trusted (immutable)             | Dev path only                                      |
-| `Groth16ZkAdapter`   | `Groth16Verifier` (prod mode)       | `verifyProof(pA, pB, pC, pubSignals)` | Trusted (immutable)             | Placeholder; zero-filled inputs (CRI-003)          |
+| `WorldlineRegistry`  | `Verifier` (defaultVerifier)        | `verifyProof(secret, publicHash)`     | Trusted (immutable)             | Dev-only; exposes secret (HI-004)                              |
+| `WorldlineRegistry`  | Per-circuit verifier address        | `verifyProof(secret, publicHash)`     | Semi-trusted (owner-registered) | Arbitrary address; dev-only                                    |
+| `WorldlineCompat`    | `WorldlineRegistry`                 | All registry mutations                | Trusted (immutable)             | Compat must be set as `compatFacade` first                     |
+| `Groth16ZkAdapter`   | `Verifier` (dev mode, 64-byte path) | `verifyProof(secret, publicHash)`     | Trusted (immutable)             | Dev path only                                                  |
+| `Groth16ZkAdapter`   | `Groth16Verifier` (prod mode)       | `verifyProof(pA, pB, pC, pubSignals)` | Trusted (immutable)             | Placeholder; zero-filled inputs (CRI-003)                      |
 
 ---
 
 ## Appendix C — Privileged Role and Key Custody Inventory
 
-| Role                | Contract(s)          | Permissions                                                              | Current Custody                           | Timelock | Risk                                     |
-| ------------------- | -------------------- | ------------------------------------------------------------------------ | ----------------------------------------- | -------- | ---------------------------------------- |
-| `owner`             | All 4 contracts      | All admin functions including `scheduleAdapterChange`, `setMinTimelock`, `schedule` | Two-step transfer; deploy.ts transfers to MULTISIG_ADDRESS | 1 day+ (adapter), 1 hour+ (timelock) | Remediated — HI-001/HI-003/INF-002 |
-| `submitter`         | `WorldlineFinalizer` | Submit proofs (permissioned mode)                                        | Set by owner                              | None     | Low                                      |
-| `compatFacade`      | `WorldlineRegistry`  | Register/deprecate circuits, drivers, plugins                            | Set by owner; currently `WorldlineCompat` | 1 day+ (timelocked change) | Remediated — MED-005 |
-| Directory signer    | Off-chain aggregator | Sign `SignedDirectory` JSON                                              | Not yet configured                        | N/A      | Remediated — CRI-001 (real secp256k1 verification) |
-| Aggregator operator | Off-chain            | Build manifest, submit proofs                                            | Not yet configured                        | N/A      | High — single PoF without redundancy     |
+| Role                | Contract(s)          | Permissions                                                                         | Current Custody                                            | Timelock                             | Risk                                               |
+| ------------------- | -------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------ | -------------------------------------------------- |
+| `owner`             | All 4 contracts      | All admin functions including `scheduleAdapterChange`, `setMinTimelock`, `schedule` | Two-step transfer; deploy.ts transfers to MULTISIG_ADDRESS | 1 day+ (adapter), 1 hour+ (timelock) | Remediated — HI-001/HI-003/INF-002                 |
+| `submitter`         | `WorldlineFinalizer` | Submit proofs (permissioned mode)                                                   | Set by owner                                               | None                                 | Low                                                |
+| `compatFacade`      | `WorldlineRegistry`  | Register/deprecate circuits, drivers, plugins                                       | Set by owner; currently `WorldlineCompat`                  | 1 day+ (timelocked change)           | Remediated — MED-005                               |
+| Directory signer    | Off-chain aggregator | Sign `SignedDirectory` JSON                                                         | Not yet configured                                         | N/A                                  | Remediated — CRI-001 (real secp256k1 verification) |
+| Aggregator operator | Off-chain            | Build manifest, submit proofs                                                       | Not yet configured                                         | N/A                                  | High — single PoF without redundancy               |
 
 **Minimum viable custody before mainnet:** Transfer all contract ownership to a Gnosis Safe ≥ 2-of-3. All threshold signers must use hardware wallets with transaction details confirmed on the device screen (mitigates Bybit-class blind-signing attacks). Establish a key rotation procedure and emergency pause runbook.
 

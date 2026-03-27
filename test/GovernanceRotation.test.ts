@@ -172,8 +172,9 @@ describe("GovernanceRotation", function () {
 
     // ── Step 8: Schedule + activate the new adapter on the Finalizer ─────────
     // HI-001: setAdapter is replaced by a two-step timelocked process.
-    await expect(finalizer.connect(owner).scheduleAdapterChange(await adapterV2.getAddress()))
-      .to.emit(finalizer, "AdapterChangeScheduled");
+    await expect(
+      finalizer.connect(owner).scheduleAdapterChange(await adapterV2.getAddress())
+    ).to.emit(finalizer, "AdapterChangeScheduled");
 
     // Fast-forward past the adapter change delay (1 day default)
     await time.increase(86401);

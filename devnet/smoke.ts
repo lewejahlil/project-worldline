@@ -247,7 +247,8 @@ async function main(): Promise<void> {
       "WorldlineFinalizer",
       await adapter.getAddress(),
       DOMAIN,
-      MAX_ACCEPTANCE_DELAY
+      MAX_ACCEPTANCE_DELAY,
+      0 // genesisL2Block (LOW-003)
     );
     const outputsRegistry = await deployContract(wallet, "WorldlineOutputsRegistry", 86400);
     const compat = await deployContract(wallet, "WorldlineCompat", await registry.getAddress());

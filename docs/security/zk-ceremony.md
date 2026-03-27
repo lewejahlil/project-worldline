@@ -81,6 +81,7 @@ snarkjs zkey export solidityverifier worldline_final.zkey Groth16Verifier.sol
 ### Verification Output
 
 The output of `snarkjs zkey verify` must be:
+
 - Saved as a text file and committed to the audit record
 - Included in the ceremony transcript
 - Verified independently by at least 2 parties
@@ -100,6 +101,7 @@ The ceremony coordinator must publish a transcript containing:
 ### Security Properties
 
 As long as **at least one contributor** honestly generates random entropy and destroys it:
+
 - The toxic waste is unknown to any party
 - No party can forge proofs
 - The CRS is secure
