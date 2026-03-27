@@ -124,13 +124,15 @@ async function downloadWithRetry(): Promise<void> {
           console.error(`Failed to download ptau: HTTP ${statusCode}`);
           process.exit(EXIT_CODES.HTTP);
         }
-        console.error(`Failed to download ptau after ${attempt} attempt(s): ${err.message}`);
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Failed to download ptau after ${attempt} attempt(s): ${msg}`);
         process.exit(statusCode ? EXIT_CODES.HTTP : EXIT_CODES.NETWORK);
       }
 
       const delayMs = 2000 * Math.pow(2, attempt - 1);
+      const retryMsg = err instanceof Error ? err.message : String(err);
       console.warn(
-        `Attempt ${attempt}/${MAX_RETRIES} failed: ${err.message}. Retrying in ${delayMs / 1000}s...`
+        `Attempt ${attempt}/${MAX_RETRIES} failed: ${retryMsg}. Retrying in ${delayMs / 1000}s...`
       );
       await sleep(delayMs);
     }
