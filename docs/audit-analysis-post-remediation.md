@@ -23,9 +23,9 @@ The Solidity contracts and TypeScript test harnesses are consistent:
 
 ### Findings
 
-| Finding | File | Line | Severity | Description |
-|---------|------|------|----------|-------------|
-| ABI-1 | `contracts/src/zk/Groth16ZkAdapter.sol` | 128-136 | **Medium** | Production mode decodes proof into `memory` arrays (`pA`, `pB`, `pC`) instead of using `calldata` slicing. Gas optimization opportunity — see Chunk 2A. |
+| Finding | File                                    | Line    | Severity   | Description                                                                                                                                             |
+| ------- | --------------------------------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ABI-1   | `contracts/src/zk/Groth16ZkAdapter.sol` | 128-136 | **Medium** | Production mode decodes proof into `memory` arrays (`pA`, `pB`, `pC`) instead of using `calldata` slicing. Gas optimization opportunity — see Chunk 2A. |
 
 ---
 
@@ -33,27 +33,27 @@ The Solidity contracts and TypeScript test harnesses are consistent:
 
 ### Coverage Matrix
 
-| Component | Groth16 | Plonk | Halo2 |
-|-----------|---------|-------|-------|
-| Solidity verifier contract | Placeholder (returns true on chainid 31337) | **NOT IMPLEMENTED** | **NOT IMPLEMENTED** |
-| Adapter (IZkAggregatorVerifier) | `Groth16ZkAdapter` (dev + prod mode) | **NOT IMPLEMENTED** | **NOT IMPLEMENTED** |
-| Circuit compilation path | `circuits/worldline.circom` (SquareHash demo) | **NOT IMPLEMENTED** | **NOT IMPLEMENTED** |
-| Proof generation flow | Dev path via snarkjs | **NOT IMPLEMENTED** | **NOT IMPLEMENTED** |
-| Test coverage | 113 Hardhat tests (Groth16 path only) | None | None |
-| Rust registry support | Backend kind `"groth16"` tested | Conceptual only | Conceptual only |
-| Recursion circuit | Not implemented (placeholder README) | Not implemented | Not implemented |
+| Component                       | Groth16                                       | Plonk               | Halo2               |
+| ------------------------------- | --------------------------------------------- | ------------------- | ------------------- |
+| Solidity verifier contract      | Placeholder (returns true on chainid 31337)   | **NOT IMPLEMENTED** | **NOT IMPLEMENTED** |
+| Adapter (IZkAggregatorVerifier) | `Groth16ZkAdapter` (dev + prod mode)          | **NOT IMPLEMENTED** | **NOT IMPLEMENTED** |
+| Circuit compilation path        | `circuits/worldline.circom` (SquareHash demo) | **NOT IMPLEMENTED** | **NOT IMPLEMENTED** |
+| Proof generation flow           | Dev path via snarkjs                          | **NOT IMPLEMENTED** | **NOT IMPLEMENTED** |
+| Test coverage                   | 113 Hardhat tests (Groth16 path only)         | None                | None                |
+| Rust registry support           | Backend kind `"groth16"` tested               | Conceptual only     | Conceptual only     |
+| Recursion circuit               | Not implemented (placeholder README)          | Not implemented     | Not implemented     |
 
 **Assessment: CRITICAL asymmetry.** Only Groth16 has any implementation. Plonk and Halo2 exist only as concepts in documentation. The Rust registry `BackendMeta.kind` field accepts arbitrary strings but no Plonk/Halo2-specific logic exists.
 
 ### Findings
 
-| Finding | File | Line | Severity | Description |
-|---------|------|------|----------|-------------|
-| PSP-1 | `contracts/src/zk/Groth16Verifier.sol` | 1-60 | **Critical** | Groth16Verifier is a placeholder that returns `true` on chainid 31337 only. No BN254 pairing checks implemented. |
-| PSP-2 | — | — | **Critical** | No Plonk verifier contract, adapter, or circuit exists anywhere in the codebase. |
-| PSP-3 | — | — | **Critical** | No Halo2 verifier contract, adapter, or circuit exists anywhere in the codebase. |
-| PSP-4 | `circuits/recursion/README.md` | 52-71 | **High** | Recursion circuits (`accum.circom`, `miniverifier.circom`) are documented but not implemented. |
-| PSP-5 | `contracts/src/zk/Verifier.sol` | 1-32 | **Medium** | Demo verifier uses plaintext `secret` on-chain (dev-only, gated by chainid 31337). |
+| Finding | File                                   | Line  | Severity     | Description                                                                                                      |
+| ------- | -------------------------------------- | ----- | ------------ | ---------------------------------------------------------------------------------------------------------------- |
+| PSP-1   | `contracts/src/zk/Groth16Verifier.sol` | 1-60  | **Critical** | Groth16Verifier is a placeholder that returns `true` on chainid 31337 only. No BN254 pairing checks implemented. |
+| PSP-2   | —                                      | —     | **Critical** | No Plonk verifier contract, adapter, or circuit exists anywhere in the codebase.                                 |
+| PSP-3   | —                                      | —     | **Critical** | No Halo2 verifier contract, adapter, or circuit exists anywhere in the codebase.                                 |
+| PSP-4   | `circuits/recursion/README.md`         | 52-71 | **High**     | Recursion circuits (`accum.circom`, `miniverifier.circom`) are documented but not implemented.                   |
+| PSP-5   | `contracts/src/zk/Verifier.sol`        | 1-32  | **Medium**   | Demo verifier uses plaintext `secret` on-chain (dev-only, gated by chainid 31337).                               |
 
 ---
 
@@ -61,23 +61,23 @@ The Solidity contracts and TypeScript test harnesses are consistent:
 
 ### Solidity vs. Rust Registry Comparison
 
-| Aspect | Solidity (`WorldlineRegistry`) | Rust (`RegistrySnapshot`) |
-|--------|-------------------------------|--------------------------|
-| Circuit ID format | `bytes32` (hash) | `String` (human-readable) |
-| Circuit fields | id, description, verifier, abiURI | id, version, public_inputs |
-| Plugin fields | id, version, implementation, circuitId, deprecated | id, version, backend |
-| Driver concept | Has `Driver` struct (id, version, endpoint) | No direct equivalent (uses `BackendMeta`) |
-| Duplicate detection | `mapping(bytes32 => bool)` | `HashSet<String>` in-memory index |
-| Serialization | On-chain storage (mappings) | JSON via `serde_json` |
-| Versioning | No version field on circuits | Has `version` field, composite `id@version` key |
+| Aspect              | Solidity (`WorldlineRegistry`)                     | Rust (`RegistrySnapshot`)                       |
+| ------------------- | -------------------------------------------------- | ----------------------------------------------- |
+| Circuit ID format   | `bytes32` (hash)                                   | `String` (human-readable)                       |
+| Circuit fields      | id, description, verifier, abiURI                  | id, version, public_inputs                      |
+| Plugin fields       | id, version, implementation, circuitId, deprecated | id, version, backend                            |
+| Driver concept      | Has `Driver` struct (id, version, endpoint)        | No direct equivalent (uses `BackendMeta`)       |
+| Duplicate detection | `mapping(bytes32 => bool)`                         | `HashSet<String>` in-memory index               |
+| Serialization       | On-chain storage (mappings)                        | JSON via `serde_json`                           |
+| Versioning          | No version field on circuits                       | Has `version` field, composite `id@version` key |
 
 ### Findings
 
-| Finding | File | Line | Severity | Description |
-|---------|------|------|----------|-------------|
-| REG-1 | — | — | **Medium** | Circuit ID schemas diverge: Solidity uses `bytes32` hashes, Rust uses human-readable strings with `id@version` composite keys. No canonical mapping between them exists. |
-| REG-2 | — | — | **Low** | Solidity `WorldlineRegistry` has no `version` field on circuits; Rust `CircuitMeta` does. Field ordering differs between the two registries. |
-| REG-3 | — | — | **Low** | Rust registry has `BackendMeta` (id, kind, versions); Solidity has `Driver` (id, version, endpoint). These serve different conceptual roles — not a direct mismatch but could cause confusion. |
+| Finding | File | Line | Severity   | Description                                                                                                                                                                                    |
+| ------- | ---- | ---- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| REG-1   | —    | —    | **Medium** | Circuit ID schemas diverge: Solidity uses `bytes32` hashes, Rust uses human-readable strings with `id@version` composite keys. No canonical mapping between them exists.                       |
+| REG-2   | —    | —    | **Low**    | Solidity `WorldlineRegistry` has no `version` field on circuits; Rust `CircuitMeta` does. Field ordering differs between the two registries.                                                   |
+| REG-3   | —    | —    | **Low**    | Rust registry has `BackendMeta` (id, kind, versions); Solidity has `Driver` (id, version, endpoint). These serve different conceptual roles — not a direct mismatch but could cause confusion. |
 
 ---
 
@@ -88,15 +88,16 @@ The Solidity contracts and TypeScript test harnesses are consistent:
 The codebase has **no nullifier implementation**. Searching for "nullifier" across all Solidity, TypeScript, and Rust files returns zero results in application code.
 
 The `WorldlineFinalizer` uses a **window-index contiguity** model instead of nullifiers:
+
 - `nextWindowIndex` increments monotonically (line 284)
 - `lastL2EndBlock` enforces contiguous block ranges (line 265)
 - Replay protection is achieved by the contiguity check: submitting the same proof twice would fail because `l2Start != lastL2EndBlock` for the second submission
 
 This is a valid alternative to nullifier-based replay protection for a sequential proof submission model. However:
 
-| Finding | File | Line | Severity | Description |
-|---------|------|------|----------|-------------|
-| NUL-1 | `contracts/src/WorldlineFinalizer.sol` | 262-266 | **Low** | Replay protection relies on window contiguity only. No explicit nullifier/proof-hash storage. This is architecturally valid for sequential submission but does not prevent replay if the contract state is reset (e.g., proxy upgrade). |
+| Finding | File                                   | Line    | Severity | Description                                                                                                                                                                                                                             |
+| ------- | -------------------------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NUL-1   | `contracts/src/WorldlineFinalizer.sol` | 262-266 | **Low**  | Replay protection relies on window contiguity only. No explicit nullifier/proof-hash storage. This is architecturally valid for sequential submission but does not prevent replay if the contract state is reset (e.g., proxy upgrade). |
 
 ---
 
@@ -106,11 +107,11 @@ This is a valid alternative to nullifier-based replay protection for a sequentia
 
 Searching for `blobhash`, `BLOBBASEFEE`, `blob`, `type-3`, `versioned_hash`, `4844` across the entire codebase returns zero results in application code.
 
-| Finding | File | Line | Severity | Description |
-|---------|------|------|----------|-------------|
-| BLOB-1 | — | — | **High** | No EIP-4844 blob construction, submission, or verification exists. The entire blob path is unimplemented. |
-| BLOB-2 | — | — | **High** | No `blobhash()` opcode usage in any contract. No versioned hash verification. |
-| BLOB-3 | — | — | **Medium** | No blob fee estimation (`eth_blobBaseFee` RPC call) exists in any script or test. |
+| Finding | File | Line | Severity   | Description                                                                                               |
+| ------- | ---- | ---- | ---------- | --------------------------------------------------------------------------------------------------------- |
+| BLOB-1  | —    | —    | **High**   | No EIP-4844 blob construction, submission, or verification exists. The entire blob path is unimplemented. |
+| BLOB-2  | —    | —    | **High**   | No `blobhash()` opcode usage in any contract. No versioned hash verification.                             |
+| BLOB-3  | —    | —    | **Medium** | No blob fee estimation (`eth_blobBaseFee` RPC call) exists in any script or test.                         |
 
 ---
 
@@ -127,6 +128,7 @@ No references to L2BEAT, stage compliance, or stage classifications exist in the
 ### Hardhat Test Suite (113 tests across 11 files)
 
 **Well-covered areas:**
+
 - WorldlineFinalizer: submission, contiguity, staleness, domain binding, adapter timelock, governance
 - WorldlineRegistry: circuit/driver/plugin CRUD, facade timelock, dev-only verify
 - WorldlineOutputsRegistry: schedule/activate flow, timelock, zero-value guards
@@ -138,17 +140,18 @@ No references to L2BEAT, stage compliance, or stage classifications exist in the
 
 **Gaps identified:**
 
-| Finding | Severity | Description |
-|---------|----------|-------------|
-| TEST-1 | **Medium** | No test for max-size batch submission (only single proofs tested). |
-| TEST-2 | **Medium** | No test for empty batch / zero-proof submission edge case. |
-| TEST-3 | **Medium** | `WorldlineRegistry.setFacadeChangeDelay()` has no test coverage (no success, rejection, boundary, or event tests). |
-| TEST-3a | **Low** | `WorldlineCompat.sol` — tested but `propagateRegistration` and `propagateDeprecation` are the only paths. No negative-path tests for compat facade auth failures. |
-| TEST-4 | **Low** | No Plonk or Halo2 test paths (expected — those proof systems are unimplemented). |
+| Finding | Severity   | Description                                                                                                                                                       |
+| ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TEST-1  | **Medium** | No test for max-size batch submission (only single proofs tested).                                                                                                |
+| TEST-2  | **Medium** | No test for empty batch / zero-proof submission edge case.                                                                                                        |
+| TEST-3  | **Medium** | `WorldlineRegistry.setFacadeChangeDelay()` has no test coverage (no success, rejection, boundary, or event tests).                                                |
+| TEST-3a | **Low**    | `WorldlineCompat.sol` — tested but `propagateRegistration` and `propagateDeprecation` are the only paths. No negative-path tests for compat facade auth failures. |
+| TEST-4  | **Low**    | No Plonk or Halo2 test paths (expected — those proof systems are unimplemented).                                                                                  |
 
 ### Rust Test Suite (91 tests across multiple crates)
 
 **Well-covered areas:**
+
 - Registry CRUD, duplicate detection, removal, roundtrip serialization (14 tests + proptests)
 - Canonical JSON hashing, shared test vectors (extensive)
 - Recursion witness building (7 tests)
@@ -158,30 +161,32 @@ No references to L2BEAT, stage compliance, or stage classifications exist in the
 
 **Gaps identified:**
 
-| Finding | Severity | Description |
-|---------|----------|-------------|
-| TEST-5 | **Medium** | No benchmark tests for snapshot save/load at scale (100, 1000, 10000 entries). Criterion benches exist but are compilation-only in CI. |
-| TEST-6 | **Low** | No stress test for concurrent registry operations (expected — no async registry access pattern yet). |
+| Finding | Severity   | Description                                                                                                                            |
+| ------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| TEST-5  | **Medium** | No benchmark tests for snapshot save/load at scale (100, 1000, 10000 entries). Criterion benches exist but are compilation-only in CI. |
+| TEST-6  | **Low**    | No stress test for concurrent registry operations (expected — no async registry access pattern yet).                                   |
 
 ---
 
 ## 1H. Dead Code & Stale Scaffolding
 
 ### Rust
+
 - `cargo check` reports **zero** unused code warnings.
 - No `#[allow(dead_code)]` or `#[allow(unused)]` attributes found.
 
 ### TypeScript
+
 - `ts-prune` reports only `hardhat.config.ts:43 - default` as an unused export (the default Hardhat config export — false positive).
 - No orphaned modules detected.
 
 ### Additional Findings
 
-| Finding | File | Severity | Description |
-|---------|------|----------|-------------|
-| DEAD-1 | `crates/worldline-registry/Cargo.toml` | **Low** | `url` dependency imported but never used in any `.rs` file — candidate for removal. |
-| DEAD-2 | `crates/worldline-driver/src/aggregator.rs:76-82` | **Low** | Unreachable branch: `verify_directory_signature()` can only return `Ok(true)` or `Err(...)`, so the `Ok(false)` handler is dead code. |
-| DEAD-3 | `crates/worldline-driver/fixtures/sample-directory.json` | **Medium** | JSON fixture includes `endpoints` and `attestations` fields silently dropped during deserialization (not in Rust `DirectoryEntry` struct), despite `endpoints` being REQUIRED in `schemas/directory.schema.json`. |
+| Finding | File                                                     | Severity   | Description                                                                                                                                                                                                       |
+| ------- | -------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DEAD-1  | `crates/worldline-registry/Cargo.toml`                   | **Low**    | `url` dependency imported but never used in any `.rs` file — candidate for removal.                                                                                                                               |
+| DEAD-2  | `crates/worldline-driver/src/aggregator.rs:76-82`        | **Low**    | Unreachable branch: `verify_directory_signature()` can only return `Ok(true)` or `Err(...)`, so the `Ok(false)` handler is dead code.                                                                             |
+| DEAD-3  | `crates/worldline-driver/fixtures/sample-directory.json` | **Medium** | JSON fixture includes `endpoints` and `attestations` fields silently dropped during deserialization (not in Rust `DirectoryEntry` struct), despite `endpoints` being REQUIRED in `schemas/directory.schema.json`. |
 
 **Assessment: Mostly clean.** Three minor items identified above.
 
@@ -191,19 +196,19 @@ No references to L2BEAT, stage compliance, or stage classifications exist in the
 
 ### Rust Stubs
 
-| File | Line | Marker | Severity | Description |
-|------|------|--------|----------|-------------|
-| `crates/worldline-driver/src/recursion.rs` | 76-79 | `# TODO` | **High** | `build_recursion_witness()` returns empty placeholder proof bytes. Actual inner proof collection from live prover endpoints is not implemented. |
-| `crates/worldline-driver/src/recursion.rs` | 105-110 | `// TODO` | **High** | Same function — the TODO explains that production would contact prover endpoints, request proofs, and validate against vkey commitments. |
+| File                                       | Line    | Marker    | Severity | Description                                                                                                                                     |
+| ------------------------------------------ | ------- | --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `crates/worldline-driver/src/recursion.rs` | 76-79   | `# TODO`  | **High** | `build_recursion_witness()` returns empty placeholder proof bytes. Actual inner proof collection from live prover endpoints is not implemented. |
+| `crates/worldline-driver/src/recursion.rs` | 105-110 | `// TODO` | **High** | Same function — the TODO explains that production would contact prover endpoints, request proofs, and validate against vkey commitments.        |
 
 ### Solidity/TypeScript Stubs
 
-| File | Line | Marker | Severity | Description |
-|------|------|--------|----------|-------------|
-| `contracts/src/zk/Groth16Verifier.sol` | 8 | `@dev TODO` | **Critical** | Entire verifier is a placeholder. Must be replaced with snarkjs-generated BN254 pairing checks. |
-| `contracts/src/zk/Groth16Verifier.sol` | 34 | `@dev TODO` | **Critical** | Function body returns `true` unconditionally on chainid 31337. |
-| `contracts/src/zk/Groth16ZkAdapter.sol` | 32 | `// TODO(circuit-team)` | **Medium** | Notes that if the outer circuit adds programVKey and policyHash as public inputs, pubSignals array needs updating. |
-| `circuits/recursion/README.md` | 52-55 | `## Files (TODO)` | **High** | `accum.circom` and `miniverifier.circom` listed as TODO, not yet implemented. |
+| File                                    | Line  | Marker                  | Severity     | Description                                                                                                        |
+| --------------------------------------- | ----- | ----------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `contracts/src/zk/Groth16Verifier.sol`  | 8     | `@dev TODO`             | **Critical** | Entire verifier is a placeholder. Must be replaced with snarkjs-generated BN254 pairing checks.                    |
+| `contracts/src/zk/Groth16Verifier.sol`  | 34    | `@dev TODO`             | **Critical** | Function body returns `true` unconditionally on chainid 31337.                                                     |
+| `contracts/src/zk/Groth16ZkAdapter.sol` | 32    | `// TODO(circuit-team)` | **Medium**   | Notes that if the outer circuit adds programVKey and policyHash as public inputs, pubSignals array needs updating. |
+| `circuits/recursion/README.md`          | 52-55 | `## Files (TODO)`       | **High**     | `accum.circom` and `miniverifier.circom` listed as TODO, not yet implemented.                                      |
 
 ---
 
@@ -216,6 +221,7 @@ snarkjs 0.7.6 handles blinding factors internally during proof generation using 
 ### .zkey Ceremony
 
 The CI pipeline (`ci.yml` lines 181-208) includes:
+
 - `npm run c:ptau` — downloads a Powers of Tau ceremony file
 - `npm run c:setup` — generates proving key
 - `npm run c:setup:verify` — independently verifies the zkey
@@ -223,6 +229,7 @@ The CI pipeline (`ci.yml` lines 181-208) includes:
 The `docs/security/zk-ceremony.md` documents the ceremony process.
 
 **Findings:**
+
 - The current circuit (`SquareHash`) is a minimal demo. For production, a proper trusted setup ceremony with community participation would be required for any non-trivial circuit.
 - PTAU file: `powersOfTau28_hez_final_10.ptau` from Hermez/iden3 ceremony, verified via SHA-256 hash (`53d0e9...edf4`). **SAFE.**
 - Development ceremony uses a **single contributor** + **fixed placeholder beacon** (`0102...1f20`). This is explicitly marked "NOT safe for production" in `docs/security/zk-ceremony.md:15`. Production requires minimum 5 independent contributors with pre-committed verifiable random beacon.
@@ -238,15 +245,15 @@ No `rand` crate usage exists in the Rust codebase. No randomness sources (RNG, C
 
 ## Summary of Critical/High Findings
 
-| ID | Severity | Category | Summary |
-|----|----------|----------|---------|
-| PSP-1 | Critical | Proof Parity | Groth16Verifier is a placeholder (always returns true on devnet) |
-| PSP-2 | Critical | Proof Parity | No Plonk verifier/adapter/circuit exists |
-| PSP-3 | Critical | Proof Parity | No Halo2 verifier/adapter/circuit exists |
-| PSP-4 | High | Proof Parity | Recursion circuits not implemented (README only) |
-| BLOB-1 | High | EIP-4844 | No blob construction/submission/verification |
-| BLOB-2 | High | EIP-4844 | No blobhash() verification on-chain |
-| 1I-Rust | High | Incomplete | Recursion witness returns empty placeholders |
+| ID      | Severity | Category     | Summary                                                          |
+| ------- | -------- | ------------ | ---------------------------------------------------------------- |
+| PSP-1   | Critical | Proof Parity | Groth16Verifier is a placeholder (always returns true on devnet) |
+| PSP-2   | Critical | Proof Parity | No Plonk verifier/adapter/circuit exists                         |
+| PSP-3   | Critical | Proof Parity | No Halo2 verifier/adapter/circuit exists                         |
+| PSP-4   | High     | Proof Parity | Recursion circuits not implemented (README only)                 |
+| BLOB-1  | High     | EIP-4844     | No blob construction/submission/verification                     |
+| BLOB-2  | High     | EIP-4844     | No blobhash() verification on-chain                              |
+| 1I-Rust | High     | Incomplete   | Recursion witness returns empty placeholders                     |
 
 ---
 
