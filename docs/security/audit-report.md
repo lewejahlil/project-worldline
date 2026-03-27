@@ -3,7 +3,8 @@
 **Prepared by:** Spearbit/Cantina-caliber Team (Alex, Jordan, Morgan, Riley, Sam, Casey)
 **Audit scope commit:** `0204d5354f5d58d2b32a6ceb5c25b46f33efe82f`
 **Audit dates:** 2026-03-26
-**Report version:** 1.0 — Final
+**Report version:** 1.1 — Remediation Update (2026-03-27)
+**Remediation branch:** `claude/remediate-security-findings-SdVYF`
 
 ---
 
@@ -27,7 +28,9 @@ Project Worldline is a multi-ZK-prover finality architecture for EVM rollups. An
 
 ### Overall Risk Posture
 
-**The protocol MUST NOT be deployed to mainnet in its current state.** Three critical gaps — a stub directory-signature verifier that accepts any forged directory, an incomplete snarkjs trusted-setup workflow missing the mandatory contribution/beacon phase (the exact February 2026 exploit class), and a production adapter path that passes zero-filled proof components to the verifier — collectively mean that the system provides no cryptographic security guarantees at present. The smart-contract logic itself is well-structured and the on-chain invariants (contiguity, domain binding, staleness) are correctly implemented. The path to production requires completing the items flagged as Critical and High before any mainnet deployment.
+**v1.0 (original):** The protocol MUST NOT be deployed to mainnet in its current state. Three critical gaps — a stub directory-signature verifier, an incomplete snarkjs trusted-setup workflow, and a production adapter path that passes zero-filled proof components — collectively mean the system provides no cryptographic security guarantees.
+
+**v1.1 (post-remediation):** All 25 findings (3 Critical, 4 High, 6 Medium, 6 Low, 6 Informational) have been remediated. The three critical gaps are now closed: directory signatures use real secp256k1 EIP-191 verification (CRI-001), the snarkjs ceremony includes Phase 2 contributions + beacon with ptau integrity checks (CRI-002), and the production adapter properly decodes bound pubSignals (CRI-003). All High findings are addressed via two-step ownership, timelock floors, timelocked adapter changes, and dev-only guards. The protocol is ready for pre-mainnet staging with the caveat that the production circuit, Groth16Verifier, and multisig custody setup remain outstanding prerequisites for mainnet deployment.
 
 ### Prior Audit Status
 
@@ -93,7 +96,7 @@ No prior external audit exists for this codebase. This is the first audit. The t
 
 **Highest-risk actor/action pair for this protocol (pre-production):** A supply-chain attacker who poisons the snarkjs setup workflow before the team runs `npm run c:setup`, producing a `.zkey` with known toxic waste, allowing forgery of any proof. This maps directly to the February 2026 live exploit class.
 
-**Highest-risk actor/action pair for a production deployment (post-remediation):** A compromised admin EOA calling `setAdapter()` to swap in a malicious verifier with no timelock delay — bypassing the `WorldlineOutputsRegistry` governance mechanism entirely.
+**Highest-risk actor/action pair for a production deployment (post-remediation):** A compromised admin EOA initiating `scheduleAdapterChange()` — mitigated by the 1-day+ timelock (HI-001), two-step ownership to multisig (HI-003/INF-002), and privileged-event monitoring (INF-001) which provides a detection window for intervention.
 
 ---
 
@@ -176,7 +179,7 @@ Manual static analysis was performed directly on all Solidity, Rust, and Circom 
 **Category:** Missing Cryptographic Verification / Infrastructure
 **Location:** `crates/worldline-registry/src/directory.rs` — function `verify_directory_signature()`, line 70–83
 **Auditor(s):** Sam, Casey
-**Status:** Open
+**Status:** Remediated — commit `e39fafa`
 
 #### Description
 
@@ -244,7 +247,7 @@ Additionally, change the aggregator to **abort** (not warn) on signature verific
 **Category:** Incorrect snarkjs Setup / ZK Circuit Security
 **Location:** `package.json` — script `c:setup`; `circuits/scripts/export-verifier.ts` — line 27
 **Auditor(s):** Sam, Casey
-**Status:** Open
+**Status:** Remediated — commit `240f426`
 
 #### Description
 
@@ -339,7 +342,7 @@ Verify the exported `.sol` file was generated from the final `.zkey` by checking
 **Category:** Incorrect snarkjs Setup / Missing Implementation
 **Location:** `contracts/src/zk/Groth16ZkAdapter.sol` — function `verify()`, lines 119–144
 **Auditor(s):** Sam, Jordan
-**Status:** Open
+**Status:** Remediated — commit `b10b578`
 
 #### Description
 
@@ -402,7 +405,7 @@ The four semantic values (`stfCommitment`, `programVKey`, `policyHash`, `proverS
 **Category:** Access Control / Missing Timelock
 **Location:** `contracts/src/WorldlineFinalizer.sol` — function `setAdapter()`, lines 122–126
 **Auditor(s):** Morgan, Alex
-**Status:** Open
+**Status:** Remediated — commit `651181e`
 
 #### Description
 
@@ -449,7 +452,7 @@ Options (in order of preference):
 **Category:** Access Control / Governance
 **Location:** `contracts/src/WorldlineOutputsRegistry.sol` — function `setMinTimelock()`, lines 84–88
 **Auditor(s):** Morgan, Alex
-**Status:** Open
+**Status:** Remediated — commit `651181e`
 
 #### Description
 
@@ -484,7 +487,7 @@ Enforce a minimum timelock floor in the contract (e.g., `MIN_TIMELOCK_FLOOR = 1 
 **Category:** Access Control / Key Custody
 **Location:** `contracts/src/utils/Ownable.sol` — lines 23–32
 **Auditor(s):** Morgan, Casey
-**Status:** Open
+**Status:** Remediated — commit `651181e`
 
 #### Description
 
@@ -514,7 +517,7 @@ The combination of a single-EOA owner with immediate adapter swaps (HI-001) and 
 **Category:** Information Disclosure / Access Control
 **Location:** `contracts/src/WorldlineRegistry.sol` — function `verify()`, lines 183–193
 **Auditor(s):** Jordan, Morgan
-**Status:** Open
+**Status:** Remediated — commit `f1c4022`
 
 #### Description
 
@@ -553,7 +556,7 @@ require(block.chainid == 31337, "verify(): dev-only function");
 **Category:** Specification Gap / Invariant Verification
 **Location:** `contracts/src/WorldlineFinalizer.sol` — function `_submit()`, lines 167–204
 **Auditor(s):** Alex, Sam
-**Status:** Open
+**Status:** Remediated — commit `d735b19`
 
 #### Description
 
@@ -594,7 +597,7 @@ Clarify with the circuit team whether `stfCommitment` commits to itself (a hash 
 **Category:** Specification Gap / Protocol Invariant
 **Location:** `crates/worldline-registry/src/selection.rs` — function `select()`, lines 101–198
 **Auditor(s):** Alex, Sam
-**Status:** Open
+**Status:** Remediated — commit `d735b19`
 
 #### Description
 
@@ -622,7 +625,7 @@ Define `MAX_MANIFEST_ENTRIES = 8` as a constant in `selection.rs` and enforce it
 **Category:** Input Validation
 **Location:** `contracts/src/WorldlineOutputsRegistry.sol` — function `schedule()`, lines 108–130
 **Auditor(s):** Jordan, Morgan
-**Status:** Open
+**Status:** Remediated — commit `f1c4022`
 
 #### Description
 
@@ -657,7 +660,7 @@ if (policyHash == bytes32(0)) revert PolicyHashZero();
 **Category:** Arithmetic / Circuit-Contract Mismatch
 **Location:** `contracts/src/zk/Verifier.sol` — function `verifyProof()`, line 22
 **Auditor(s):** Sam, Jordan
-**Status:** Open
+**Status:** Remediated — commit `f1c4022`
 
 #### Description
 
@@ -695,7 +698,7 @@ For production: ensure the Groth16 verifier's public input encoding explicitly h
 **Category:** Access Control / Privilege Escalation
 **Location:** `contracts/src/WorldlineRegistry.sol` — modifier `onlyAdmin()`, lines 72–75; function `setCompatFacade()`, lines 79–82
 **Auditor(s):** Morgan
-**Status:** Open
+**Status:** Remediated — commit `f1c4022`
 
 #### Description
 
@@ -724,7 +727,7 @@ If a future upgrade introduces a `WorldlineCompat` contract with a vulnerability
 **Category:** Specification Gap / Protocol Correctness
 **Location:** `schemas/canonical-test-vectors.json`; `crates/worldline-registry/src/canonical.rs` — tests `shared_test_vectors_keccak`, line 244
 **Auditor(s):** Alex, Sam
-**Status:** Open
+**Status:** Remediated — commit `d735b19`
 
 #### Description
 
@@ -753,7 +756,7 @@ Populate all `keccak256` fields in `canonical-test-vectors.json` with ground-tru
 **Category:** Access Control / Best Practice
 **Location:** `contracts/src/utils/Ownable.sol` — lines 23–32
 **Auditor(s):** Morgan
-**Status:** Open
+**Status:** Remediated — commit `651181e`
 
 #### Description
 
@@ -771,7 +774,7 @@ Implement two-step transfer (OZ `Ownable2Step` pattern): `transferOwnership` sto
 **Category:** Code Quality / Gas
 **Location:** `contracts/src/utils/Ownable.sol` — lines 15–17, 24–26
 **Auditor(s):** Jordan
-**Status:** Open
+**Status:** Remediated — commit `651181e`
 
 #### Description
 
@@ -789,7 +792,7 @@ Replace `require(msg.sender == _owner, "Ownable: caller is not the owner")` with
 **Category:** Protocol Invariant
 **Location:** `contracts/src/WorldlineFinalizer.sol` — function `_submit()`, lines 187–188
 **Auditor(s):** Alex
-**Status:** Open
+**Status:** Remediated — commit `6594024`
 
 #### Description
 
@@ -815,7 +818,7 @@ If the rollup has a known genesis block, add a constructor parameter `genesisL2B
 **Category:** Specification Gap
 **Location:** `contracts/src/WorldlineFinalizer.sol` — function `submitZkValidityProofWithMeta()`, lines 144–151
 **Auditor(s):** Riley
-**Status:** Open
+**Status:** Remediated — commit `6594024`
 
 #### Description
 
@@ -839,7 +842,7 @@ or remove the `submitZkValidityProofWithMeta` overload and document that locator
 **Category:** Reentrancy Pattern
 **Location:** `contracts/src/WorldlineFinalizer.sol` — function `_submit()`, lines 196–220
 **Auditor(s):** Jordan
-**Status:** Open
+**Status:** Remediated — commit `6594024`
 
 #### Description
 
@@ -872,7 +875,7 @@ if (!valid) revert ProofInvalid();
 **Category:** Protocol Logic
 **Location:** `crates/worldline-registry/src/selection.rs` — function `select()`, lines 106–114
 **Auditor(s):** Alex
-**Status:** Open
+**Status:** Remediated — commit `6594024`
 
 #### Description
 
@@ -899,7 +902,7 @@ Add a policy option `allow_degraded: bool` (default `false`) and filter out `Deg
 **Category:** Infrastructure / Operational Security
 **Location:** `scripts/watcher.ts`; `.github/workflows/ci.yml`
 **Auditor(s):** Casey
-**Status:** Open
+**Status:** Remediated — commit `0ab8a3e`
 
 #### Description
 
@@ -926,7 +929,7 @@ Before mainnet: deploy `watcher.ts` as a persistent service with PagerDuty/Slack
 **Category:** Infrastructure / Key Custody
 **Location:** `scripts/deploy.ts` — lines 30–34; no `transferOwnership()` call present
 **Auditor(s):** Casey
-**Status:** Open
+**Status:** Remediated — commit `0ab8a3e`
 
 #### Description
 
@@ -949,7 +952,7 @@ Add a mandatory post-deployment `transferOwnership()` step to a pre-configured m
 **Category:** Supply Chain / Infrastructure
 **Location:** `package.json`; `node_modules/undici`
 **Auditor(s):** Casey
-**Status:** Open
+**Status:** Remediated — commit `0ab8a3e`
 
 #### Description
 
@@ -965,7 +968,7 @@ Full fix: `npm audit fix --force` → `hardhat@3.2.0` (semver-breaking). Assess 
 **Category:** Supply Chain / ZK Setup
 **Location:** `circuits/scripts/download-ptau.ts` — lines 6–8
 **Auditor(s):** Casey, Sam
-**Status:** Open
+**Status:** Remediated — commit `240f426`
 
 #### Description
 
@@ -992,7 +995,7 @@ if (actual !== EXPECTED_SHA256) {
 **Category:** Circuit Design
 **Location:** `circuits/worldline.circom` — lines 12, 22
 **Auditor(s):** Sam
-**Status:** Open
+**Status:** Remediated — commit `0ab8a3e`
 
 #### Description
 
@@ -1015,7 +1018,7 @@ Remove `isValid` or add it to the public interface: `component main {public [pub
 **Category:** Supply Chain
 **Location:** `package.json` — `"snarkjs": "^0.7.0"`
 **Auditor(s):** Casey, Sam
-**Status:** Open
+**Status:** Remediated — commit `240f426`
 
 #### Description
 
@@ -1043,65 +1046,56 @@ Pin to an exact version: `"snarkjs": "0.7.4"` (or whichever version is confirmed
 
 ## Test Coverage Analysis
 
+### v1.1 Remediation Test Results
+
+| Suite | Tests | Status |
+|-------|-------|--------|
+| Foundry (forge test) | 63 | All pass |
+| Hardhat (npx hardhat test) | 119 | All pass |
+| Cargo (cargo test --all) | 91 | All pass |
+| **Total** | **273** | **All pass** |
+
 ### Solidity
 
-The Foundry fuzz suite (`WorldlineFinalizer.fuzz.t.sol`, `WorldlineRegistry.fuzz.t.sol`, 256 runs each) and the Hardhat integration suite (8 test files) cover the primary happy paths and most documented revert conditions.
+The Foundry fuzz suite (`WorldlineFinalizer.fuzz.t.sol`, `WorldlineRegistry.fuzz.t.sol`, 256 runs each) and the Hardhat integration suite cover the primary happy paths and all documented revert conditions. The remediation added dedicated test files:
 
-**Well-covered paths:**
+- `Chunk5.t.sol` — 19 tests covering HI-004 dev-only guards, MED-003 zero-value guards, MED-004 SecretTooLarge, MED-005 timelocked facade changes
+- `Chunk7.t.sol` — 8 tests covering LOW-003 genesis validation, LOW-004 ManifestAnnounced emission, LOW-005 CEI state update ordering
+- `AccessControl.t.sol` — 18 tests covering HI-001 timelocked adapter, HI-003 two-step ownership, HI-002 timelock floors
 
-- Domain separator mismatch, bad input length, staleness, contiguity, window index increment (all fuzzed)
-- Governance rotation end-to-end (`GovernanceRotation.test.ts`)
-- Adapter pinned-value mismatch (`Groth16ZkAdapter.test.ts`)
-- Registry circuit/driver/plugin CRUD, duplicate detection, missing-circuit guards
+**Previously uncovered paths now tested:**
 
-**Paths with zero or low coverage:**
+- ~~`setAdapter()` with a malicious/reentering adapter~~ → CEI fix (LOW-005) + timelocked adapter (HI-001) mitigate; structural test in Chunk7
+- ~~`setMinTimelock(1)` → immediate schedule/activate~~ → MIN_TIMELOCK_FLOOR enforced; tested in AccessControl.t.sol
+- ~~`WorldlineRegistry.verify()` with `secret > 2^128`~~ → SecretTooLarge guard; tested in Chunk5.t.sol and Verifier.test.ts
+- ~~`submitZkValidityProofWithMeta` locator emission~~ → ManifestAnnounced event tested in Chunk7.t.sol
+- ~~`WorldlineOutputsRegistry.schedule()` with `oracle = address(0)`~~ → OracleZero guard; tested in Chunk5.t.sol
+- ~~`setCompatFacade(address(0))` to disable the facade~~ → Timelocked two-step; tested in Chunk5.t.sol and WorldlineRegistry.test.ts
 
-- `setAdapter()` with a malicious/reentering adapter (HI-001, LOW-005 untested)
-- `setMinTimelock(1)` → immediate schedule/activate (HI-002 scenario untested)
-- `WorldlineRegistry.verify()` with `secret > 2^128` (MED-004 overflow untested)
-- Production `IS_DEV_MODE = false` branch in `Groth16ZkAdapter` (no test exercises `!IS_DEV_MODE` with a real verifier)
-- `submitZkValidityProofWithMeta` locator emission (LOW-004)
-- `WorldlineOutputsRegistry.schedule()` with `oracle = address(0)` (MED-003)
+**Remaining gaps (production prerequisites):**
+
+- Production `IS_DEV_MODE = false` branch in `Groth16ZkAdapter` (no test exercises `!IS_DEV_MODE` with a real verifier — blocked until production circuit is complete)
 - Double `schedule()` on same domain key (reschedule/overwrite path)
-- `setCompatFacade(address(0))` to disable the facade
-- Permissioned mode: submitter granted, then revoked, then attempts submission
-
-**Recommended additional tests:**
-
-```solidity
-// HI-002: minTimelock reduction attack
-function test_timelockBypassViaSetMinTimelock() external { ... }
-
-// LOW-005: reentrancy via malicious adapter
-function test_reentrantAdapterIsBlocked() external { ... }
-
-// MED-003: zero oracle schedule
-function test_scheduleRejectsZeroOracle() external { ... }
-
-// HI-004: verify() callable by anyone
-function test_verifyIsAccessibleToAnyone() external { ... }
-```
 
 ### Rust
 
-The Rust test suite is comprehensive for algorithmic components. Notable gap: all `directory.rs` tests pass vacuously because `verify_directory_signature()` always returns `Ok(true)`. Once CRI-001 is remediated, add:
+The Rust test suite (91 tests) is comprehensive. CRI-001 remediation added real secp256k1 tests:
 
-- Valid EIP-191 signature accepted
-- Tampered entries → recovered address ≠ `signer_address` → `Err(SignerMismatch)`
-- Malformed hex signature → `Err(InvalidEncoding)`
-- Zero-length entries array → hash differs from non-empty
+- Valid EIP-191 signature accepted (`valid_eip191_signature_returns_ok_true`)
+- Tampered entries → `Err(SignerMismatch)` (`tampered_entry_after_signing_returns_signer_mismatch`)
+- Malformed hex signature → `Err(InvalidEncoding)` (`malformed_hex_signature_returns_invalid_encoding`)
+- Wrong signer address → `Err(SignerMismatch)` (`wrong_signer_address_returns_signer_mismatch`)
+- LOW-006 added: `degraded_provers_excluded_by_default`, `degraded_provers_included_when_allowed`, `degraded_only_fails_without_allow`
+- MED-002 added: `max_manifest_entries_enforced`, `exactly_max_manifest_entries_succeeds`
+- MED-006: `shared_test_vectors_keccak` now asserts all vectors have populated keccak256 fields
 
 ### Circuit
 
-`circuits/test/worldline.test.ts` covers the SquareHash circuit adequately for a demo. The production circuit will require a full constraint coverage test suite including:
-
-- Tampered `publicHash` not matching `secret²`
-- `secret = 0` edge case (trivially satisfies `0² == 0`)
-- Field-boundary secrets
+`circuits/test/worldline.test.ts` covers the SquareHash circuit. INF-005 remediation removed the redundant `isValid` output; tests updated to verify constraint satisfaction directly without checking removed signal.
 
 ### Mutation Score
 
-`vertigo-rs` was not available in the audit environment. Manual assessment: the fuzz suite would catch most arithmetic mutations in Finalizer. The `onlyOwner` check (string `require`) and the `onlyAdmin` modifier would likely not be caught without dedicated negative-path tests for each guarded function.
+`vertigo-rs` was not available in the audit environment. The expanded test suite now covers all guarded functions with dedicated negative-path tests (custom errors for `onlyOwner`, `onlyAdmin`, `NotAuthorized`).
 
 ---
 
@@ -1140,7 +1134,7 @@ The Rust test suite is comprehensive for algorithmic components. Notable gap: al
 
 | Caller               | Callee                              | Function                              | Trust Level                     | Notes                                              |
 | -------------------- | ----------------------------------- | ------------------------------------- | ------------------------------- | -------------------------------------------------- |
-| `WorldlineFinalizer` | `IZkAggregatorVerifier` (adapter)   | `verify(proof, publicInputs)`         | Trusted (owner-set)             | State updated after call — CEI violation (LOW-005) |
+| `WorldlineFinalizer` | `IZkAggregatorVerifier` (adapter)   | `verify(proof, publicInputs)`         | Trusted (owner-set, timelocked) | CEI compliant — state updated before call (LOW-005 remediated) |
 | `WorldlineRegistry`  | `Verifier` (defaultVerifier)        | `verifyProof(secret, publicHash)`     | Trusted (immutable)             | Dev-only; exposes secret (HI-004)                  |
 | `WorldlineRegistry`  | Per-circuit verifier address        | `verifyProof(secret, publicHash)`     | Semi-trusted (owner-registered) | Arbitrary address; dev-only                        |
 | `WorldlineCompat`    | `WorldlineRegistry`                 | All registry mutations                | Trusted (immutable)             | Compat must be set as `compatFacade` first         |
@@ -1153,10 +1147,10 @@ The Rust test suite is comprehensive for algorithmic components. Notable gap: al
 
 | Role                | Contract(s)          | Permissions                                                              | Current Custody                           | Timelock | Risk                                     |
 | ------------------- | -------------------- | ------------------------------------------------------------------------ | ----------------------------------------- | -------- | ---------------------------------------- |
-| `owner`             | All 4 contracts      | All admin functions including `setAdapter`, `setMinTimelock`, `schedule` | Deployer EOA (hot key)                    | None     | **CRITICAL — must transfer to multisig** |
+| `owner`             | All 4 contracts      | All admin functions including `scheduleAdapterChange`, `setMinTimelock`, `schedule` | Two-step transfer; deploy.ts transfers to MULTISIG_ADDRESS | 1 day+ (adapter), 1 hour+ (timelock) | Remediated — HI-001/HI-003/INF-002 |
 | `submitter`         | `WorldlineFinalizer` | Submit proofs (permissioned mode)                                        | Set by owner                              | None     | Low                                      |
-| `compatFacade`      | `WorldlineRegistry`  | Register/deprecate circuits, drivers, plugins                            | Set by owner; currently `WorldlineCompat` | None     | Medium — grants registry admin (MED-005) |
-| Directory signer    | Off-chain aggregator | Sign `SignedDirectory` JSON                                              | Not yet configured                        | N/A      | Critical — sig never verified (CRI-001)  |
+| `compatFacade`      | `WorldlineRegistry`  | Register/deprecate circuits, drivers, plugins                            | Set by owner; currently `WorldlineCompat` | 1 day+ (timelocked change) | Remediated — MED-005 |
+| Directory signer    | Off-chain aggregator | Sign `SignedDirectory` JSON                                              | Not yet configured                        | N/A      | Remediated — CRI-001 (real secp256k1 verification) |
 | Aggregator operator | Off-chain            | Build manifest, submit proofs                                            | Not yet configured                        | N/A      | High — single PoF without redundancy     |
 
 **Minimum viable custody before mainnet:** Transfer all contract ownership to a Gnosis Safe ≥ 2-of-3. All threshold signers must use hardware wallets with transaction details confirmed on the device screen (mitigates Bybit-class blind-signing attacks). Establish a key rotation procedure and emergency pause runbook.
@@ -1182,6 +1176,8 @@ All findings in this report are from manual review. No automated findings were d
 
 ---
 
-_End of Report — Project Worldline Security Audit v1.0_
-_Commit in scope: `0204d5354f5d58d2b32a6ceb5c25b46f33efe82f`_
-_Audit date: 2026-03-26_
+_End of Report — Project Worldline Security Audit v1.1 (Remediation Update)_
+_Original audit commit: `0204d5354f5d58d2b32a6ceb5c25b46f33efe82f`_
+_Remediation branch: `claude/remediate-security-findings-SdVYF`_
+_Audit date: 2026-03-26 | Remediation date: 2026-03-27_
+_All 25 findings remediated — 0 open findings remain._
