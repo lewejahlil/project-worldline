@@ -1,0 +1,415 @@
+   Compiling worldline-benches v0.1.0 (/home/user/project-worldline/crates/benches)
+    Finished `bench` profile [optimized] target(s) in 1.89s
+     Running unittests src/lib.rs (target/release/deps/worldline_benches-fa038992ef45d04c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running src/bench_aggregation.rs (target/release/deps/bench_aggregation-597b47a48bb9e7c2)
+Gnuplot not found, using plotters backend
+Benchmarking aggregation_throughput/select_n_proofs/1
+Benchmarking aggregation_throughput/select_n_proofs/1: Warming up for 3.0000 s
+Benchmarking aggregation_throughput/select_n_proofs/1: Collecting 100 samples in estimated 5.0094 s (1.1M iterations)
+Benchmarking aggregation_throughput/select_n_proofs/1: Analyzing
+aggregation_throughput/select_n_proofs/1
+                        time:   [4.4343 µs 4.4730 µs 4.5171 µs]
+Found 3 outliers among 100 measurements (3.00%)
+  2 (2.00%) high mild
+  1 (1.00%) high severe
+Benchmarking aggregation_throughput/select_n_proofs/2
+Benchmarking aggregation_throughput/select_n_proofs/2: Warming up for 3.0000 s
+Benchmarking aggregation_throughput/select_n_proofs/2: Collecting 100 samples in estimated 5.0163 s (535k iterations)
+Benchmarking aggregation_throughput/select_n_proofs/2: Analyzing
+aggregation_throughput/select_n_proofs/2
+                        time:   [9.9731 µs 10.057 µs 10.159 µs]
+                        change: [+13.282% +14.669% +16.198%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+Benchmarking aggregation_throughput/select_n_proofs/4
+Benchmarking aggregation_throughput/select_n_proofs/4: Warming up for 3.0000 s
+Benchmarking aggregation_throughput/select_n_proofs/4: Collecting 100 samples in estimated 5.1000 s (242k iterations)
+Benchmarking aggregation_throughput/select_n_proofs/4: Analyzing
+aggregation_throughput/select_n_proofs/4
+                        time:   [21.794 µs 22.105 µs 22.476 µs]
+                        change: [+10.340% +11.799% +13.541%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  3 (3.00%) high mild
+  3 (3.00%) high severe
+Benchmarking aggregation_throughput/select_n_proofs/8
+Benchmarking aggregation_throughput/select_n_proofs/8: Warming up for 3.0000 s
+Benchmarking aggregation_throughput/select_n_proofs/8: Collecting 100 samples in estimated 5.1885 s (121k iterations)
+Benchmarking aggregation_throughput/select_n_proofs/8: Analyzing
+aggregation_throughput/select_n_proofs/8
+                        time:   [41.151 µs 41.390 µs 41.655 µs]
+                        change: [-5.0815% -3.8399% -2.4385%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) high mild
+  4 (4.00%) high severe
+
+     Running src/bench_canonical.rs (target/release/deps/bench_canonical-71426b32ddd1d61b)
+Gnuplot not found, using plotters backend
+Benchmarking canonical_json_serialize/entries/1
+Benchmarking canonical_json_serialize/entries/1: Warming up for 3.0000 s
+Benchmarking canonical_json_serialize/entries/1: Collecting 100 samples in estimated 5.0031 s (4.0M iterations)
+Benchmarking canonical_json_serialize/entries/1: Analyzing
+canonical_json_serialize/entries/1
+                        time:   [1.2391 µs 1.2429 µs 1.2470 µs]
+                        change: [-14.296% -13.181% -12.150%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 3 outliers among 100 measurements (3.00%)
+  1 (1.00%) high mild
+  2 (2.00%) high severe
+Benchmarking canonical_json_serialize/entries/10
+Benchmarking canonical_json_serialize/entries/10: Warming up for 3.0000 s
+Benchmarking canonical_json_serialize/entries/10: Collecting 100 samples in estimated 5.0497 s (419k iterations)
+Benchmarking canonical_json_serialize/entries/10: Analyzing
+canonical_json_serialize/entries/10
+                        time:   [11.878 µs 11.910 µs 11.944 µs]
+                        change: [-10.978% -10.410% -9.8626%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 6 outliers among 100 measurements (6.00%)
+  1 (1.00%) low mild
+  5 (5.00%) high mild
+Benchmarking canonical_json_serialize/entries/100
+Benchmarking canonical_json_serialize/entries/100: Warming up for 3.0000 s
+Benchmarking canonical_json_serialize/entries/100: Collecting 100 samples in estimated 5.1037 s (40k iterations)
+Benchmarking canonical_json_serialize/entries/100: Analyzing
+canonical_json_serialize/entries/100
+                        time:   [125.82 µs 126.32 µs 126.87 µs]
+                        change: [-15.283% -13.513% -11.826%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking canonical_json_serialize/entries/1000
+Benchmarking canonical_json_serialize/entries/1000: Warming up for 3.0000 s
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 6.4s, enable flat sampling, or reduce sample count to 60.
+Benchmarking canonical_json_serialize/entries/1000: Collecting 100 samples in estimated 6.4451 s (5050 iterations)
+Benchmarking canonical_json_serialize/entries/1000: Analyzing
+canonical_json_serialize/entries/1000
+                        time:   [1.2186 ms 1.2253 ms 1.2325 ms]
+                        change: [-6.9149% -4.6764% -2.6758%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 2 outliers among 100 measurements (2.00%)
+  1 (1.00%) high mild
+  1 (1.00%) high severe
+
+Benchmarking canonical_keccak_hash/entries/1
+Benchmarking canonical_keccak_hash/entries/1: Warming up for 3.0000 s
+Benchmarking canonical_keccak_hash/entries/1: Collecting 100 samples in estimated 5.0045 s (2.2M iterations)
+Benchmarking canonical_keccak_hash/entries/1: Analyzing
+canonical_keccak_hash/entries/1
+                        time:   [2.2925 µs 2.3131 µs 2.3356 µs]
+                        change: [-3.0366% -2.0327% -1.0110%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 5 outliers among 100 measurements (5.00%)
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+Benchmarking canonical_keccak_hash/entries/10
+Benchmarking canonical_keccak_hash/entries/10: Warming up for 3.0000 s
+Benchmarking canonical_keccak_hash/entries/10: Collecting 100 samples in estimated 5.0309 s (242k iterations)
+Benchmarking canonical_keccak_hash/entries/10: Analyzing
+canonical_keccak_hash/entries/10
+                        time:   [20.661 µs 20.882 µs 21.159 µs]
+                        change: [-6.9433% -5.5740% -4.2606%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 7 outliers among 100 measurements (7.00%)
+  4 (4.00%) high mild
+  3 (3.00%) high severe
+Benchmarking canonical_keccak_hash/entries/100
+Benchmarking canonical_keccak_hash/entries/100: Warming up for 3.0000 s
+Benchmarking canonical_keccak_hash/entries/100: Collecting 100 samples in estimated 5.8889 s (30k iterations)
+Benchmarking canonical_keccak_hash/entries/100: Analyzing
+canonical_keccak_hash/entries/100
+                        time:   [194.27 µs 195.36 µs 196.54 µs]
+                        change: [-3.1812% -2.5252% -1.8636%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high mild
+Benchmarking canonical_keccak_hash/entries/1000
+Benchmarking canonical_keccak_hash/entries/1000: Warming up for 3.0000 s
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 9.9s, enable flat sampling, or reduce sample count to 40.
+Benchmarking canonical_keccak_hash/entries/1000: Collecting 100 samples in estimated 9.9337 s (5050 iterations)
+Benchmarking canonical_keccak_hash/entries/1000: Analyzing
+canonical_keccak_hash/entries/1000
+                        time:   [1.9747 ms 1.9837 ms 1.9939 ms]
+                        change: [-4.7275% -4.0045% -3.2277%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) high mild
+
+     Running src/bench_recursion.rs (target/release/deps/bench_recursion-634afd6a99d6727e)
+Gnuplot not found, using plotters backend
+Benchmarking recursion_depth/witness_depth/1
+Benchmarking recursion_depth/witness_depth/1: Warming up for 3.0000 s
+Benchmarking recursion_depth/witness_depth/1: Collecting 100 samples in estimated 5.0001 s (280M iterations)
+Benchmarking recursion_depth/witness_depth/1: Analyzing
+recursion_depth/witness_depth/1
+                        time:   [17.946 ns 18.154 ns 18.429 ns]
+                        change: [+4.6784% +5.7442% +6.8753%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  2 (2.00%) low mild
+  3 (3.00%) high mild
+  5 (5.00%) high severe
+Benchmarking recursion_depth/witness_depth/2
+Benchmarking recursion_depth/witness_depth/2: Warming up for 3.0000 s
+Benchmarking recursion_depth/witness_depth/2: Collecting 100 samples in estimated 5.0000 s (260M iterations)
+Benchmarking recursion_depth/witness_depth/2: Analyzing
+recursion_depth/witness_depth/2
+                        time:   [19.037 ns 19.096 ns 19.170 ns]
+                        change: [+2.3326% +2.9798% +3.6270%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  2 (2.00%) low mild
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+Benchmarking recursion_depth/witness_depth/4
+Benchmarking recursion_depth/witness_depth/4: Warming up for 3.0000 s
+Benchmarking recursion_depth/witness_depth/4: Collecting 100 samples in estimated 5.0001 s (238M iterations)
+Benchmarking recursion_depth/witness_depth/4: Analyzing
+recursion_depth/witness_depth/4
+                        time:   [20.948 ns 21.045 ns 21.150 ns]
+                        change: [+1.3567% +2.0656% +2.7724%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 2 outliers among 100 measurements (2.00%)
+  1 (1.00%) high mild
+  1 (1.00%) high severe
+Benchmarking recursion_depth/witness_depth/8
+Benchmarking recursion_depth/witness_depth/8: Warming up for 3.0000 s
+Benchmarking recursion_depth/witness_depth/8: Collecting 100 samples in estimated 5.0001 s (209M iterations)
+Benchmarking recursion_depth/witness_depth/8: Analyzing
+recursion_depth/witness_depth/8
+                        time:   [23.722 ns 23.792 ns 23.868 ns]
+                        change: [-0.9401% +0.4194% +1.7263%] (p = 0.55 > 0.05)
+                        No change in performance detected.
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high severe
+
+     Running src/bench_verify.rs (target/release/deps/bench_verify-497a23aa3188ad47)
+Gnuplot not found, using plotters backend
+Benchmarking groth16_bn254_verify_latency
+Benchmarking groth16_bn254_verify_latency: Warming up for 3.0000 s
+Benchmarking groth16_bn254_verify_latency: Collecting 100 samples in estimated 5.0167 s (1.2M iterations)
+Benchmarking groth16_bn254_verify_latency: Analyzing
+groth16_bn254_verify_latency
+                        time:   [4.3847 µs 4.4250 µs 4.4679 µs]
+                        change: [-0.6649% +1.3798% +3.5193%] (p = 0.20 > 0.05)
+                        No change in performance detected.
+Found 6 outliers among 100 measurements (6.00%)
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+
+     Running unittests src/lib.rs (target/release/deps/worldline_compat-5a3e5575475b5757)
+
+running 4 tests
+test tests::build_compat_snapshot_extracts_ids ... ignored
+test tests::compat_snapshot_roundtrip_json ... ignored
+test tests::ensure_plugin_exists_found ... ignored
+test tests::ensure_plugin_exists_not_found ... ignored
+
+test result: ok. 0 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/release/deps/worldline_devnet-ce3de85e162acae9)
+
+running 4 tests
+test tests::spawn_anvil_missing_binary ... ignored
+test tests::to_json_pretty_formatted ... ignored
+test tests::to_json_roundtrip ... ignored
+test tests::wait_for_ready_completes ... ignored
+
+test result: ok. 0 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/release/deps/worldline_driver-26e5e202b47b6a50)
+
+running 11 tests
+test aggregator::tests::policy_hash_is_keccak_of_canonical_policy ... ignored
+test aggregator::tests::run_aggregator_with_sample_fixtures ... ignored
+test recursion::tests::k_in_proof_gt_manifest_returns_error ... ignored
+test recursion::tests::k_in_proof_gt_max_inner_returns_error ... ignored
+test recursion::tests::none_mode_returns_ok_none ... ignored
+test recursion::tests::snark_accum_returns_placeholder_witness ... ignored
+test recursion::tests::witness_serialises_and_deserialises ... ignored
+test recursion::tests::zero_k_in_proof_returns_empty_witnesses ... ignored
+test tests::check_plugin_found ... ignored
+test tests::check_plugin_not_found ... ignored
+test tests::export_compat_produces_valid_json ... ignored
+
+test result: ok. 0 passed; 0 failed; 11 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/release/deps/worldline_driver-43232bcb2ead1106)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/release/deps/worldline_registry-bfa4e3b372db3f26)
+
+running 65 tests
+test canonical::tests::canonical_already_sorted ... ignored
+test canonical::tests::canonical_array_of_objects ... ignored
+test canonical::tests::canonical_bool_false ... ignored
+test canonical::tests::canonical_bool_true ... ignored
+test canonical::tests::canonical_empty_array ... ignored
+test canonical::tests::canonical_empty_object ... ignored
+test canonical::tests::canonical_integer ... ignored
+test canonical::tests::canonical_negative_integer ... ignored
+test canonical::tests::canonical_nested_array ... ignored
+test canonical::tests::canonical_nested_objects ... ignored
+test canonical::tests::canonical_null ... ignored
+test canonical::tests::canonical_simple_key_reorder ... ignored
+test canonical::tests::canonical_string_simple ... ignored
+test canonical::tests::canonical_string_with_escapes ... ignored
+test canonical::tests::canonical_unicode_string ... ignored
+test canonical::tests::canonical_zero ... ignored
+test canonical::tests::keccak_deterministic ... ignored
+test canonical::tests::keccak_different_for_different_inputs ... ignored
+test canonical::tests::keccak_known_vector_simple_reorder ... ignored
+test canonical::tests::keccak_same_for_equivalent_canonical_forms ... ignored
+test canonical::tests::shared_test_vectors_canonical_strings ... ignored
+test canonical::tests::shared_test_vectors_keccak ... ignored
+test directory::tests::malformed_hex_signature_returns_invalid_encoding ... ignored
+test directory::tests::message_hash_is_deterministic ... ignored
+test directory::tests::signed_directory_serialises_and_deserialises ... ignored
+test directory::tests::tampered_entry_after_signing_returns_signer_mismatch ... ignored
+test directory::tests::valid_eip191_signature_returns_ok_true ... ignored
+test directory::tests::wrong_length_signature_returns_invalid_encoding ... ignored
+test directory::tests::wrong_signer_address_returns_signer_mismatch ... ignored
+test selection::tests::all_offline_returns_error ... ignored
+test selection::tests::allowlist_filters_entries ... ignored
+test selection::tests::basic_selection_three_families ... ignored
+test selection::tests::degraded_only_fails_without_allow ... ignored
+test selection::tests::degraded_provers_excluded_by_default ... ignored
+test selection::tests::degraded_provers_included_when_allowed ... ignored
+test selection::tests::empty_directory_returns_error ... ignored
+test selection::tests::exactly_max_manifest_entries_succeeds ... ignored
+test selection::tests::fallback_tier_activates_when_primary_fails ... ignored
+test selection::tests::fallback_tier_succeeds_with_relaxed_families ... ignored
+test selection::tests::manifest_json_is_canonical ... ignored
+test selection::tests::max_manifest_entries_enforced ... ignored
+test selection::tests::missing_required_family_triggers_fallback ... ignored
+test selection::tests::offline_entries_are_excluded ... ignored
+test selection::tests::prover_set_digest_non_zero ... ignored
+test selection::tests::required_family_must_be_included ... ignored
+test selection::tests::selection_is_deterministic ... ignored
+test selection::tests::single_entry_satisfies_min_count_one ... ignored
+test selection::tests::tie_break_by_latency_then_cost ... ignored
+test tests::indexes_rebuilt_on_load ... ignored
+test tests::load_missing_file_returns_default ... ignored
+test tests::prevent_duplicate_backend_registration ... ignored
+test tests::prevent_duplicate_circuit_registration ... ignored
+test tests::prevent_duplicate_plugin_registration ... ignored
+test tests::proptests::duplicate_circuit_always_fails ... ignored
+test tests::proptests::remove_after_register_succeeds ... ignored
+test tests::proptests::roundtrip_any_snapshot ... ignored
+test tests::reject_future_schema_version ... ignored
+test tests::remove_backend_not_found ... ignored
+test tests::remove_backend_succeeds ... ignored
+test tests::remove_circuit_not_found ... ignored
+test tests::remove_circuit_succeeds ... ignored
+test tests::remove_plugin_not_found ... ignored
+test tests::remove_plugin_succeeds ... ignored
+test tests::save_and_load_roundtrip ... ignored
+test tests::schema_version_persisted ... ignored
+
+test result: ok. 0 passed; 0 failed; 65 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running benches/registry_bench.rs (target/release/deps/registry_bench-87d520cf9b1dbbfd)
+Gnuplot not found, using plotters backend
+Benchmarking load/10
+Benchmarking load/10: Warming up for 3.0000 s
+Benchmarking load/10: Collecting 100 samples in estimated 5.0752 s (308k iterations)
+Benchmarking load/10: Analyzing
+load/10                 time:   [15.786 µs 15.842 µs 15.904 µs]
+                        change: [-2.2869% -1.6900% -1.0862%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+Benchmarking load/100
+Benchmarking load/100: Warming up for 3.0000 s
+Benchmarking load/100: Collecting 100 samples in estimated 5.5769 s (40k iterations)
+Benchmarking load/100: Analyzing
+load/100                time:   [135.48 µs 136.76 µs 138.59 µs]
+                        change: [-5.1122% -4.2261% -3.3528%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 6 outliers among 100 measurements (6.00%)
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+Benchmarking load/1000
+Benchmarking load/1000: Warming up for 3.0000 s
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 6.7s, enable flat sampling, or reduce sample count to 60.
+Benchmarking load/1000: Collecting 100 samples in estimated 6.7020 s (5050 iterations)
+Benchmarking load/1000: Analyzing
+load/1000               time:   [1.3102 ms 1.3194 ms 1.3296 ms]
+                        change: [+0.0187% +1.1626% +2.4817%] (p = 0.07 > 0.05)
+                        No change in performance detected.
+Found 7 outliers among 100 measurements (7.00%)
+  4 (4.00%) high mild
+  3 (3.00%) high severe
+Benchmarking load/10000
+Benchmarking load/10000: Warming up for 3.0000 s
+Benchmarking load/10000: Collecting 100 samples in estimated 5.7430 s (300 iterations)
+Benchmarking load/10000: Analyzing
+load/10000              time:   [18.858 ms 18.935 ms 19.014 ms]
+                        change: [-1.9729% -1.1298% -0.3986%] (p = 0.01 < 0.05)
+                        Change within noise threshold.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+
+Benchmarking save/10
+Benchmarking save/10: Warming up for 3.0000 s
+Benchmarking save/10: Collecting 100 samples in estimated 5.1198 s (76k iterations)
+Benchmarking save/10: Analyzing
+save/10                 time:   [61.818 µs 63.116 µs 64.462 µs]
+                        change: [-10.732% -7.6337% -4.1973%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking save/100
+Benchmarking save/100: Warming up for 3.0000 s
+Benchmarking save/100: Collecting 100 samples in estimated 5.2375 s (45k iterations)
+Benchmarking save/100: Analyzing
+save/100                time:   [108.35 µs 111.02 µs 113.82 µs]
+                        change: [+5.3714% +9.7044% +14.186%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking save/1000
+Benchmarking save/1000: Warming up for 3.0000 s
+Benchmarking save/1000: Collecting 100 samples in estimated 5.8582 s (10k iterations)
+Benchmarking save/1000: Analyzing
+save/1000               time:   [583.95 µs 591.53 µs 600.73 µs]
+                        change: [+3.0020% +4.6714% +6.2905%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  2 (2.00%) high mild
+  4 (4.00%) high severe
+Benchmarking save/10000
+Benchmarking save/10000: Warming up for 3.0000 s
+Benchmarking save/10000: Collecting 100 samples in estimated 5.3094 s (900 iterations)
+Benchmarking save/10000: Analyzing
+save/10000              time:   [5.7861 ms 5.8270 ms 5.8763 ms]
+                        change: [+1.7405% +3.2373% +4.6216%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high severe
+
+Benchmarking register_circuit/100_existing
+Benchmarking register_circuit/100_existing: Warming up for 3.0000 s
+Benchmarking register_circuit/100_existing: Collecting 100 samples in estimated 5.1906 s (40k iterations)
+Benchmarking register_circuit/100_existing: Analyzing
+register_circuit/100_existing
+                        time:   [296.29 ns 304.57 ns 313.88 ns]
+                        change: [-9.0081% -4.7893% +0.4526%] (p = 0.04 < 0.05)
+                        Change within noise threshold.
+Found 8 outliers among 100 measurements (8.00%)
+  7 (7.00%) high mild
+  1 (1.00%) high severe
