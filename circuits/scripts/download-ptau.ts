@@ -152,7 +152,7 @@ export function verifyPtauIntegrity(filePath: string, expectedSha256: string): P
     const hash = createHash("sha256");
     const stream = createReadStream(filePath);
 
-    stream.on("data", (chunk: Buffer) => hash.update(chunk));
+    stream.on("data", (chunk) => hash.update(chunk));
     stream.on("end", () => {
       const actual = hash.digest("hex");
       if (actual === expectedSha256) {
