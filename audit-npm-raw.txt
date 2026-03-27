@@ -1,0 +1,225 @@
+# npm audit report
+
+bn.js  <4.12.3
+Severity: moderate
+bn.js affected by an infinite loop - https://github.com/advisories/GHSA-378v-28hj-76wf
+fix available via `npm audit fix`
+node_modules/ethjs-unit/node_modules/bn.js
+node_modules/number-to-bn/node_modules/bn.js
+  ethjs-unit  >=0.1.3
+  Depends on vulnerable versions of bn.js
+  Depends on vulnerable versions of number-to-bn
+  node_modules/ethjs-unit
+  number-to-bn  *
+  Depends on vulnerable versions of bn.js
+  node_modules/number-to-bn
+    web3-utils  1.0.0-beta.8 - 3.0.0-rc.5
+    Depends on vulnerable versions of ethjs-unit
+    Depends on vulnerable versions of number-to-bn
+    node_modules/web3-utils
+      solidity-coverage  >=0.7.0-beta.0
+      Depends on vulnerable versions of hardhat
+      Depends on vulnerable versions of mocha
+      Depends on vulnerable versions of web3-utils
+      node_modules/solidity-coverage
+
+cookie  <0.7.0
+cookie accepts cookie name, path, and domain with out of bounds characters - https://github.com/advisories/GHSA-pxg6-pf52-xh8x
+fix available via `npm audit fix --force`
+Will install hardhat@3.2.0, which is a breaking change
+node_modules/cookie
+  @sentry/node  4.0.0-beta.0 - 7.74.2-alpha.1
+  Depends on vulnerable versions of cookie
+  node_modules/@sentry/node
+    hardhat  0.1.0-rc.0 - 3.0.0-next.32
+    Depends on vulnerable versions of @ethersproject/abi
+    Depends on vulnerable versions of @sentry/node
+    Depends on vulnerable versions of mocha
+    Depends on vulnerable versions of solc
+    Depends on vulnerable versions of undici
+    node_modules/hardhat
+      @nomicfoundation/hardhat-chai-matchers  <=2.1.2
+      Depends on vulnerable versions of @nomicfoundation/hardhat-ethers
+      Depends on vulnerable versions of hardhat
+      node_modules/@nomicfoundation/hardhat-chai-matchers
+        @nomicfoundation/hardhat-toolbox  <=6.1.2
+        Depends on vulnerable versions of @nomicfoundation/hardhat-chai-matchers
+        Depends on vulnerable versions of @nomicfoundation/hardhat-verify
+        Depends on vulnerable versions of @typechain/hardhat
+        Depends on vulnerable versions of hardhat
+        node_modules/@nomicfoundation/hardhat-toolbox
+      @nomicfoundation/hardhat-ethers  3.0.7 || 3.1.0 - 3.1.3
+      Depends on vulnerable versions of hardhat
+      node_modules/@nomicfoundation/hardhat-ethers
+      @nomicfoundation/hardhat-network-helpers  <=1.1.2
+      Depends on vulnerable versions of ethereumjs-util
+      Depends on vulnerable versions of hardhat
+      node_modules/@nomicfoundation/hardhat-network-helpers
+      @typechain/hardhat  >=6.1.0
+      Depends on vulnerable versions of hardhat
+      node_modules/@typechain/hardhat
+
+elliptic  *
+Elliptic Uses a Cryptographic Primitive with a Risky Implementation - https://github.com/advisories/GHSA-848j-6mx2-7j84
+fix available via `npm audit fix --force`
+Will install @nomicfoundation/hardhat-toolbox@7.0.0, which is a breaking change
+node_modules/elliptic
+  @ethersproject/signing-key  <=5.8.0
+  Depends on vulnerable versions of elliptic
+  node_modules/@ethersproject/signing-key
+    @ethersproject/hdnode  *
+    Depends on vulnerable versions of @ethersproject/abstract-signer
+    Depends on vulnerable versions of @ethersproject/signing-key
+    Depends on vulnerable versions of @ethersproject/transactions
+    Depends on vulnerable versions of @ethersproject/wordlists
+    node_modules/@ethersproject/hdnode
+      @ethersproject/json-wallets  *
+      Depends on vulnerable versions of @ethersproject/abstract-signer
+      Depends on vulnerable versions of @ethersproject/hdnode
+      Depends on vulnerable versions of @ethersproject/transactions
+      node_modules/@ethersproject/json-wallets
+    @ethersproject/transactions  <=5.8.0
+    Depends on vulnerable versions of @ethersproject/signing-key
+    node_modules/@ethersproject/transactions
+      @ethersproject/abstract-provider  *
+      Depends on vulnerable versions of @ethersproject/transactions
+      node_modules/@ethersproject/abstract-provider
+        @ethersproject/abstract-signer  *
+        Depends on vulnerable versions of @ethersproject/abstract-provider
+        node_modules/@ethersproject/abstract-signer
+          @ethersproject/hash  5.0.6 - 5.8.0
+          Depends on vulnerable versions of @ethersproject/abstract-signer
+          node_modules/@ethersproject/hash
+            @ethersproject/abi  5.0.10 - 5.8.0
+            Depends on vulnerable versions of @ethersproject/hash
+            node_modules/@ethersproject/abi
+              @ethersproject/contracts  *
+              Depends on vulnerable versions of @ethersproject/abi
+              Depends on vulnerable versions of @ethersproject/abstract-provider
+              Depends on vulnerable versions of @ethersproject/abstract-signer
+              Depends on vulnerable versions of @ethersproject/transactions
+              node_modules/@ethersproject/contracts
+                ethers  5.0.0-beta.119 - 5.8.0
+                Depends on vulnerable versions of @ethersproject/abi
+                Depends on vulnerable versions of @ethersproject/abstract-provider
+                Depends on vulnerable versions of @ethersproject/abstract-signer
+                Depends on vulnerable versions of @ethersproject/contracts
+                Depends on vulnerable versions of @ethersproject/hash
+                Depends on vulnerable versions of @ethersproject/hdnode
+                Depends on vulnerable versions of @ethersproject/json-wallets
+                Depends on vulnerable versions of @ethersproject/providers
+                Depends on vulnerable versions of @ethersproject/signing-key
+                Depends on vulnerable versions of @ethersproject/transactions
+                Depends on vulnerable versions of @ethersproject/wallet
+                Depends on vulnerable versions of @ethersproject/wordlists
+                node_modules/eth-gas-reporter/node_modules/ethers
+              @nomicfoundation/hardhat-verify  *
+              Depends on vulnerable versions of @ethersproject/abi
+              Depends on vulnerable versions of undici
+              node_modules/@nomicfoundation/hardhat-verify
+            @ethersproject/providers  <=5.8.0
+            Depends on vulnerable versions of @ethersproject/abstract-provider
+            Depends on vulnerable versions of @ethersproject/abstract-signer
+            Depends on vulnerable versions of @ethersproject/hash
+            Depends on vulnerable versions of @ethersproject/transactions
+            node_modules/@ethersproject/providers
+            @ethersproject/wallet  <=5.8.0
+            Depends on vulnerable versions of @ethersproject/abstract-provider
+            Depends on vulnerable versions of @ethersproject/abstract-signer
+            Depends on vulnerable versions of @ethersproject/hash
+            Depends on vulnerable versions of @ethersproject/hdnode
+            Depends on vulnerable versions of @ethersproject/json-wallets
+            Depends on vulnerable versions of @ethersproject/signing-key
+            Depends on vulnerable versions of @ethersproject/transactions
+            Depends on vulnerable versions of @ethersproject/wordlists
+            node_modules/@ethersproject/wallet
+            @ethersproject/wordlists  5.0.8 - 5.8.0
+            Depends on vulnerable versions of @ethersproject/hash
+            node_modules/@ethersproject/wordlists
+  secp256k1  >=2.0.0
+  Depends on vulnerable versions of elliptic
+  node_modules/secp256k1
+    ethereum-cryptography  0.1.0 - 0.1.3
+    Depends on vulnerable versions of secp256k1
+    node_modules/ethereum-cryptography
+      ethereumjs-util  4.5.1 || 5.2.1 || 6.2.1 || >=7.0.3
+      Depends on vulnerable versions of ethereum-cryptography
+      node_modules/ethereumjs-util
+
+minimatch  9.0.0 - 9.0.6
+Severity: high
+minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern - https://github.com/advisories/GHSA-3ppc-4f35-3m26
+minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments - https://github.com/advisories/GHSA-7r86-cg39-jmmj
+minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions - https://github.com/advisories/GHSA-23c5-xmqv-rm74
+fix available via `npm audit fix`
+node_modules/minimatch
+  @typescript-eslint/typescript-estree  6.16.0 - 7.5.0
+  Depends on vulnerable versions of minimatch
+  node_modules/@typescript-eslint/typescript-estree
+    @typescript-eslint/parser  6.16.0 - 7.5.0
+    Depends on vulnerable versions of @typescript-eslint/typescript-estree
+    node_modules/@typescript-eslint/parser
+    @typescript-eslint/type-utils  6.16.0 - 7.5.0
+    Depends on vulnerable versions of @typescript-eslint/typescript-estree
+    Depends on vulnerable versions of @typescript-eslint/utils
+    node_modules/@typescript-eslint/type-utils
+    @typescript-eslint/utils  6.16.0 - 7.5.0
+    Depends on vulnerable versions of @typescript-eslint/typescript-estree
+    node_modules/@typescript-eslint/utils
+      @typescript-eslint/eslint-plugin  6.16.0 - 7.5.0
+      Depends on vulnerable versions of @typescript-eslint/type-utils
+      Depends on vulnerable versions of @typescript-eslint/utils
+      node_modules/@typescript-eslint/eslint-plugin
+
+serialize-javascript  <=7.0.2
+Severity: high
+Serialize JavaScript is Vulnerable to RCE via RegExp.flags and Date.prototype.toISOString() - https://github.com/advisories/GHSA-5c6j-r48x-rmvq
+fix available via `npm audit fix`
+node_modules/serialize-javascript
+  mocha  8.0.0 - 12.0.0-beta-2
+  Depends on vulnerable versions of serialize-javascript
+  node_modules/mocha
+    eth-gas-reporter  >=0.2.26
+    Depends on vulnerable versions of ethers
+    Depends on vulnerable versions of mocha
+    node_modules/eth-gas-reporter
+
+tmp  <=0.2.3
+tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter - https://github.com/advisories/GHSA-52f5-9888-hmc6
+fix available via `npm audit fix --force`
+Will install hardhat@3.2.0, which is a breaking change
+node_modules/tmp
+  solc  >=0.5.1
+  Depends on vulnerable versions of tmp
+  node_modules/solc
+
+underscore  <=1.13.7
+Severity: high
+Underscore has unlimited recursion in _.flatten and _.isEqual, potential for DoS attack - https://github.com/advisories/GHSA-qpx9-hpmf-5gmw
+fix available via `npm audit fix`
+node_modules/underscore
+  jsonpath  *
+  Depends on vulnerable versions of underscore
+  node_modules/jsonpath
+    bfj  7.1.0 - 9.1.2
+    Depends on vulnerable versions of jsonpath
+    node_modules/bfj
+
+undici  <=6.23.0
+Severity: high
+Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion - https://github.com/advisories/GHSA-g9mf-h72j-4rw9
+Undici has an HTTP Request/Response Smuggling issue - https://github.com/advisories/GHSA-2mjp-6q6p-2qxm
+Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression - https://github.com/advisories/GHSA-vrm6-8vpv-qv8q
+Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation - https://github.com/advisories/GHSA-v9p9-hfj2-hcw8
+Undici has CRLF Injection in undici via `upgrade` option - https://github.com/advisories/GHSA-4992-7rv2-5pvq
+fix available via `npm audit fix --force`
+Will install hardhat@3.2.0, which is a breaking change
+node_modules/undici
+
+46 vulnerabilities (21 low, 10 moderate, 15 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
