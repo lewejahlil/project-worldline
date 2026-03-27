@@ -30,19 +30,31 @@ contract WorldlineFinalizerFuzzTest is Test {
         verifier = new Verifier();
         // isDev=true for all fuzz tests — exercises dev behaviour.
         adapter = new Groth16ZkAdapter(address(verifier), PROGRAM_VKEY, POLICY_HASH, true);
-        finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, MAX_DELAY);
+        finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, MAX_DELAY, 0);
         // Enable permissionless mode so the fuzzer address can submit.
         finalizer.setPermissionless(true);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /// @dev MED-001: stfCommitment = keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domain, windowCloseTimestamp))
+    function computeStf(
+        uint256 l2Start,
+        uint256 l2End,
+        bytes32 outputRoot,
+        bytes32 l1BlockHash,
+        bytes32 domain,
+        uint256 windowCloseTimestamp
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domain, windowCloseTimestamp));
+    }
+
     function encodeValidInputs(
         uint256 l2Start,
         uint256 l2End,
         uint256 windowCloseTimestamp
     ) internal pure returns (bytes memory) {
-        bytes32 stf = keccak256("stf");
+        bytes32 stf = computeStf(l2Start, l2End, bytes32(0), bytes32(0), DOMAIN, windowCloseTimestamp);
         return abi.encode(
             stf,
             l2Start,
@@ -71,10 +83,10 @@ contract WorldlineFinalizerFuzzTest is Test {
     /// A domain separator other than DOMAIN must always revert with DomainMismatch.
     function testFuzz_rejectWrongDomain(bytes32 wrongDomain) public {
         vm.assume(wrongDomain != DOMAIN);
-        bytes32 stf = keccak256("stf-domain");
-        bytes memory proof = encodeValidProof(stf);
-        // Build 224-byte publicInputs with the wrong domain.
+        // Build correctly bound stfCommitment using the wrong domain
         uint256 ts = block.timestamp + 100;
+        bytes32 stf = computeStf(0, 100, bytes32(0), bytes32(0), wrongDomain, ts);
+        bytes memory proof = encodeValidProof(stf);
         bytes memory inputs = abi.encode(
             stf,
             uint256(0),
@@ -94,13 +106,15 @@ contract WorldlineFinalizerFuzzTest is Test {
         vm.assume(n > 0 && n <= 10);
         uint256 l2End = 100;
         uint256 ts = block.timestamp + 3600;
-        bytes32 stf = keccak256("stf-incr");
         for (uint8 i = 0; i < n; i++) {
+            uint256 start = l2End * i;
+            uint256 end = l2End * (i + 1);
+            bytes32 stf = computeStf(start, end, bytes32(0), bytes32(0), DOMAIN, ts);
             bytes memory proof = encodeValidProof(stf);
             bytes memory inputs = abi.encode(
                 stf,
-                l2End * i, // l2Start: previous end
-                l2End * (i + 1), // l2End: next boundary
+                start,
+                end,
                 bytes32(0),
                 bytes32(0),
                 DOMAIN,
@@ -117,9 +131,9 @@ contract WorldlineFinalizerFuzzTest is Test {
 
         // First submit genesis window: l2Start=0, l2End=100.
         uint256 ts = block.timestamp + 3600;
-        bytes32 stf = keccak256("stf-cont");
-        bytes memory proof = encodeValidProof(stf);
-        bytes memory inputs = abi.encode(stf, uint256(0), uint256(100), bytes32(0), bytes32(0), DOMAIN, ts);
+        bytes32 stfGenesis = computeStf(0, 100, bytes32(0), bytes32(0), DOMAIN, ts);
+        bytes memory proof = encodeValidProof(stfGenesis);
+        bytes memory inputs = abi.encode(stfGenesis, uint256(0), uint256(100), bytes32(0), bytes32(0), DOMAIN, ts);
         finalizer.submitZkValidityProof(proof, inputs);
         // lastL2EndBlock is now 100.
 
@@ -127,8 +141,9 @@ contract WorldlineFinalizerFuzzTest is Test {
         vm.assume(uint256(l2Start) != 100);
         vm.assume(uint256(l2End) > uint256(l2Start));
 
-        proof = encodeValidProof(stf);
-        inputs = abi.encode(stf, uint256(l2Start), uint256(l2End), bytes32(0), bytes32(0), DOMAIN, ts);
+        bytes32 stfBad = computeStf(uint256(l2Start), uint256(l2End), bytes32(0), bytes32(0), DOMAIN, ts);
+        proof = encodeValidProof(stfBad);
+        inputs = abi.encode(stfBad, uint256(l2Start), uint256(l2End), bytes32(0), bytes32(0), DOMAIN, ts);
         vm.expectRevert(WorldlineFinalizer.NotContiguous.selector);
         finalizer.submitZkValidityProof(proof, inputs);
     }
@@ -139,7 +154,7 @@ contract WorldlineFinalizerFuzzTest is Test {
         vm.assume(delayPastMax >= 1);
         uint256 windowCloseTimestamp = block.timestamp - MAX_DELAY - uint256(delayPastMax);
 
-        bytes32 stf = keccak256("stf-stale");
+        bytes32 stf = computeStf(0, 100, bytes32(0), bytes32(0), DOMAIN, windowCloseTimestamp);
         bytes memory proof = encodeValidProof(stf);
         bytes memory inputs = abi.encode(
             stf,
@@ -158,7 +173,7 @@ contract WorldlineFinalizerFuzzTest is Test {
     function testFuzz_rejectInvalidWindowRange(uint128 l2Start) public {
         // l2End == l2Start (empty window) → revert.
         uint256 ts = block.timestamp + 100;
-        bytes32 stf = keccak256("stf-range");
+        bytes32 stf = computeStf(uint256(l2Start), uint256(l2Start), bytes32(0), bytes32(0), DOMAIN, ts);
         bytes memory proof = encodeValidProof(stf);
         bytes memory inputs = abi.encode(
             stf,

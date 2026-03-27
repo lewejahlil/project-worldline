@@ -33,22 +33,32 @@ async function deployStack() {
   );
 
   const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-  const finalizer = await Finalizer.deploy(await adapter.getAddress(), DOMAIN, 3600);
+  const finalizer = await Finalizer.deploy(await adapter.getAddress(), DOMAIN, 3600, 0);
   await finalizer.setPermissionless(true);
 
   return { finalizer, owner };
 }
 
+function computeStf(l2Start: bigint, l2End: bigint, windowCloseTimestamp: bigint): string {
+  return ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ["uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
+      [l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, windowCloseTimestamp]
+    )
+  );
+}
+
 function encodePublicInputs(
-  stfCommitment: string,
   l2Start: bigint,
   l2End: bigint,
   windowCloseTimestamp: bigint
-): string {
-  return ethers.AbiCoder.defaultAbiCoder().encode(
+): { inputs: string; stf: string } {
+  const stf = computeStf(l2Start, l2End, windowCloseTimestamp);
+  const inputs = ethers.AbiCoder.defaultAbiCoder().encode(
     ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-    [stfCommitment, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, windowCloseTimestamp]
+    [stf, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, windowCloseTimestamp]
   );
+  return { inputs, stf };
 }
 
 function encodeProof(stfCommitment: string): string {
@@ -69,9 +79,8 @@ describe("GasBenchmark: WorldlineFinalizer.submitZkValidityProof", function () {
     for (let i = 0; i < batchSize; i++) {
       const l2Start = l2Cursor;
       const l2End = l2Cursor + 100n;
-      const stf = ethers.keccak256(ethers.toUtf8Bytes(`stf-gas-${i}`));
+      const { inputs, stf } = encodePublicInputs(l2Start, l2End, ts);
       const proof = encodeProof(stf);
-      const inputs = encodePublicInputs(stf, l2Start, l2End, ts);
       await finalizer.submitZkValidityProof(proof, inputs);
       l2Cursor = l2End;
     }

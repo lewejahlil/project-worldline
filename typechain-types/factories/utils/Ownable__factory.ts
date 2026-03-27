@@ -7,6 +7,45 @@ import type { Ownable, OwnableInterface } from "../../utils/Ownable";
 
 const _abi = [
   {
+    inputs: [],
+    name: "NewOwnerIsZero",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "NoPendingTransfer",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "NotOwner",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "NotPendingOwner",
+    type: "error",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "currentOwner",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "OwnershipTransferStarted",
+    type: "event",
+  },
+  {
     anonymous: false,
     inputs: [
       {
@@ -27,7 +66,27 @@ const _abi = [
   },
   {
     inputs: [],
+    name: "acceptOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "owner",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "pendingOwner",
     outputs: [
       {
         internalType: "address",

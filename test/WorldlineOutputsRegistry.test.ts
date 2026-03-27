@@ -8,8 +8,8 @@ const PROGRAM_VKEY = ethers.keccak256(ethers.toUtf8Bytes("vkey"));
 const POLICY_HASH = ethers.keccak256(ethers.toUtf8Bytes("policy"));
 
 describe("WorldlineOutputsRegistry", function () {
-  // 1 hour timelock for tests
-  const MIN_TIMELOCK = 3600;
+  // MIN_TIMELOCK_FLOOR is 1 day (86400s). Use exactly 1 day for tests.
+  const MIN_TIMELOCK = 86400;
 
   async function deployFixture() {
     const [owner, oracle, stranger] = await ethers.getSigners();
@@ -56,7 +56,7 @@ describe("WorldlineOutputsRegistry", function () {
       const { registry, stranger, oracle, dKey } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).schedule(dKey, PROGRAM_VKEY, POLICY_HASH, oracle.address)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(registry, "NotOwner");
     });
 
     it("emits OutputRescheduled when overwriting a pending entry", async function () {
@@ -130,10 +130,12 @@ describe("WorldlineOutputsRegistry", function () {
   describe("setMinTimelock", function () {
     it("owner can update timelock", async function () {
       const { registry, owner } = await loadFixture(deployFixture);
-      await expect(registry.connect(owner).setMinTimelock(7200))
+      // Must be >= MIN_TIMELOCK_FLOOR (86400). Use 2 days.
+      const twoDays = 86400 * 2;
+      await expect(registry.connect(owner).setMinTimelock(twoDays))
         .to.emit(registry, "MinTimelockSet")
-        .withArgs(7200);
-      expect(await registry.minTimelock()).to.equal(7200);
+        .withArgs(twoDays);
+      expect(await registry.minTimelock()).to.equal(twoDays);
     });
 
     it("reverts if set to zero", async function () {

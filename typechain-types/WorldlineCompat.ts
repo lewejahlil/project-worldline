@@ -76,11 +76,13 @@ export declare namespace WorldlineRegistry {
 export interface WorldlineCompatInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "acceptOwnership"
       | "deprecatePlugin"
       | "getCircuit"
       | "getDriver"
       | "getPlugin"
       | "owner"
+      | "pendingOwner"
       | "registerCircuit"
       | "registerDriver"
       | "registerPlugin"
@@ -89,8 +91,14 @@ export interface WorldlineCompatInterface extends Interface {
       | "verify"
   ): FunctionFragment;
 
-  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(
+    nameOrSignatureOrTopic: "OwnershipTransferStarted" | "OwnershipTransferred"
+  ): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "acceptOwnership",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "deprecatePlugin",
     values: [BytesLike]
@@ -108,6 +116,10 @@ export interface WorldlineCompatInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "pendingOwner",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "registerCircuit",
     values: [BytesLike, string, AddressLike, string]
@@ -131,6 +143,10 @@ export interface WorldlineCompatInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
+    functionFragment: "acceptOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "deprecatePlugin",
     data: BytesLike
   ): Result;
@@ -138,6 +154,10 @@ export interface WorldlineCompatInterface extends Interface {
   decodeFunctionResult(functionFragment: "getDriver", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getPlugin", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingOwner",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "registerCircuit",
     data: BytesLike
@@ -156,6 +176,19 @@ export interface WorldlineCompatInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
+}
+
+export namespace OwnershipTransferStartedEvent {
+  export type InputTuple = [currentOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [currentOwner: string, newOwner: string];
+  export interface OutputObject {
+    currentOwner: string;
+    newOwner: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
 }
 
 export namespace OwnershipTransferredEvent {
@@ -214,6 +247,8 @@ export interface WorldlineCompat extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
   deprecatePlugin: TypedContractMethod<[id: BytesLike], [void], "nonpayable">;
 
   getCircuit: TypedContractMethod<
@@ -235,6 +270,8 @@ export interface WorldlineCompat extends BaseContract {
   >;
 
   owner: TypedContractMethod<[], [string], "view">;
+
+  pendingOwner: TypedContractMethod<[], [string], "view">;
 
   registerCircuit: TypedContractMethod<
     [id: BytesLike, description: string, verifier: AddressLike, abiURI: string],
@@ -278,6 +315,9 @@ export interface WorldlineCompat extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "acceptOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "deprecatePlugin"
   ): TypedContractMethod<[id: BytesLike], [void], "nonpayable">;
   getFunction(
@@ -303,6 +343,9 @@ export interface WorldlineCompat extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "owner"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "pendingOwner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "registerCircuit"
@@ -345,6 +388,13 @@ export interface WorldlineCompat extends BaseContract {
   >;
 
   getEvent(
+    key: "OwnershipTransferStarted"
+  ): TypedContractEvent<
+    OwnershipTransferStartedEvent.InputTuple,
+    OwnershipTransferStartedEvent.OutputTuple,
+    OwnershipTransferStartedEvent.OutputObject
+  >;
+  getEvent(
     key: "OwnershipTransferred"
   ): TypedContractEvent<
     OwnershipTransferredEvent.InputTuple,
@@ -353,6 +403,17 @@ export interface WorldlineCompat extends BaseContract {
   >;
 
   filters: {
+    "OwnershipTransferStarted(address,address)": TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
+    >;
+    OwnershipTransferStarted: TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
+    >;
+
     "OwnershipTransferred(address,address)": TypedContractEvent<
       OwnershipTransferredEvent.InputTuple,
       OwnershipTransferredEvent.OutputTuple,

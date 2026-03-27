@@ -18,6 +18,10 @@ circuits/ptau/
 artifacts/
 cache/
 
+# Foundry
+contracts/out/
+contracts/cache/
+
 # Rust
 Cargo.lock
 

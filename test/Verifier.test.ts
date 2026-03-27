@@ -65,12 +65,13 @@ describe("Verifier", function () {
       await expect(verifier.verifyProof(secret, publicHash)).to.not.be.reverted;
     });
 
-    it("reverts with overflow panic when secret² exceeds uint256 (Solidity 0.8 checked math)", async function () {
+    it("reverts with SecretTooLarge when secret >= 2^128 (MED-004 range check)", async function () {
       const { verifier } = await loadFixture(deployVerifierFixture);
-      // 2^128 * 2^128 = 2^256, which overflows uint256.
+      // 2^128 is now caught by the range check before multiplication.
       const secret = 2n ** 128n;
-      await expect(verifier.verifyProof(secret, 0n)).to.be.revertedWithPanic(
-        0x11 // arithmetic overflow
+      await expect(verifier.verifyProof(secret, 0n)).to.be.revertedWithCustomError(
+        verifier,
+        "SecretTooLarge"
       );
     });
   });

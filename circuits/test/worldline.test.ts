@@ -31,17 +31,12 @@ async function getVKey(): Promise<object> {
   return vKey!;
 }
 
-// Helper: compute witness for given inputs and return output signals.
-async function computeWitness(
-  inputs: Record<string, bigint | number>
-): Promise<{ isValid: bigint }> {
-  const { wtns } = await snarkjs.wtns.calculate(inputs, WASM_PATH, {});
-  // wtns is a Uint8Array; convert to JSON to read named signals.
-  // snarkjs provides a utility to export wtns to JSON.
-  const wtnsJson = await snarkjs.wtns.exportJson(wtns);
-  // Signal ordering: [1, isValid, secret, publicHash] (index 1 is first user signal).
-  // Exact index depends on compilation; use groth16.fullProve instead for output checking.
-  return { isValid: wtnsJson[1] };
+// Helper: compute witness for given inputs.
+// INF-005: isValid output was removed from the circuit. The witness now
+// only contains the constraint wire for `computed === publicHash`.
+// A successful return means the constraints were satisfied.
+async function computeWitness(inputs: Record<string, bigint | number>): Promise<void> {
+  await snarkjs.wtns.calculate(inputs, WASM_PATH, {});
 }
 
 // Helper: generate a full proof and verify it on-chain (via snarkjs JS verifier).
@@ -61,36 +56,20 @@ const artifactsExist =
   // ── Witness computation ───────────────────────────────────────────────────
 
   describe("witness generation", function () {
-    it("produces isValid=1 when secret² == publicHash", async function () {
-      const { isValid } = await computeWitness({
-        secret: 5n,
-        publicHash: 25n
-      });
-      if (isValid !== 1n) throw new Error(`Expected isValid=1, got ${isValid}`);
+    it("satisfies constraints when secret² == publicHash", async function () {
+      await computeWitness({ secret: 5n, publicHash: 25n });
     });
 
-    it("produces isValid=1 for secret=3, publicHash=9", async function () {
-      const { isValid } = await computeWitness({
-        secret: 3n,
-        publicHash: 9n
-      });
-      if (isValid !== 1n) throw new Error(`Expected isValid=1, got ${isValid}`);
+    it("satisfies constraints for secret=3, publicHash=9", async function () {
+      await computeWitness({ secret: 3n, publicHash: 9n });
     });
 
-    it("produces isValid=1 for edge case secret=0, publicHash=0", async function () {
-      const { isValid } = await computeWitness({
-        secret: 0n,
-        publicHash: 0n
-      });
-      if (isValid !== 1n) throw new Error(`Expected isValid=1, got ${isValid}`);
+    it("satisfies constraints for edge case secret=0, publicHash=0", async function () {
+      await computeWitness({ secret: 0n, publicHash: 0n });
     });
 
-    it("produces isValid=1 for secret=1, publicHash=1", async function () {
-      const { isValid } = await computeWitness({
-        secret: 1n,
-        publicHash: 1n
-      });
-      if (isValid !== 1n) throw new Error(`Expected isValid=1, got ${isValid}`);
+    it("satisfies constraints for secret=1, publicHash=1", async function () {
+      await computeWitness({ secret: 1n, publicHash: 1n });
     });
 
     it("fails witness generation when secret² != publicHash (constraint violation)", async function () {
@@ -159,8 +138,8 @@ const artifactsExist =
       );
       const vk = await getVKey();
       // Attempt to verify with tampered public signals.
-      // Public signals are [isValid, publicHash] after declaring publicHash as public.
-      const tamperedSignals = ["1", "10"]; // isValid=1, publicHash=10 instead of 9
+      // INF-005: Public signals are now just [publicHash] (isValid removed).
+      const tamperedSignals = ["10"]; // publicHash=10 instead of 9
       const valid = await snarkjs.groth16.verify(vk, tamperedSignals, proof);
       if (valid) {
         throw new Error("Expected tampered proof verification to fail");

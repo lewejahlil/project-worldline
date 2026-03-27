@@ -26,15 +26,24 @@ import type {
 export interface WorldlineFinalizerInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "MIN_ADAPTER_DELAY"
+      | "acceptOwnership"
+      | "activateAdapterChange"
       | "adapter"
+      | "adapterChangeDelay"
       | "domainSeparator"
+      | "genesisL2Block"
       | "lastL2EndBlock"
       | "maxAcceptanceDelay"
       | "nextWindowIndex"
       | "owner"
       | "paused"
+      | "pendingAdapter"
+      | "pendingAdapterActivation"
+      | "pendingOwner"
       | "permissionless"
-      | "setAdapter"
+      | "scheduleAdapterChange"
+      | "setAdapterChangeDelay"
       | "setMaxAcceptanceDelay"
       | "setPaused"
       | "setPermissionless"
@@ -47,9 +56,13 @@ export interface WorldlineFinalizerInterface extends Interface {
 
   getEvent(
     nameOrSignatureOrTopic:
+      | "AdapterChangeDelaySet"
+      | "AdapterChangeScheduled"
       | "AdapterSet"
+      | "ManifestAnnounced"
       | "MaxAcceptanceDelaySet"
       | "OutputProposed"
+      | "OwnershipTransferStarted"
       | "OwnershipTransferred"
       | "PausedSet"
       | "PermissionlessSet"
@@ -57,9 +70,29 @@ export interface WorldlineFinalizerInterface extends Interface {
       | "ZkProofAccepted"
   ): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "MIN_ADAPTER_DELAY",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "acceptOwnership",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "activateAdapterChange",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "adapter", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "adapterChangeDelay",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "domainSeparator",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "genesisL2Block",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -77,12 +110,28 @@ export interface WorldlineFinalizerInterface extends Interface {
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "pendingAdapter",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "pendingAdapterActivation",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "pendingOwner",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "permissionless",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "setAdapter",
+    functionFragment: "scheduleAdapterChange",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setAdapterChangeDelay",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "setMaxAcceptanceDelay",
@@ -114,9 +163,29 @@ export interface WorldlineFinalizerInterface extends Interface {
     values: [AddressLike]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "MIN_ADAPTER_DELAY",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "acceptOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "activateAdapterChange",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "adapter", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "adapterChangeDelay",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "domainSeparator",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "genesisL2Block",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -134,10 +203,29 @@ export interface WorldlineFinalizerInterface extends Interface {
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "pendingAdapter",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingAdapterActivation",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingOwner",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "permissionless",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "setAdapter", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "scheduleAdapterChange",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setAdapterChangeDelay",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "setMaxAcceptanceDelay",
     data: BytesLike
@@ -166,11 +254,49 @@ export interface WorldlineFinalizerInterface extends Interface {
   ): Result;
 }
 
+export namespace AdapterChangeDelaySetEvent {
+  export type InputTuple = [delay: BigNumberish];
+  export type OutputTuple = [delay: bigint];
+  export interface OutputObject {
+    delay: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace AdapterChangeScheduledEvent {
+  export type InputTuple = [adapter: AddressLike, activationTime: BigNumberish];
+  export type OutputTuple = [adapter: string, activationTime: bigint];
+  export interface OutputObject {
+    adapter: string;
+    activationTime: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace AdapterSetEvent {
   export type InputTuple = [adapter: AddressLike];
   export type OutputTuple = [adapter: string];
   export interface OutputObject {
     adapter: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace ManifestAnnouncedEvent {
+  export type InputTuple = [proverSetDigest: BytesLike, metaLocator: BytesLike];
+  export type OutputTuple = [proverSetDigest: string, metaLocator: string];
+  export interface OutputObject {
+    proverSetDigest: string;
+    metaLocator: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -211,6 +337,19 @@ export namespace OutputProposedEvent {
     l2Start: bigint;
     l2End: bigint;
     stfCommitment: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OwnershipTransferStartedEvent {
+  export type InputTuple = [currentOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [currentOwner: string, newOwner: string];
+  export interface OutputObject {
+    currentOwner: string;
+    newOwner: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -336,9 +475,19 @@ export interface WorldlineFinalizer extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  MIN_ADAPTER_DELAY: TypedContractMethod<[], [bigint], "view">;
+
+  acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
+  activateAdapterChange: TypedContractMethod<[], [void], "nonpayable">;
+
   adapter: TypedContractMethod<[], [string], "view">;
 
+  adapterChangeDelay: TypedContractMethod<[], [bigint], "view">;
+
   domainSeparator: TypedContractMethod<[], [string], "view">;
+
+  genesisL2Block: TypedContractMethod<[], [bigint], "view">;
 
   lastL2EndBlock: TypedContractMethod<[], [bigint], "view">;
 
@@ -350,10 +499,22 @@ export interface WorldlineFinalizer extends BaseContract {
 
   paused: TypedContractMethod<[], [boolean], "view">;
 
+  pendingAdapter: TypedContractMethod<[], [string], "view">;
+
+  pendingAdapterActivation: TypedContractMethod<[], [bigint], "view">;
+
+  pendingOwner: TypedContractMethod<[], [string], "view">;
+
   permissionless: TypedContractMethod<[], [boolean], "view">;
 
-  setAdapter: TypedContractMethod<
+  scheduleAdapterChange: TypedContractMethod<
     [_adapter: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  setAdapterChangeDelay: TypedContractMethod<
+    [_delay: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -403,11 +564,26 @@ export interface WorldlineFinalizer extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "MIN_ADAPTER_DELAY"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "acceptOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "activateAdapterChange"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "adapter"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "adapterChangeDelay"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
     nameOrSignature: "domainSeparator"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "genesisL2Block"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "lastL2EndBlock"
   ): TypedContractMethod<[], [bigint], "view">;
@@ -424,11 +600,23 @@ export interface WorldlineFinalizer extends BaseContract {
     nameOrSignature: "paused"
   ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
+    nameOrSignature: "pendingAdapter"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "pendingAdapterActivation"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "pendingOwner"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "permissionless"
   ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
-    nameOrSignature: "setAdapter"
+    nameOrSignature: "scheduleAdapterChange"
   ): TypedContractMethod<[_adapter: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "setAdapterChangeDelay"
+  ): TypedContractMethod<[_delay: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "setMaxAcceptanceDelay"
   ): TypedContractMethod<[_delay: BigNumberish], [void], "nonpayable">;
@@ -467,11 +655,32 @@ export interface WorldlineFinalizer extends BaseContract {
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
 
   getEvent(
+    key: "AdapterChangeDelaySet"
+  ): TypedContractEvent<
+    AdapterChangeDelaySetEvent.InputTuple,
+    AdapterChangeDelaySetEvent.OutputTuple,
+    AdapterChangeDelaySetEvent.OutputObject
+  >;
+  getEvent(
+    key: "AdapterChangeScheduled"
+  ): TypedContractEvent<
+    AdapterChangeScheduledEvent.InputTuple,
+    AdapterChangeScheduledEvent.OutputTuple,
+    AdapterChangeScheduledEvent.OutputObject
+  >;
+  getEvent(
     key: "AdapterSet"
   ): TypedContractEvent<
     AdapterSetEvent.InputTuple,
     AdapterSetEvent.OutputTuple,
     AdapterSetEvent.OutputObject
+  >;
+  getEvent(
+    key: "ManifestAnnounced"
+  ): TypedContractEvent<
+    ManifestAnnouncedEvent.InputTuple,
+    ManifestAnnouncedEvent.OutputTuple,
+    ManifestAnnouncedEvent.OutputObject
   >;
   getEvent(
     key: "MaxAcceptanceDelaySet"
@@ -486,6 +695,13 @@ export interface WorldlineFinalizer extends BaseContract {
     OutputProposedEvent.InputTuple,
     OutputProposedEvent.OutputTuple,
     OutputProposedEvent.OutputObject
+  >;
+  getEvent(
+    key: "OwnershipTransferStarted"
+  ): TypedContractEvent<
+    OwnershipTransferStartedEvent.InputTuple,
+    OwnershipTransferStartedEvent.OutputTuple,
+    OwnershipTransferStartedEvent.OutputObject
   >;
   getEvent(
     key: "OwnershipTransferred"
@@ -524,6 +740,28 @@ export interface WorldlineFinalizer extends BaseContract {
   >;
 
   filters: {
+    "AdapterChangeDelaySet(uint256)": TypedContractEvent<
+      AdapterChangeDelaySetEvent.InputTuple,
+      AdapterChangeDelaySetEvent.OutputTuple,
+      AdapterChangeDelaySetEvent.OutputObject
+    >;
+    AdapterChangeDelaySet: TypedContractEvent<
+      AdapterChangeDelaySetEvent.InputTuple,
+      AdapterChangeDelaySetEvent.OutputTuple,
+      AdapterChangeDelaySetEvent.OutputObject
+    >;
+
+    "AdapterChangeScheduled(address,uint256)": TypedContractEvent<
+      AdapterChangeScheduledEvent.InputTuple,
+      AdapterChangeScheduledEvent.OutputTuple,
+      AdapterChangeScheduledEvent.OutputObject
+    >;
+    AdapterChangeScheduled: TypedContractEvent<
+      AdapterChangeScheduledEvent.InputTuple,
+      AdapterChangeScheduledEvent.OutputTuple,
+      AdapterChangeScheduledEvent.OutputObject
+    >;
+
     "AdapterSet(address)": TypedContractEvent<
       AdapterSetEvent.InputTuple,
       AdapterSetEvent.OutputTuple,
@@ -533,6 +771,17 @@ export interface WorldlineFinalizer extends BaseContract {
       AdapterSetEvent.InputTuple,
       AdapterSetEvent.OutputTuple,
       AdapterSetEvent.OutputObject
+    >;
+
+    "ManifestAnnounced(bytes32,bytes)": TypedContractEvent<
+      ManifestAnnouncedEvent.InputTuple,
+      ManifestAnnouncedEvent.OutputTuple,
+      ManifestAnnouncedEvent.OutputObject
+    >;
+    ManifestAnnounced: TypedContractEvent<
+      ManifestAnnouncedEvent.InputTuple,
+      ManifestAnnouncedEvent.OutputTuple,
+      ManifestAnnouncedEvent.OutputObject
     >;
 
     "MaxAcceptanceDelaySet(uint256)": TypedContractEvent<
@@ -555,6 +804,17 @@ export interface WorldlineFinalizer extends BaseContract {
       OutputProposedEvent.InputTuple,
       OutputProposedEvent.OutputTuple,
       OutputProposedEvent.OutputObject
+    >;
+
+    "OwnershipTransferStarted(address,address)": TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
+    >;
+    OwnershipTransferStarted: TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
     >;
 
     "OwnershipTransferred(address,address)": TypedContractEvent<

@@ -29,6 +29,7 @@ fn make_policy(n: usize) -> Policy {
         allowlist_provers: None,
         min_inclusion_ratio: 0.0,
         fallback_tiers: vec![],
+        allow_degraded: false,
     }
 }
 

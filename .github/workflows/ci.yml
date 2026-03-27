@@ -25,6 +25,21 @@ jobs:
       - name: Prettier check
         run: npm run format:check
 
+  npm-audit:
+    name: NPM Audit (INF-003)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Audit all dependencies (informational)
+        run: npm audit --audit-level=critical || echo "::warning::npm audit found vulnerabilities in dev dependencies — review before mainnet"
+
   rust:
     name: Rust
     runs-on: ubuntu-latest
@@ -152,6 +167,45 @@ jobs:
         run: forge build
       - name: Fuzz tests
         run: forge test --match-contract Fuzz -v
+
+  zk-setup-verify:
+    name: ZK Setup Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Install circom 2.1.6
+        run: |
+          curl -sL https://github.com/iden3/circom/releases/download/v2.1.6/circom-linux-amd64 -o /usr/local/bin/circom
+          chmod +x /usr/local/bin/circom
+          circom --version
+      - name: Compile circuit
+        run: npm run c:compile
+      - name: Download ptau (with integrity check)
+        run: npm run c:ptau
+      - name: Run full ceremony (dev mode)
+        run: npm run c:setup
+      - name: Verify final zkey exists
+        run: |
+          if [ ! -f circuits/artifacts/worldline_final.zkey ]; then
+            echo "ERROR: worldline_final.zkey not found after c:setup"
+            exit 1
+          fi
+          echo "worldline_final.zkey exists ✓"
+      - name: Verify zkey independently
+        run: npm run c:setup:verify
+      - name: Confirm snarkjs is pinned (no caret/tilde)
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').devDependencies.snarkjs)")
+          if echo "$VERSION" | grep -qE '[\^~]'; then
+            echo "ERROR: snarkjs version is not pinned: $VERSION"
+            exit 1
+          fi
+          echo "snarkjs pinned to $VERSION ✓"
 
   devnet-smoke:
     name: Devnet Smoke Test

@@ -47,6 +47,8 @@ export declare namespace WorldlineOutputsRegistry {
 export interface WorldlineOutputsRegistryInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "MIN_TIMELOCK_FLOOR"
+      | "acceptOwnership"
       | "activate"
       | "activeEntries"
       | "domainKey"
@@ -55,6 +57,7 @@ export interface WorldlineOutputsRegistryInterface extends Interface {
       | "minTimelock"
       | "owner"
       | "pendingEntries"
+      | "pendingOwner"
       | "schedule"
       | "setMinTimelock"
       | "transferOwnership"
@@ -66,9 +69,18 @@ export interface WorldlineOutputsRegistryInterface extends Interface {
       | "OutputActivated"
       | "OutputRescheduled"
       | "OutputScheduled"
+      | "OwnershipTransferStarted"
       | "OwnershipTransferred"
   ): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "MIN_TIMELOCK_FLOOR",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "acceptOwnership",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "activate", values: [BytesLike]): string;
   encodeFunctionData(
     functionFragment: "activeEntries",
@@ -93,6 +105,10 @@ export interface WorldlineOutputsRegistryInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "pendingOwner",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "schedule",
     values: [BytesLike, BytesLike, BytesLike, AddressLike]
   ): string;
@@ -105,6 +121,14 @@ export interface WorldlineOutputsRegistryInterface extends Interface {
     values: [AddressLike]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "MIN_TIMELOCK_FLOOR",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "acceptOwnership",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "activate", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "activeEntries",
@@ -123,6 +147,10 @@ export interface WorldlineOutputsRegistryInterface extends Interface {
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "pendingEntries",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingOwner",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "schedule", data: BytesLike): Result;
@@ -229,6 +257,19 @@ export namespace OutputScheduledEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace OwnershipTransferStartedEvent {
+  export type InputTuple = [currentOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [currentOwner: string, newOwner: string];
+  export interface OutputObject {
+    currentOwner: string;
+    newOwner: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace OwnershipTransferredEvent {
   export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
   export type OutputTuple = [previousOwner: string, newOwner: string];
@@ -285,6 +326,10 @@ export interface WorldlineOutputsRegistry extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  MIN_TIMELOCK_FLOOR: TypedContractMethod<[], [bigint], "view">;
+
+  acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
   activate: TypedContractMethod<[_domainKey: BytesLike], [void], "nonpayable">;
 
   activeEntries: TypedContractMethod<
@@ -332,6 +377,8 @@ export interface WorldlineOutputsRegistry extends BaseContract {
     "view"
   >;
 
+  pendingOwner: TypedContractMethod<[], [string], "view">;
+
   schedule: TypedContractMethod<
     [
       _domainKey: BytesLike,
@@ -359,6 +406,12 @@ export interface WorldlineOutputsRegistry extends BaseContract {
     key: string | FunctionFragment
   ): T;
 
+  getFunction(
+    nameOrSignature: "MIN_TIMELOCK_FLOOR"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "acceptOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "activate"
   ): TypedContractMethod<[_domainKey: BytesLike], [void], "nonpayable">;
@@ -415,6 +468,9 @@ export interface WorldlineOutputsRegistry extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "pendingOwner"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "schedule"
   ): TypedContractMethod<
     [
@@ -460,6 +516,13 @@ export interface WorldlineOutputsRegistry extends BaseContract {
     OutputScheduledEvent.InputTuple,
     OutputScheduledEvent.OutputTuple,
     OutputScheduledEvent.OutputObject
+  >;
+  getEvent(
+    key: "OwnershipTransferStarted"
+  ): TypedContractEvent<
+    OwnershipTransferStartedEvent.InputTuple,
+    OwnershipTransferStartedEvent.OutputTuple,
+    OwnershipTransferStartedEvent.OutputObject
   >;
   getEvent(
     key: "OwnershipTransferred"
@@ -512,6 +575,17 @@ export interface WorldlineOutputsRegistry extends BaseContract {
       OutputScheduledEvent.InputTuple,
       OutputScheduledEvent.OutputTuple,
       OutputScheduledEvent.OutputObject
+    >;
+
+    "OwnershipTransferStarted(address,address)": TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
+    >;
+    OwnershipTransferStarted: TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
     >;
 
     "OwnershipTransferred(address,address)": TypedContractEvent<

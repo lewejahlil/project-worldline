@@ -9,7 +9,6 @@ pragma circom 2.1.6;
 template SquareHash() {
     signal input secret;
     signal input publicHash;
-    signal output isValid;
 
     signal computed;
     computed <== secret * secret;
@@ -17,9 +16,9 @@ template SquareHash() {
     // Enforce equality between the computed value and the provided commitment.
     computed === publicHash;
 
-    // Expose a boolean-ish output that downstream tooling can use to assert
-    // correctness without parsing constraints directly.
-    isValid <== 1;
+    // INF-005 remediation: removed redundant `isValid` output signal.
+    // It was assigned `1` unconditionally and was not in the public interface,
+    // so it contributed one R1CS constraint without providing a verifiable guarantee.
 }
 
 component main {public [publicHash]} = SquareHash();

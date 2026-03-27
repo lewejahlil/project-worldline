@@ -23,6 +23,7 @@ export interface Groth16ZkAdapterInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "IS_DEV_MODE"
+      | "PROD_PROOF_MIN_LEN"
       | "policyHashPinned"
       | "programVKeyPinned"
       | "verifierAddress"
@@ -31,6 +32,10 @@ export interface Groth16ZkAdapterInterface extends Interface {
 
   encodeFunctionData(
     functionFragment: "IS_DEV_MODE",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "PROD_PROOF_MIN_LEN",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -52,6 +57,10 @@ export interface Groth16ZkAdapterInterface extends Interface {
 
   decodeFunctionResult(
     functionFragment: "IS_DEV_MODE",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "PROD_PROOF_MIN_LEN",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -114,6 +123,8 @@ export interface Groth16ZkAdapter extends BaseContract {
 
   IS_DEV_MODE: TypedContractMethod<[], [boolean], "view">;
 
+  PROD_PROOF_MIN_LEN: TypedContractMethod<[], [bigint], "view">;
+
   policyHashPinned: TypedContractMethod<[], [string], "view">;
 
   programVKeyPinned: TypedContractMethod<[], [string], "view">;
@@ -141,6 +152,9 @@ export interface Groth16ZkAdapter extends BaseContract {
   getFunction(
     nameOrSignature: "IS_DEV_MODE"
   ): TypedContractMethod<[], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "PROD_PROOF_MIN_LEN"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "policyHashPinned"
   ): TypedContractMethod<[], [string], "view">;
