@@ -23,9 +23,9 @@
  *   MULTISIG_ADDRESS        (required on non-dev networks) multisig to transfer ownership to
  */
 
-import { ethers, network } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
+import { ethers, network } from "hardhat";
 
 async function main() {
   const [deployer] = await ethers.getSigners();

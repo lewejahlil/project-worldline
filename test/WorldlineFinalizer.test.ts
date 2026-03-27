@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-test-domain"));
 const PROGRAM_VKEY = ethers.keccak256(ethers.toUtf8Bytes("program-vkey"));
@@ -420,14 +420,7 @@ describe("WorldlineFinalizer", function () {
       const ts = BigInt(await time.latest()) + 200n;
 
       // publicInputs has correctly bound stfCommitment
-      const { inputs, stf } = encodePublicInputs(
-        0n,
-        100n,
-        ethers.ZeroHash,
-        ethers.ZeroHash,
-        DOMAIN,
-        ts
-      );
+      const { inputs } = encodePublicInputs(0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
       // proof encodes a DIFFERENT stfCommitment (adapter will return this)
       const stfWrong = ethers.keccak256(ethers.toUtf8Bytes("stf-wrong"));
       const proof = encodeProof(stfWrong, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);

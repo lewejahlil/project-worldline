@@ -12,9 +12,9 @@
  *  3. Generate and verify a full Groth16 proof for end-to-end coverage.
  */
 
-import * as path from "path";
 import * as fs from "fs";
-// @ts-ignore – snarkjs ships its own types
+import * as path from "path";
+// @ts-expect-error – snarkjs ships its own types
 import * as snarkjs from "snarkjs";
 
 const ARTIFACTS_DIR = path.resolve(__dirname, "../artifacts");

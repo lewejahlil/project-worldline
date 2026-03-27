@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
 const CHAIN_HASH = ethers.keccak256(ethers.toUtf8Bytes("chain-1"));
 const DOMAIN_TAG = ethers.keccak256(ethers.toUtf8Bytes("domain-tag"));
@@ -36,7 +36,7 @@ describe("WorldlineOutputsRegistry", function () {
 
   describe("domainKey", function () {
     it("computes deterministic key", async function () {
-      const { registry, dKey } = await loadFixture(deployFixture);
+      const { dKey } = await loadFixture(deployFixture);
       const expected = ethers.keccak256(
         ethers.solidityPacked(["bytes32", "bytes32"], [CHAIN_HASH, DOMAIN_TAG])
       );

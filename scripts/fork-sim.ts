@@ -29,9 +29,9 @@
  *       locally running Anvil fork instance. See BENCHMARKS.md for usage.
  */
 
-import { ethers } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
+import { ethers } from "ethers";
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
