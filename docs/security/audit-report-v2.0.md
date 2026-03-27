@@ -20,32 +20,32 @@ the fix process.
 
 ### Baseline
 
-| Item | Value |
-|------|-------|
-| v1.0 audit commit | `0204d5354f5d58d2b32a6ceb5c25b46f33efe82f` |
-| Remediation commit (first fix) | `e39fafa` (CRI-001) |
-| Remediation merge commit | `fa8dda6501b9018eac8c98c667e24017901e206c` |
-| v1.0 total findings | 26 (3 Critical, 4 High, 6 Medium, 6 Low, 6 Informational, 1 Gas) |
+| Item                           | Value                                                            |
+| ------------------------------ | ---------------------------------------------------------------- |
+| v1.0 audit commit              | `0204d5354f5d58d2b32a6ceb5c25b46f33efe82f`                       |
+| Remediation commit (first fix) | `e39fafa` (CRI-001)                                              |
+| Remediation merge commit       | `fa8dda6501b9018eac8c98c667e24017901e206c`                       |
+| v1.0 total findings            | 26 (3 Critical, 4 High, 6 Medium, 6 Low, 6 Informational, 1 Gas) |
 
 ### Remediation Verification Summary
 
-| Result | Count | Findings |
-|--------|-------|---------|
-| **Verified** | 22 | CRI-001..003, HI-001..004, MED-001..006, LOW-001..006, INF-004..006, GAS-001 |
-| **Partially Fixed** | 3 | INF-001, INF-002, INF-003 |
-| **Not Fixed** | 0 | — |
-| **New Issue Introduced** | 0 | — |
+| Result                   | Count | Findings                                                                     |
+| ------------------------ | ----- | ---------------------------------------------------------------------------- |
+| **Verified**             | 22    | CRI-001..003, HI-001..004, MED-001..006, LOW-001..006, INF-004..006, GAS-001 |
+| **Partially Fixed**      | 3     | INF-001, INF-002, INF-003                                                    |
+| **Not Fixed**            | 0     | —                                                                            |
+| **New Issue Introduced** | 0     | —                                                                            |
 
 ### New Findings (this re-audit)
 
-| ID | Title | Severity |
-|----|-------|----------|
-| REA-001 | `Groth16ZkAdapter` constructor missing `_verifier != address(0)` check | Low |
-| REA-002 | `WorldlineFinalizer.domainSeparator` should be `immutable` | Gas |
-| REA-003 | `setCompatFacade` reuses `FacadeTimelockActive(0)` as wrong error | Informational |
-| REA-004 | `deploy.ts` omits `WorldlineCompat` from ownership transfer to multisig | Low |
+| ID      | Title                                                                           | Severity      |
+| ------- | ------------------------------------------------------------------------------- | ------------- |
+| REA-001 | `Groth16ZkAdapter` constructor missing `_verifier != address(0)` check          | Low           |
+| REA-002 | `WorldlineFinalizer.domainSeparator` should be `immutable`                      | Gas           |
+| REA-003 | `setCompatFacade` reuses `FacadeTimelockActive(0)` as wrong error               | Informational |
+| REA-004 | `deploy.ts` omits `WorldlineCompat` from ownership transfer to multisig         | Low           |
 | REA-005 | Missing monitoring documentation (`sentinel-config.md`, `incident-response.md`) | Informational |
-| REA-006 | Missing `docs/security/known-risks.md` for accepted npm vulnerabilities | Informational |
+| REA-006 | Missing `docs/security/known-risks.md` for accepted npm vulnerabilities         | Informational |
 
 ### Overall Risk Posture
 
@@ -71,21 +71,21 @@ on the contract layer.
 
 ### 0.1 Environment Verification
 
-| Tool | Version | Status |
-|------|---------|--------|
-| forge (Foundry) | 1.5.1-stable | Installed during re-audit; not present in v1.0 environment |
-| slither-analyzer | 0.11.5 | Installed during re-audit |
-| halmos | 0.3.3 | Installed during re-audit |
-| cargo-audit | 0.22.1 | Installed during re-audit |
-| cargo clippy | rustc 1.93.1 | Available (workspace toolchain) |
-| node / npm | v22.22.0 / 10.9.4 | Available |
-| circomspect | MISSING | `cargo install` did not complete in this environment |
-| Aderyn | MISSING | Not installed |
-| Echidna | MISSING | Not installed |
-| Medusa | MISSING | Not installed |
-| vertigo-rs | MISSING | Not installed |
-| ZKAP | MISSING | Not installed |
-| snarkjs zkey verify | N/A | No `.zkey` file in repository |
+| Tool                | Version           | Status                                                     |
+| ------------------- | ----------------- | ---------------------------------------------------------- |
+| forge (Foundry)     | 1.5.1-stable      | Installed during re-audit; not present in v1.0 environment |
+| slither-analyzer    | 0.11.5            | Installed during re-audit                                  |
+| halmos              | 0.3.3             | Installed during re-audit                                  |
+| cargo-audit         | 0.22.1            | Installed during re-audit                                  |
+| cargo clippy        | rustc 1.93.1      | Available (workspace toolchain)                            |
+| node / npm          | v22.22.0 / 10.9.4 | Available                                                  |
+| circomspect         | MISSING           | `cargo install` did not complete in this environment       |
+| Aderyn              | MISSING           | Not installed                                              |
+| Echidna             | MISSING           | Not installed                                              |
+| Medusa              | MISSING           | Not installed                                              |
+| vertigo-rs          | MISSING           | Not installed                                              |
+| ZKAP                | MISSING           | Not installed                                              |
+| snarkjs zkey verify | N/A               | No `.zkey` file in repository                              |
 
 **Re-audit limitation:** circomspect, Aderyn, Echidna, Medusa, vertigo-rs, and ZKAP could
 not be executed. The circuit in scope (`worldline.circom`) is a 25-line demo circuit; the
@@ -184,57 +184,58 @@ vertigo-rs was not available. Mutation score: not measured.
 
 ### 0.10 Phase 0 Summary Table
 
-| Tool | Finding | Severity | File:Line | Disposition |
-|------|---------|----------|-----------|-------------|
-| Slither | `Groth16ZkAdapter._verifier` no zero-check in constructor | Low | `Groth16ZkAdapter.sol:74` | **New → REA-001** |
-| Slither | `WorldlineFinalizer.domainSeparator` not `immutable` | Gas | `WorldlineFinalizer.sol:78` | **New → REA-002** |
-| Slither | `scheduleCompatFacade` zero-check on `compat` | Info | `WorldlineRegistry.sol:105` | False positive — zero intentionally allowed to disable facade |
-| Slither | `setCompatFacade` zero-check on `compat` | Info | `WorldlineRegistry.sol:137` | False positive — function only runs when `compatFacade == address(0)` |
-| Slither | `block.timestamp` comparisons in timelocks | Info | Various | False positive — standard timelock pattern; 15s miner drift negligible for 1-day floors |
-| Slither | `^0.8.20` known compiler issues | Info | All contracts | False positive — listed bugs (VerbatimInvalidDeduplication, etc.) do not affect this codebase |
-| Slither | Naming convention violations (`_param`, `IS_DEV_MODE`) | Info | Various | False positive — consistent project style |
-| Slither | Redundant statements (`l1BlockHash;`, `outputRoot;`, `_pA;` etc.) | Info | Various | False positive — intentional unused-variable suppression |
-| Slither | High cyclomatic complexity in `_submit()` (score 12) | Info | `WorldlineFinalizer.sol:217` | False positive — complexity is inherent to the validation logic |
-| cargo-audit | `rustls-pemfile 1.0.4` unmaintained (RUSTSEC-2025-0134) | Info | `Cargo.lock` | New — informational, non-exploitable maintenance warning |
-| npm audit | undici ≤ 6.23.0 CVEs (5 distinct) in devDeps | Info | `node_modules/undici` | Maps to v1.0 INF-003 — Partially Fixed (see INF-003 verdict) |
-| Manual | `WorldlineCompat` omitted from ownership transfer in `deploy.ts` | Low | `scripts/deploy.ts:137-163` | **New → REA-004** |
-| Manual | `setCompatFacade` reuses `FacadeTimelockActive(0)` as wrong error | Info | `WorldlineRegistry.sol:136` | **New → REA-003** |
-| Manual | Missing `sentinel-config.md` and `incident-response.md` | Info | `docs/security/` | Maps to v1.0 INF-001 — Partially Fixed → **REA-005** |
-| Manual | Missing `docs/security/known-risks.md` | Info | `docs/security/` | Maps to v1.0 INF-003 → **REA-006** |
+| Tool        | Finding                                                           | Severity | File:Line                    | Disposition                                                                                   |
+| ----------- | ----------------------------------------------------------------- | -------- | ---------------------------- | --------------------------------------------------------------------------------------------- |
+| Slither     | `Groth16ZkAdapter._verifier` no zero-check in constructor         | Low      | `Groth16ZkAdapter.sol:74`    | **New → REA-001**                                                                             |
+| Slither     | `WorldlineFinalizer.domainSeparator` not `immutable`              | Gas      | `WorldlineFinalizer.sol:78`  | **New → REA-002**                                                                             |
+| Slither     | `scheduleCompatFacade` zero-check on `compat`                     | Info     | `WorldlineRegistry.sol:105`  | False positive — zero intentionally allowed to disable facade                                 |
+| Slither     | `setCompatFacade` zero-check on `compat`                          | Info     | `WorldlineRegistry.sol:137`  | False positive — function only runs when `compatFacade == address(0)`                         |
+| Slither     | `block.timestamp` comparisons in timelocks                        | Info     | Various                      | False positive — standard timelock pattern; 15s miner drift negligible for 1-day floors       |
+| Slither     | `^0.8.20` known compiler issues                                   | Info     | All contracts                | False positive — listed bugs (VerbatimInvalidDeduplication, etc.) do not affect this codebase |
+| Slither     | Naming convention violations (`_param`, `IS_DEV_MODE`)            | Info     | Various                      | False positive — consistent project style                                                     |
+| Slither     | Redundant statements (`l1BlockHash;`, `outputRoot;`, `_pA;` etc.) | Info     | Various                      | False positive — intentional unused-variable suppression                                      |
+| Slither     | High cyclomatic complexity in `_submit()` (score 12)              | Info     | `WorldlineFinalizer.sol:217` | False positive — complexity is inherent to the validation logic                               |
+| cargo-audit | `rustls-pemfile 1.0.4` unmaintained (RUSTSEC-2025-0134)           | Info     | `Cargo.lock`                 | New — informational, non-exploitable maintenance warning                                      |
+| npm audit   | undici ≤ 6.23.0 CVEs (5 distinct) in devDeps                      | Info     | `node_modules/undici`        | Maps to v1.0 INF-003 — Partially Fixed (see INF-003 verdict)                                  |
+| Manual      | `WorldlineCompat` omitted from ownership transfer in `deploy.ts`  | Low      | `scripts/deploy.ts:137-163`  | **New → REA-004**                                                                             |
+| Manual      | `setCompatFacade` reuses `FacadeTimelockActive(0)` as wrong error | Info     | `WorldlineRegistry.sol:136`  | **New → REA-003**                                                                             |
+| Manual      | Missing `sentinel-config.md` and `incident-response.md`           | Info     | `docs/security/`             | Maps to v1.0 INF-001 — Partially Fixed → **REA-005**                                          |
+| Manual      | Missing `docs/security/known-risks.md`                            | Info     | `docs/security/`             | Maps to v1.0 INF-003 → **REA-006**                                                            |
 
 ---
+
 ## Phase 1 — Remediation Verification
 
 ### Summary Table
 
-| ID | Title | Claimed Status (v1.1) | Re-audit Verdict | Notes |
-|----|-------|-----------------------|------------------|-------|
-| CRI-001 | Directory Signature Verification Stub | Fixed — `e39fafa` | **Verified** | Real secp256k1 EIP-191 recovery; aggregator aborts on failure |
-| CRI-002 | snarkjs Setup Missing Contributions/Beacon | Fixed — `240f426` | **Verified** | Full 4-step ceremony; `_final.zkey` guard; ptau SHA-256 check |
-| CRI-003 | Adapter Zero-Filled Proof Components | Fixed — `b10b578` | **Verified** | Production decode path implemented; pubSignals cryptographically bound |
-| HI-001 | `setAdapter()` No Timelock | Fixed — `651181e` | **Verified** | `scheduleAdapterChange` + `activateAdapterChange`; 1-day floor |
-| HI-002 | `setMinTimelock` 1-Second Bypass | Fixed — `651181e` | **Verified** | `MIN_TIMELOCK_FLOOR = 1 days` enforced in `setMinTimelock` and constructor |
-| HI-003 | Single EOA, No Two-Step Transfer | Fixed — `651181e` | **Verified** | `_pendingOwner` pattern; custom errors; `acceptOwnership()` required |
-| HI-004 | `verify()` Exposes Secret On-Chain | Fixed — `f1c4022` | **Verified** | `block.chainid != 31337 → revert DevOnly()` in Registry and Compat |
-| MED-001 | `stfCommitment` Not Independently Verified | Fixed — `d735b19` | **Verified** | On-chain `keccak256(abi.encode(6 fields))` recomputation; `StfBindingMismatch` |
-| MED-002 | `MAX_MANIFEST_ENTRIES` Unenforced | Fixed — `d735b19` | **Verified** | Constant = 8; `ManifestTooLarge` error enforced post-selection |
-| MED-003 | Zero Oracle in `schedule()` | Fixed — `f1c4022` | **Verified** | `OracleZero`, `VKeyZero`, `PolicyHashZero` guards |
-| MED-004 | Verifier Overflow for `secret > 2^128` | Fixed — `f1c4022` | **Verified** | `secret >= 1 << 128 → revert SecretTooLarge()` |
-| MED-005 | `setCompatFacade` Privilege Escalation | Fixed — `f1c4022` | **Verified** | Two-step timelocked `scheduleCompatFacade` / `activateCompatFacade` |
-| MED-006 | Canonical Keccak Vectors Incomplete | Fixed — `d735b19` | **Verified** | All 10 vectors populated; test asserts non-empty; all pass |
-| LOW-001 | Ownable: No Two-Step Transfer | Fixed — `651181e` | **Verified** | Closed by HI-003 fix |
-| LOW-002 | Ownable Uses `require()` Strings | Fixed — `651181e` | **Verified** | Closed by HI-003 fix; all custom errors |
-| LOW-003 | Genesis Window Accepts Any `l2Start` | Fixed — `6594024` | **Verified** | `genesisL2Block` immutable; `GenesisStartMismatch` on window 0 |
-| LOW-004 | `metaLocator` Not Emitted | Fixed — `6594024` | **Verified** | `ManifestAnnounced(proverSetDigest, metaLocator)` emitted |
-| LOW-005 | CEI Violation in `_submit()` | Fixed — `6594024` | **Verified** | State (`nextWindowIndex`, `lastL2EndBlock`) updated before external call |
-| LOW-006 | Degraded Provers Silently Included | Fixed — `6594024` | **Verified** | `allow_degraded: bool` (default false); `Degraded` excluded by default |
-| INF-001 | No Monitoring Infrastructure | Fixed — `0ab8a3e` | **Partially Fixed** | `watcher.ts` expanded; required docs absent — see below |
-| INF-002 | `deploy.ts` Hot Wallet Owner | Fixed — `0ab8a3e` | **Partially Fixed** | `WorldlineCompat` ownership NOT transferred — see REA-004 |
-| INF-003 | 46 npm Vulnerabilities | Fixed — `0ab8a3e` | **Partially Fixed** | CI audits prod deps only (correct); `known-risks.md` absent — see below |
-| INF-004 | `download-ptau.ts` No Integrity Check | Fixed — `240f426` | **Verified** | `PTAU_SHA256` constant; exits if mismatch |
-| INF-005 | `isValid` Signal Not Public in Circuit | Fixed — `0ab8a3e` | **Verified** | `isValid` output removed; circuit compiles clean |
-| INF-006 | snarkjs Unpinned | Fixed — `240f426` | **Verified** | `"snarkjs": "0.7.6"` — no range prefix |
-| GAS-001 | `activate()` Already Optimal | Acknowledged | **Verified — No Regression** | No changes to `activate()` struct write pattern |
+| ID      | Title                                      | Claimed Status (v1.1) | Re-audit Verdict             | Notes                                                                          |
+| ------- | ------------------------------------------ | --------------------- | ---------------------------- | ------------------------------------------------------------------------------ |
+| CRI-001 | Directory Signature Verification Stub      | Fixed — `e39fafa`     | **Verified**                 | Real secp256k1 EIP-191 recovery; aggregator aborts on failure                  |
+| CRI-002 | snarkjs Setup Missing Contributions/Beacon | Fixed — `240f426`     | **Verified**                 | Full 4-step ceremony; `_final.zkey` guard; ptau SHA-256 check                  |
+| CRI-003 | Adapter Zero-Filled Proof Components       | Fixed — `b10b578`     | **Verified**                 | Production decode path implemented; pubSignals cryptographically bound         |
+| HI-001  | `setAdapter()` No Timelock                 | Fixed — `651181e`     | **Verified**                 | `scheduleAdapterChange` + `activateAdapterChange`; 1-day floor                 |
+| HI-002  | `setMinTimelock` 1-Second Bypass           | Fixed — `651181e`     | **Verified**                 | `MIN_TIMELOCK_FLOOR = 1 days` enforced in `setMinTimelock` and constructor     |
+| HI-003  | Single EOA, No Two-Step Transfer           | Fixed — `651181e`     | **Verified**                 | `_pendingOwner` pattern; custom errors; `acceptOwnership()` required           |
+| HI-004  | `verify()` Exposes Secret On-Chain         | Fixed — `f1c4022`     | **Verified**                 | `block.chainid != 31337 → revert DevOnly()` in Registry and Compat             |
+| MED-001 | `stfCommitment` Not Independently Verified | Fixed — `d735b19`     | **Verified**                 | On-chain `keccak256(abi.encode(6 fields))` recomputation; `StfBindingMismatch` |
+| MED-002 | `MAX_MANIFEST_ENTRIES` Unenforced          | Fixed — `d735b19`     | **Verified**                 | Constant = 8; `ManifestTooLarge` error enforced post-selection                 |
+| MED-003 | Zero Oracle in `schedule()`                | Fixed — `f1c4022`     | **Verified**                 | `OracleZero`, `VKeyZero`, `PolicyHashZero` guards                              |
+| MED-004 | Verifier Overflow for `secret > 2^128`     | Fixed — `f1c4022`     | **Verified**                 | `secret >= 1 << 128 → revert SecretTooLarge()`                                 |
+| MED-005 | `setCompatFacade` Privilege Escalation     | Fixed — `f1c4022`     | **Verified**                 | Two-step timelocked `scheduleCompatFacade` / `activateCompatFacade`            |
+| MED-006 | Canonical Keccak Vectors Incomplete        | Fixed — `d735b19`     | **Verified**                 | All 10 vectors populated; test asserts non-empty; all pass                     |
+| LOW-001 | Ownable: No Two-Step Transfer              | Fixed — `651181e`     | **Verified**                 | Closed by HI-003 fix                                                           |
+| LOW-002 | Ownable Uses `require()` Strings           | Fixed — `651181e`     | **Verified**                 | Closed by HI-003 fix; all custom errors                                        |
+| LOW-003 | Genesis Window Accepts Any `l2Start`       | Fixed — `6594024`     | **Verified**                 | `genesisL2Block` immutable; `GenesisStartMismatch` on window 0                 |
+| LOW-004 | `metaLocator` Not Emitted                  | Fixed — `6594024`     | **Verified**                 | `ManifestAnnounced(proverSetDigest, metaLocator)` emitted                      |
+| LOW-005 | CEI Violation in `_submit()`               | Fixed — `6594024`     | **Verified**                 | State (`nextWindowIndex`, `lastL2EndBlock`) updated before external call       |
+| LOW-006 | Degraded Provers Silently Included         | Fixed — `6594024`     | **Verified**                 | `allow_degraded: bool` (default false); `Degraded` excluded by default         |
+| INF-001 | No Monitoring Infrastructure               | Fixed — `0ab8a3e`     | **Partially Fixed**          | `watcher.ts` expanded; required docs absent — see below                        |
+| INF-002 | `deploy.ts` Hot Wallet Owner               | Fixed — `0ab8a3e`     | **Partially Fixed**          | `WorldlineCompat` ownership NOT transferred — see REA-004                      |
+| INF-003 | 46 npm Vulnerabilities                     | Fixed — `0ab8a3e`     | **Partially Fixed**          | CI audits prod deps only (correct); `known-risks.md` absent — see below        |
+| INF-004 | `download-ptau.ts` No Integrity Check      | Fixed — `240f426`     | **Verified**                 | `PTAU_SHA256` constant; exits if mismatch                                      |
+| INF-005 | `isValid` Signal Not Public in Circuit     | Fixed — `0ab8a3e`     | **Verified**                 | `isValid` output removed; circuit compiles clean                               |
+| INF-006 | snarkjs Unpinned                           | Fixed — `240f426`     | **Verified**                 | `"snarkjs": "0.7.6"` — no range prefix                                         |
+| GAS-001 | `activate()` Already Optimal               | Acknowledged          | **Verified — No Regression** | No changes to `activate()` struct write pattern                                |
 
 ---
 
@@ -249,6 +250,7 @@ privileged-role events: `AdapterSet`, `AdapterChangeScheduled`, `PausedSet`,
 received an npm-audit job.
 
 **What remains missing:**
+
 - `scripts/monitoring/sentinel-config.md` — **does not exist** (required by the re-audit
   checklist and the v1.0 recommendation for Forta/OZ Defender Sentinel configuration).
 - `docs/security/incident-response.md` — **does not exist** (required by the re-audit
@@ -279,6 +281,7 @@ owns the other contracts. This is a **new Low severity finding — REA-004**.
 #### INF-003 — npm Vulnerabilities — **Partially Fixed**
 
 **What was done:** Commit `0ab8a3e` added a CI job `npm-audit` that runs:
+
 ```bash
 npm audit --omit=dev --audit-level=high   # fails on HIGH prod-dep vulns
 npm audit --audit-level=critical || echo "::warning::..."  # warns on dev vulns
@@ -289,6 +292,7 @@ devDependencies. `npm audit --omit=dev --audit-level=high` passes cleanly. The C
 correctly separates production risk from dev-toolchain risk.
 
 **What remains missing:**
+
 - `docs/security/known-risks.md` does not exist. The accepted risks (undici CVEs in
   hardhat devDependencies) are not formally documented outside of the CI log.
 - `hardhat` is still at `^2.19.0`; undici CVE count has grown from 46 to 67 since the
@@ -298,7 +302,6 @@ correctly separates production risk from dev-toolchain risk.
 **Risk to CI/developer machines:** An RCE in undici triggered via the Hardhat HTTP stack
 on a developer machine that also holds deployment keys remains a theoretical risk. The
 existing CI approach (prod-only gate) is an acceptable interim posture if documented.
-
 
 ---
 
@@ -371,6 +374,7 @@ fn pubkey_to_eth_address(key: &VerifyingKey) -> [u8; 20] {
 ```
 
 Both are correct:
+
 - EIP-191 uses the 32-byte form (`\n32` suffix) appropriate for `personal_sign` over a
   prehash, matching how ethers.js `signer.signMessage(bytes32)` behaves.
 - Address derivation strips exactly 1 prefix byte, hashes 64 bytes, and takes the last 20.
@@ -405,6 +409,7 @@ bytes32 expectedStf = keccak256(
 ```
 
 This matches the spec description in the v1.0 report:
+
 > `stfCommitment = keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domainSeparator, windowCloseTimestamp))`
 
 The SPEC-CLARIFICATION-NEEDED flag in the original finding's recommendation (regarding
@@ -466,7 +471,6 @@ If this placeholder were accidentally deployed to a testnet, every call to
 `Groth16ZkAdapter.verify()` to propagate `ProofInvalid()` — a clear failure mode, not a
 silent false return. **No opaque failure mode.** No new finding required.
 
-
 ---
 
 ## Phase 4 — New Findings
@@ -500,6 +504,7 @@ constructor(
 ```
 
 If `_verifier` is accidentally set to `address(0)` during deployment:
+
 - In **dev mode**: `Verifier(address(0)).verifyProof(...)` will revert on every call,
   permanently bricking the adapter.
 - In **production mode**: `Groth16Verifier(address(0)).verifyProof(...)` will revert on
@@ -607,12 +612,12 @@ The INF-002 remediation added mandatory ownership transfer to a multisig after d
 However, `transferOwnership(MULTISIG_ADDRESS)` is called on only three of the four ownable
 contracts:
 
-| Contract | `transferOwnership` called |
-|----------|---------------------------|
-| `WorldlineFinalizer` | ✅ yes (line 142) |
-| `WorldlineRegistry` | ✅ yes (line 149) |
-| `WorldlineOutputsRegistry` | ✅ yes (line 156) |
-| `WorldlineCompat` | ❌ **missing** |
+| Contract                   | `transferOwnership` called |
+| -------------------------- | -------------------------- |
+| `WorldlineFinalizer`       | ✅ yes (line 142)          |
+| `WorldlineRegistry`        | ✅ yes (line 149)          |
+| `WorldlineOutputsRegistry` | ✅ yes (line 156)          |
+| `WorldlineCompat`          | ❌ **missing**             |
 
 `WorldlineCompat` inherits from `Ownable` and is gated by `onlyOwner` on all registry
 mutation functions: `registerCircuit`, `registerDriver`, `registerPlugin`,
@@ -712,39 +717,38 @@ Create `docs/security/known-risks.md` with entries for each accepted risk:
   evaluated).
 - cargo: `rustls-pemfile` unmaintained — rationale, replacement timeline.
 
-
 ---
 
 ## Automated Tool Output Summary
 
-| Tool | Version | Findings | New vs. Known | Notes |
-|------|---------|----------|---------------|-------|
-| Slither | 0.11.5 | 9 detector categories, 28 result hits | 2 new (REA-001, REA-002); 7 false positives | Requires `forge` — installed during re-audit |
-| Halmos | 0.3.3 | 0 | 0 new | No `check_*`/`invariant_*` test targets in codebase |
-| cargo-audit | 0.22.1 | 1 warning | 1 new informational (rustls-pemfile unmaintained) | Yanked-crate check failed (registry 503); vuln scan completed |
-| cargo clippy | rustc 1.93.1 | 0 errors, 0 warnings | — | Clean |
-| npm audit | 10.9.4 | 67 vulns (21L/30M/16H) | Maps to INF-003 (v1.0 known) | All devDeps; CI prod-only gate passes |
-| forge test | 1.5.1-stable | 0 failures (63/63 pass) | — | All tests pass |
-| forge coverage | 1.5.1-stable | Line 73.6%, Branch 50.7% | — | Branch gap due to unimplemented production circuit path |
-| circomspect | MISSING | N/A | N/A | Install failed; must run against production circuit |
-| Aderyn | MISSING | N/A | N/A | Not installed |
-| Echidna | MISSING | N/A | N/A | Not installed |
-| Medusa | MISSING | N/A | N/A | Not installed |
-| vertigo-rs | MISSING | N/A | N/A | Not installed; mutation score not measured |
-| ZKAP | MISSING | N/A | N/A | Not installed |
-| snarkjs zkey verify | N/A | N/A | N/A | No `.zkey` in repo; mandatory before production ceremony |
+| Tool                | Version      | Findings                              | New vs. Known                                     | Notes                                                         |
+| ------------------- | ------------ | ------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------- |
+| Slither             | 0.11.5       | 9 detector categories, 28 result hits | 2 new (REA-001, REA-002); 7 false positives       | Requires `forge` — installed during re-audit                  |
+| Halmos              | 0.3.3        | 0                                     | 0 new                                             | No `check_*`/`invariant_*` test targets in codebase           |
+| cargo-audit         | 0.22.1       | 1 warning                             | 1 new informational (rustls-pemfile unmaintained) | Yanked-crate check failed (registry 503); vuln scan completed |
+| cargo clippy        | rustc 1.93.1 | 0 errors, 0 warnings                  | —                                                 | Clean                                                         |
+| npm audit           | 10.9.4       | 67 vulns (21L/30M/16H)                | Maps to INF-003 (v1.0 known)                      | All devDeps; CI prod-only gate passes                         |
+| forge test          | 1.5.1-stable | 0 failures (63/63 pass)               | —                                                 | All tests pass                                                |
+| forge coverage      | 1.5.1-stable | Line 73.6%, Branch 50.7%              | —                                                 | Branch gap due to unimplemented production circuit path       |
+| circomspect         | MISSING      | N/A                                   | N/A                                               | Install failed; must run against production circuit           |
+| Aderyn              | MISSING      | N/A                                   | N/A                                               | Not installed                                                 |
+| Echidna             | MISSING      | N/A                                   | N/A                                               | Not installed                                                 |
+| Medusa              | MISSING      | N/A                                   | N/A                                               | Not installed                                                 |
+| vertigo-rs          | MISSING      | N/A                                   | N/A                                               | Not installed; mutation score not measured                    |
+| ZKAP                | MISSING      | N/A                                   | N/A                                               | Not installed                                                 |
+| snarkjs zkey verify | N/A          | N/A                                   | N/A                                               | No `.zkey` in repo; mandatory before production ceremony      |
 
 ---
 
 ## Updated Coverage Analysis
 
-| Metric | v1.0 Baseline | v2.0 (post-remediation) | Delta |
-|--------|---------------|------------------------|-------|
-| Forge tests | 0 (Foundry not available) | 63 / 63 pass | +63 |
-| Hardhat tests | 119 (claimed) | not re-run | — |
-| Rust tests | 91 / 91 pass | 91 / 91 pass | 0 |
-| Line coverage | Not measured | 73.6% (195/265) | baseline |
-| Branch coverage | Not measured | 50.7% (37/73) | baseline |
+| Metric          | v1.0 Baseline             | v2.0 (post-remediation) | Delta    |
+| --------------- | ------------------------- | ----------------------- | -------- |
+| Forge tests     | 0 (Foundry not available) | 63 / 63 pass            | +63      |
+| Hardhat tests   | 119 (claimed)             | not re-run              | —        |
+| Rust tests      | 91 / 91 pass              | 91 / 91 pass            | 0        |
+| Line coverage   | Not measured              | 73.6% (195/265)         | baseline |
+| Branch coverage | Not measured              | 50.7% (37/73)           | baseline |
 
 **New test suites added during remediation:**
 
@@ -801,7 +805,7 @@ Create `docs/security/known-risks.md` with entries for each accepted risk:
 ### Key Custody and Deployment
 
 - [ ] **BLOCKING** — All four contracts (`WorldlineFinalizer`, `WorldlineRegistry`,
-  `WorldlineOutputsRegistry`, `WorldlineCompat`) ownership transferred to multisig ≥ 2-of-3
+      `WorldlineOutputsRegistry`, `WorldlineCompat`) ownership transferred to multisig ≥ 2-of-3
 - [ ] **BLOCKING** — Multisig confirms `acceptOwnership()` on all four contracts
 - [ ] Multisig signers use hardware wallets with transaction detail confirmation on device
 - [ ] Key rotation procedure documented
@@ -831,4 +835,3 @@ _Baseline audit commit: `0204d5354f5d58d2b32a6ceb5c25b46f33efe82f`_
 _Remediation merge commit: `fa8dda6501b9018eac8c98c667e24017901e206c`_
 _Re-audit date: 2026-03-27_
 _22 of 26 v1.0 findings verified closed — 3 partially fixed — 6 new findings (0 Critical, 0 High, 2 Low, 4 Informational)_
-
