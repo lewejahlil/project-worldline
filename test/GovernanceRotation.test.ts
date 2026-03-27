@@ -8,9 +8,9 @@
  * This test proves the full governance rotation flow works end-to-end.
  */
 
-import { ethers } from "hardhat";
-import { expect } from "chai";
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-governance-test"));
 const PROGRAM_VKEY_V1 = ethers.keccak256(ethers.toUtf8Bytes("program-vkey-v1"));

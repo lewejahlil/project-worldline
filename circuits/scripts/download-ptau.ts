@@ -1,7 +1,7 @@
-import { createReadStream, createWriteStream, existsSync, mkdirSync, unlinkSync } from "fs";
 import { createHash } from "crypto";
-import { get } from "https";
+import { createReadStream, createWriteStream, existsSync, mkdirSync, unlinkSync } from "fs";
 import { IncomingMessage } from "http";
+import { get } from "https";
 import { join } from "path";
 
 const PTAU_URL = "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_10.ptau";
@@ -68,7 +68,7 @@ function downloadFile(url: string, redirectCount = 0): Promise<void> {
       if (statusCode !== 200) {
         response.resume();
         const err = new Error(`HTTP ${statusCode}`);
-        (err as any).statusCode = statusCode;
+        (err as NodeJS.ErrnoException & { statusCode?: number }).statusCode = statusCode;
         reject(err);
         return;
       }
@@ -113,10 +113,10 @@ async function downloadWithRetry(): Promise<void> {
     try {
       await downloadFile(PTAU_URL);
       return;
-    } catch (err: any) {
+    } catch (err: unknown) {
       cleanupPartialFile();
 
-      const statusCode = err?.statusCode as number | undefined;
+      const statusCode = (err as Record<string, unknown>)?.statusCode as number | undefined;
       const isLastAttempt = attempt === MAX_RETRIES;
 
       if (!isRetriable(statusCode) || isLastAttempt) {
@@ -124,13 +124,15 @@ async function downloadWithRetry(): Promise<void> {
           console.error(`Failed to download ptau: HTTP ${statusCode}`);
           process.exit(EXIT_CODES.HTTP);
         }
-        console.error(`Failed to download ptau after ${attempt} attempt(s): ${err.message}`);
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Failed to download ptau after ${attempt} attempt(s): ${msg}`);
         process.exit(statusCode ? EXIT_CODES.HTTP : EXIT_CODES.NETWORK);
       }
 
       const delayMs = 2000 * Math.pow(2, attempt - 1);
+      const retryMsg = err instanceof Error ? err.message : String(err);
       console.warn(
-        `Attempt ${attempt}/${MAX_RETRIES} failed: ${err.message}. Retrying in ${delayMs / 1000}s...`
+        `Attempt ${attempt}/${MAX_RETRIES} failed: ${retryMsg}. Retrying in ${delayMs / 1000}s...`
       );
       await sleep(delayMs);
     }
@@ -200,9 +202,9 @@ if (existsSync(OUTPUT_FILE)) {
       try {
         await verifyPtauIntegrity(OUTPUT_FILE, PTAU_SHA256);
         console.log("ptau integrity verified ✓");
-      } catch (err: any) {
+      } catch (err: unknown) {
         cleanupPartialFile();
-        console.error(err.message);
+        console.error(err instanceof Error ? err.message : String(err));
         process.exit(EXIT_CODES.UNEXPECTED);
       }
     })

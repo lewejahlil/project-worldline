@@ -1,8 +1,8 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
-import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { WorldlineRegistry, Verifier } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { WorldlineRegistry, Verifier } from "../typechain-types";
 
 const CIRCUIT_ID = ethers.encodeBytes32String("circuit-1");
 const DRIVER_ID = ethers.encodeBytes32String("driver-1");

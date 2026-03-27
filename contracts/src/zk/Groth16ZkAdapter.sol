@@ -121,17 +121,21 @@ contract Groth16ZkAdapter is IZkAggregatorVerifier {
             //
             // Decode the production proof layout:
             //   (pA[2], pB[2][2], pC[2], stfCommitment, proverSetDigest)
+            //
+            // Cheap length check before any decoding.
             if (proof.length < PROD_PROOF_MIN_LEN) {
                 revert ProofTooShort(PROD_PROOF_MIN_LEN, proof.length);
             }
 
-            uint256[2] memory pA;
-            uint256[2][2] memory pB;
-            uint256[2] memory pC;
-            uint256 stfCommitmentUint;
-            uint256 proverSetDigestUint;
-
-            (pA, pB, pC, stfCommitmentUint, proverSetDigestUint) = abi.decode(
+            // Decode all 10 words in a single abi.decode call. The pubSignals
+            // array is constructed inline to avoid a separate memory allocation.
+            (
+                uint256[2] memory pA,
+                uint256[2][2] memory pB,
+                uint256[2] memory pC,
+                uint256 stfCommitmentUint,
+                uint256 proverSetDigestUint
+            ) = abi.decode(
                 proof,
                 (uint256[2], uint256[2][2], uint256[2], uint256, uint256)
             );
@@ -143,13 +147,10 @@ contract Groth16ZkAdapter is IZkAggregatorVerifier {
             programVKey = programVKeyPinned;
             policyHash = policyHashPinned;
 
-            // Construct pubSignals from the decoded values so they are
-            // cryptographically bound to the Groth16 proof.
-            uint256[2] memory pubSignals;
-            pubSignals[0] = stfCommitmentUint;
-            pubSignals[1] = proverSetDigestUint;
-
-            bool ok = Groth16Verifier(verifierAddress).verifyProof(pA, pB, pC, pubSignals);
+            // Pass pubSignals inline — avoids extra memory allocation.
+            bool ok = Groth16Verifier(verifierAddress).verifyProof(
+                pA, pB, pC, [stfCommitmentUint, proverSetDigestUint]
+            );
             if (!ok) revert ProofInvalid();
         }
 

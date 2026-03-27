@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-test-domain"));
 const PROGRAM_VKEY = ethers.keccak256(ethers.toUtf8Bytes("program-vkey"));
@@ -412,14 +412,11 @@ describe("WorldlineFinalizer", function () {
         finalizer.connect(owner).submitZkValidityProof(proof2, inputs2)
       ).to.be.revertedWithCustomError(finalizer, "NotContiguous");
     });
-  });
 
-  describe("StfMismatch", function () {
-    it("reverts when adapter stfCommitment differs from publicInputs stfCommitment", async function () {
+    it("emits ProofConsumed with correct proof hash (NUL-1 hardening)", async function () {
       const { finalizer, owner } = await loadFixture(deployFixture);
       const ts = BigInt(await time.latest()) + 200n;
 
-      // publicInputs has correctly bound stfCommitment
       const { inputs, stf } = encodePublicInputs(
         0n,
         100n,
@@ -428,6 +425,45 @@ describe("WorldlineFinalizer", function () {
         DOMAIN,
         ts
       );
+      const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+      const expectedHash = ethers.keccak256(proof);
+
+      await expect(finalizer.connect(owner).submitZkValidityProof(proof, inputs))
+        .to.emit(finalizer, "ProofConsumed")
+        .withArgs(0n, expectedHash);
+    });
+
+    it("identical proof bytes submitted twice reverts on second attempt", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      const ts = BigInt(await time.latest()) + 200n;
+
+      const { inputs, stf } = encodePublicInputs(
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+
+      // First submission succeeds
+      await finalizer.connect(owner).submitZkValidityProof(proof, inputs);
+
+      // Second submission with identical proof bytes fails (contiguity prevents replay)
+      await expect(
+        finalizer.connect(owner).submitZkValidityProof(proof, inputs)
+      ).to.be.revertedWithCustomError(finalizer, "NotContiguous");
+    });
+  });
+
+  describe("StfMismatch", function () {
+    it("reverts when adapter stfCommitment differs from publicInputs stfCommitment", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      const ts = BigInt(await time.latest()) + 200n;
+
+      // publicInputs has correctly bound stfCommitment
+      const { inputs } = encodePublicInputs(0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
       // proof encodes a DIFFERENT stfCommitment (adapter will return this)
       const stfWrong = ethers.keccak256(ethers.toUtf8Bytes("stf-wrong"));
       const proof = encodeProof(stfWrong, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);

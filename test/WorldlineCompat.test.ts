@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
 const CIRCUIT_ID = ethers.encodeBytes32String("circuit-1");
 const DRIVER_ID = ethers.encodeBytes32String("driver-1");

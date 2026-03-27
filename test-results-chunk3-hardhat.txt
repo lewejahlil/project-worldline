@@ -1,0 +1,197 @@
+duplicate definition - BlobHashMismatch(uint256,bytes32,bytes32)
+duplicate definition - InvalidVersionedHash(bytes32)
+duplicate definition - NoBlobAtIndex(uint256)
+
+  BlobVerifier
+    getBlobHash
+      ✔ returns bytes32(0) when no blob exists (local EVM)
+    verifyBlobHash
+      ✔ reverts with NoBlobAtIndex when no blob at index
+    validateVersionByte
+      ✔ accepts a hash with version byte 0x01
+      ✔ rejects a hash with wrong version byte
+      ✔ rejects a hash with version byte 0x02
+
+  GovernanceRotation
+    ✔ full governance rotation pipeline
+
+  Groth16ZkAdapter
+    deployment
+      ✔ stores pinned programVKey
+      ✔ stores pinned policyHash
+    verify
+      ✔ returns valid=true for correct proof with matching pinned values
+      ✔ reverts when programVKey does not match pinned value
+      ✔ reverts when policyHash does not match pinned value
+      ✔ reverts when underlying proof is invalid (secret² != publicHash)
+      ✔ returns valid=true for 224-byte publicInputs without invoking demo verifier (dev-only behavior)
+
+  Verifier
+    verifyProof
+      ✔ succeeds when secret² == publicHash
+      ✔ succeeds for secret=5, publicHash=25
+      ✔ succeeds for zero: secret=0, publicHash=0
+      ✔ succeeds for secret=1, publicHash=1
+      ✔ reverts with InvalidProof when secret² != publicHash
+      ✔ reverts when secret is correct but publicHash is off by one
+      ✔ reverts when secret=0 but publicHash is non-zero
+      ✔ handles a large valid pair within uint256 bounds
+      ✔ reverts with SecretTooLarge when secret >= 2^128 (MED-004 range check)
+
+  WorldlineCompat
+    deployment
+      ✔ stores the registry address
+      ✔ reverts if deployed with zero registry address
+(node:17735) PromiseRejectionHandledWarning: Promise rejection was handled asynchronously (rejection id: 1)
+(Use `node --trace-warnings ...` to show where the warning was created)
+    registerCircuit
+      ✔ owner can register a circuit through the facade
+      ✔ non-owner cannot register a circuit through the facade
+    registerDriver
+      ✔ owner can register a driver through the facade
+    registerPlugin
+      ✔ owner can register a plugin through the facade
+    deprecatePlugin
+      ✔ owner can deprecate a plugin through the facade
+    view functions
+      ✔ getCircuit reads through to registry
+      ✔ getDriver reads through to registry
+      ✔ getPlugin reads through to registry
+      ✔ verify delegates to registry
+
+  WorldlineFinalizer
+    deployment
+      ✔ sets the adapter
+      ✔ sets the domain separator
+      ✔ reverts if deployed with zero adapter
+      ✔ reverts if deployed with zero maxAcceptanceDelay
+    access control
+      ✔ owner can submit
+      ✔ authorized submitter can submit
+      ✔ unauthorized caller cannot submit
+      ✔ permissionless mode allows anyone
+    paused
+      ✔ reverts when paused
+    validation
+      ✔ reverts on wrong input length
+      ✔ reverts on domain mismatch
+      ✔ reverts when l2End <= l2Start
+      ✔ reverts when l2End == l2Start (empty window)
+      ✔ reverts when proof is too old (TooOld)
+      ✔ reverts when metaLocator exceeds 96 bytes
+    admin events
+      ✔ setPaused emits PausedSet
+      ✔ setPermissionless emits PermissionlessSet
+      ✔ setSubmitter emits SubmitterSet
+      ✔ setMaxAcceptanceDelay emits MaxAcceptanceDelaySet
+      ✔ setMaxAcceptanceDelay reverts on zero
+      ✔ scheduleAdapterChange + activateAdapterChange emits AdapterSet
+      ✔ scheduleAdapterChange reverts on zero address
+    events
+      ✔ emits OutputProposed and ZkProofAccepted on success
+    duplicate window
+      ✔ second proof for the same window index reverts (NotContiguous)
+      ✔ emits ProofConsumed with correct proof hash (NUL-1 hardening)
+      ✔ identical proof bytes submitted twice reverts on second attempt
+    StfMismatch
+      ✔ reverts when adapter stfCommitment differs from publicInputs stfCommitment
+    contiguity
+      ✔ enforces contiguous windows
+
+  WorldlineOutputsRegistry
+    deployment
+      ✔ sets minimum timelock
+      ✔ reverts if timelock is zero
+    domainKey
+      ✔ computes deterministic key
+    schedule
+      ✔ owner can schedule an entry
+      ✔ non-owner cannot schedule
+      ✔ emits OutputRescheduled when overwriting a pending entry
+    activate
+      ✔ reverts if no pending entry
+      ✔ reverts if timelock has not elapsed
+      ✔ activates after timelock elapses
+      ✔ anyone can activate after timelock (permissionless)
+    getActiveEntry
+      ✔ reverts if no active entry
+    setMinTimelock
+      ✔ owner can update timelock
+      ✔ reverts if set to zero
+
+  WorldlineRegistry
+    deployment
+      ✔ sets the deployer as owner
+      ✔ stores the default verifier address
+      ✔ reverts if deployed with zero verifier address
+    Ownable
+      ✔ owner() returns the current owner
+      ✔ owner can initiate two-step ownership transfer
+      ✔ pending owner can accept ownership
+      ✔ new owner can exercise ownership after transfer
+      ✔ non-owner cannot transfer ownership
+      ✔ transferring ownership to zero address reverts
+    setCompatFacade
+      ✔ owner can set the compat facade
+      ✔ non-owner cannot set the compat facade
+      ✔ compat facade can be disabled via timelocked two-step
+      ✔ compat facade gains admin rights after being set
+    registerCircuit
+      ✔ admin can register a circuit
+      ✔ non-admin cannot register a circuit
+      ✔ reverts on duplicate circuit ID
+      ✔ reverts when circuit ID is zero bytes32
+      ✔ registers with address(0) verifier (falls back to defaultVerifier)
+    getCircuit
+      ✔ returns correct metadata for a registered circuit
+      ✔ reverts for an unknown circuit ID
+    registerDriver
+      ✔ admin can register a driver
+      ✔ non-admin cannot register a driver
+      ✔ reverts on duplicate driver ID
+      ✔ reverts when driver ID is zero bytes32
+    getDriver
+      ✔ returns correct metadata for a registered driver
+      ✔ reverts for an unknown driver ID
+    registerPlugin
+      ✔ admin can register a plugin linked to an existing circuit
+      ✔ non-admin cannot register a plugin
+      ✔ reverts on duplicate plugin ID
+      ✔ reverts when plugin ID is zero bytes32
+      ✔ reverts when implementation address is zero
+      ✔ reverts when referenced circuit does not exist
+    deprecatePlugin
+      ✔ admin can deprecate a registered plugin
+      ✔ deprecated flag is set to true after deprecation
+      ✔ non-admin cannot deprecate a plugin
+      ✔ reverts when deprecating a non-existent plugin
+    getPlugin
+      ✔ returns correct metadata for a registered plugin
+      ✔ returns deprecated=true after deprecation
+      ✔ reverts for an unknown plugin ID
+    verify
+      ✔ returns true for a valid proof using the defaultVerifier (circuit verifier=0)
+      ✔ returns true for a valid proof using a circuit-specific verifier
+      ✔ reverts with InvalidProof for an invalid proof
+      ✔ reverts when circuit ID is not registered
+
+  E2E Integration
+    ✔ full lifecycle: deploy → register → verify via registry
+    ✔ full lifecycle via compat facade
+    ✔ invalid proof reverts
+    ✔ deprecating a plugin marks it but keeps it queryable
+
+  GasBenchmark: GovernanceRotation full 10-step sequence
+    ✔ full governance rotation gas total
+
+  GasBenchmark: Groth16Verifier.verifyProof
+    ✔ single Groth16 BN254 proof verify latency
+
+  GasBenchmark: WorldlineFinalizer.submitZkValidityProof
+    ✔ batch size 1 — single verifyAndFinalize call
+    ✔ batch size 4 — four sequential verifyAndFinalize calls
+    ✔ batch size 16 — sixteen sequential verifyAndFinalize calls
+
+
+  126 passing (2s)
+

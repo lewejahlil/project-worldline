@@ -13,9 +13,9 @@
  *   FROM_BLOCK               Start block for event query (default: 0)
  */
 
-import { ethers } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
+import { ethers } from "ethers";
 import { canonicalKeccak } from "./canonical-json";
 
 // ── ABIs ──────────────────────────────────────────────────────────────────────

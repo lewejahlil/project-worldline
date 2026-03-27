@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
 /**
  * End-to-end integration test exercising the full contract stack:

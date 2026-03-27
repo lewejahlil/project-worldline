@@ -1,0 +1,21 @@
+Circuit Constraint Counts — Worldline v1.0 (SquareHash)
+========================================================
+
+Source: circuits/worldline.circom
+Compiled with: circom 2.1.6
+Curve: BN-128 (BN254)
+
+Constraint Summary:
+  # of Constraints:    1
+  # of Wires:          3
+  # of Private Inputs: 1
+  # of Public Inputs:  1
+  # of Labels:         4
+  # of Outputs:        0
+
+Notes:
+  - The SquareHash circuit is a minimal demo (1 non-linear constraint).
+  - INF-005 remediation already removed 1 redundant constraint (unused isValid output).
+  - No further constraint reduction is possible — the circuit is at its minimum.
+  - Production circuits (recursion modes snark-accum, snark-miniverifier) are not yet
+    implemented. Constraint counts for those will be documented when available.

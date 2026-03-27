@@ -1,0 +1,24 @@
+    Updating crates.io index
+     Locking 287 packages to latest compatible versions
+      Adding criterion v0.5.1 (available: v0.8.2)
+      Adding crypto-common v0.1.6 (available: v0.1.7)
+      Adding reqwest v0.11.27 (available: v0.13.2)
+      Adding thiserror v1.0.69 (available: v2.0.18)
+    Fetching advisory database from `https://github.com/RustSec/advisory-db.git`
+      Loaded 1017 security advisories (from /root/.cargo/advisory-db)
+    Updating crates.io index
+    Scanning Cargo.lock for vulnerabilities (292 crate dependencies)
+Crate:     rustls-pemfile
+Version:   1.0.4
+Warning:   unmaintained
+Title:     rustls-pemfile is unmaintained
+Date:      2025-11-28
+ID:        RUSTSEC-2025-0134
+URL:       https://rustsec.org/advisories/RUSTSEC-2025-0134
+Dependency tree:
+rustls-pemfile 1.0.4
+└── reqwest 0.11.27
+    └── worldline-driver 0.1.0
+        └── worldline-benches 0.1.0
+
+warning: 1 allowed warning found

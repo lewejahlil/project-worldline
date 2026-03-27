@@ -9,10 +9,10 @@
  * Usage: npm run devnet
  */
 
-const { spawn } = require("child_process");
-const { ethers } = require("ethers");
-const fs = require("fs");
-const path = require("path");
+import { spawn } from "child_process";
+import fs from "fs";
+import path from "path";
+import { ethers } from "ethers";
 
 const ANVIL_PORT = process.env.DEVNET_PORT || "8545";
 const PRIVATE_KEY =

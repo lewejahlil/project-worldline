@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
 const PROGRAM_VKEY = ethers.keccak256(ethers.toUtf8Bytes("program-vkey"));
 const POLICY_HASH = ethers.keccak256(ethers.toUtf8Bytes("policy-hash"));

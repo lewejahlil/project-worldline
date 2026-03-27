@@ -1,0 +1,16 @@
+
+> worldline@1.0.0 c:compile
+> mkdir -p circuits/artifacts && circom circuits/worldline.circom --wasm --r1cs --output circuits/artifacts
+
+[32mtemplate instances[0m: 1
+non-linear constraints: 1
+linear constraints: 0
+public inputs: 1
+public outputs: 0
+private inputs: 1
+private outputs: 0
+wires: 3
+labels: 4
+[32mWritten successfully:[0m circuits/artifacts/worldline.r1cs
+[32mWritten successfully:[0m circuits/artifacts/worldline_js/worldline.wasm
+[32mEverything went okay, circom safe[0m

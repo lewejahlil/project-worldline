@@ -20,10 +20,10 @@
  */
 
 import { spawn, ChildProcess } from "child_process";
-import * as net from "net";
-import { ethers } from "ethers";
 import * as fs from "fs";
+import * as net from "net";
 import * as path from "path";
+import { ethers } from "ethers";
 
 const ANVIL_PORT = process.env["DEVNET_PORT"] ?? "8545";
 const PRIVATE_KEY =

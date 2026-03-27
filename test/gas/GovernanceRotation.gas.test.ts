@@ -18,8 +18,8 @@
  * NOTE: Do NOT modify existing test files; this file lives in test/gas/ as a helper.
  */
 
-import { ethers } from "hardhat";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { ethers } from "hardhat";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-gov-gas-domain"));
 const PROGRAM_VKEY_V1 = ethers.keccak256(ethers.toUtf8Bytes("program-vkey-v1-gas"));

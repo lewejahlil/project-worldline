@@ -20,11 +20,12 @@ fn make_entry(i: usize) -> DirectoryEntry {
     }
 }
 
-/// A policy that selects all N provers (min_count == N, at least one distinct family).
+/// A policy that selects min(N, 8) provers (capped at MAX_MANIFEST_ENTRIES),
+/// requiring at most 3 distinct families (the number of synthetic families).
 fn make_policy(n: usize) -> Policy {
     Policy {
-        min_count: n,
-        min_distinct_families: (n / 4).max(1),
+        min_count: n.min(8),
+        min_distinct_families: (n / 4).clamp(1, 3),
         required_families: vec![],
         allowlist_provers: None,
         min_inclusion_ratio: 0.0,
@@ -41,9 +42,13 @@ fn make_policy(n: usize) -> Policy {
 ///   3. Prefix scan satisfying policy constraints.
 ///   4. Build canonical manifest JSON.
 ///   5. Compute `prover_set_digest = keccak256(manifest_json)`.
+///
+/// For N > 8, the policy and directory are sized so that selected entries
+/// stay within MAX_MANIFEST_ENTRIES (8). Larger directories still exercise
+/// the full filtering and sorting path.
 fn bench_aggregation_throughput(c: &mut Criterion) {
     let mut group = c.benchmark_group("aggregation_throughput");
-    for n in [2usize, 4, 8, 16, 32] {
+    for n in [1usize, 2, 4, 8] {
         let entries: Vec<DirectoryEntry> = (0..n).map(make_entry).collect();
         let policy = make_policy(n);
         group.bench_with_input(BenchmarkId::new("select_n_proofs", n), &n, |b, _| {

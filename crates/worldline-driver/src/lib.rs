@@ -4,7 +4,7 @@ pub mod recursion;
 use std::path::Path;
 
 use anyhow::{bail, Context, Result};
-use tracing::info;
+use tracing::{info, warn};
 use worldline_compat::{build_compat_snapshot, ensure_plugin_exists};
 use worldline_registry::{self as registry};
 
@@ -54,21 +54,39 @@ pub async fn sync_registry(url: &str, output: &Path) -> Result<()> {
     );
 
     registry::save(output, &snapshot).context("failed to save registry snapshot")?;
+    info!(
+        output = %output.display(),
+        bytes = bytes.len(),
+        "registry sync complete"
+    );
 
     Ok(())
 }
 
 /// Load a registry snapshot and export it as a JSON compat snapshot.
 pub fn export_compat(input: &Path) -> Result<String> {
+    info!(input = %input.display(), "exporting compat snapshot");
     let snapshot = registry::load(input).context("failed to load registry")?;
     let compat = build_compat_snapshot(&snapshot);
-    serde_json::to_string_pretty(&compat).context("failed to serialize compat snapshot")
+    let json =
+        serde_json::to_string_pretty(&compat).context("failed to serialize compat snapshot")?;
+    info!(
+        circuits = snapshot.circuits.len(),
+        plugins = snapshot.plugins.len(),
+        "compat export complete"
+    );
+    Ok(json)
 }
 
 /// Verify that a plugin exists in a local registry snapshot.
 pub fn check_plugin(input: &Path, plugin_id: &str) -> Result<()> {
+    info!(input = %input.display(), plugin_id = %plugin_id, "checking plugin existence");
     let snapshot = registry::load(input).context("failed to load registry")?;
-    ensure_plugin_exists(&snapshot, plugin_id)
+    let result = ensure_plugin_exists(&snapshot, plugin_id);
+    if result.is_err() {
+        warn!(plugin_id = %plugin_id, "plugin not found in registry");
+    }
+    result
 }
 
 #[cfg(test)]

@@ -56,6 +56,12 @@ contract WorldlineFinalizer is Ownable {
     event AdapterChangeScheduled(address indexed adapter, uint256 activationTime);
     event AdapterChangeDelaySet(uint256 delay);
 
+    /// @notice Emitted when a proof is consumed for a window, providing an explicit
+    ///         on-chain audit trail for proof deduplication (NUL-1 hardening).
+    /// @param windowIndex The sequential window index this proof was consumed for.
+    /// @param proofHash   keccak256 of the raw proof bytes.
+    event ProofConsumed(uint256 indexed windowIndex, bytes32 proofHash);
+
     /// @notice Emitted when a proof submission includes a manifest locator hint (LOW-004 remediation).
     /// @param proverSetDigest The keccak256 digest of the canonical prover manifest.
     /// @param metaLocator     Off-chain locator for the manifest data.
@@ -223,7 +229,7 @@ contract WorldlineFinalizer is Ownable {
             revert NotAuthorized();
         }
 
-        // ABI length check
+        // ABI length check (cheapest possible — pure calldata length comparison)
         if (publicInputs.length != PUBLIC_INPUTS_LEN) revert BadInputsLen();
 
         // Decode the seven public input words
@@ -240,6 +246,27 @@ contract WorldlineFinalizer is Ownable {
             (bytes32, uint256, uint256, bytes32, bytes32, bytes32, uint256)
         );
 
+        // ── Cheap validation first (comparisons before keccak/SLOAD) ────────
+        // Domain binding — single SLOAD + comparison
+        if (inputDomainSeparator != domainSeparator) revert DomainMismatch();
+
+        // Window range — pure arithmetic comparison, no storage reads
+        if (l2End <= l2Start) revert InvalidWindowRange();
+
+        // Contiguity — single SLOAD + comparison
+        // LOW-003 remediation: genesis window l2Start is validated against the constructor anchor.
+        if (nextWindowIndex == 0) {
+            if (l2Start != genesisL2Block) revert GenesisStartMismatch(genesisL2Block, l2Start);
+        } else {
+            if (l2Start != lastL2EndBlock) revert NotContiguous();
+        }
+
+        // Staleness — SLOAD + arithmetic
+        if (maxAcceptanceDelay > 0 && block.timestamp > windowCloseTimestamp + maxAcceptanceDelay) {
+            revert TooOld();
+        }
+
+        // ── Expensive validation (keccak256) after all cheap checks pass ────
         // MED-001: Defense-in-depth — verify stfCommitment binds to the decoded ABI content.
         // stfCommitment must equal keccak256(abi.encode(l2Start, l2End, outputRoot,
         // l1BlockHash, domainSeparator, windowCloseTimestamp)). This prevents a circuit
@@ -250,32 +277,6 @@ contract WorldlineFinalizer is Ownable {
             );
             if (stfCommitment != expectedStf) revert StfBindingMismatch();
         }
-
-        // Domain binding
-        if (inputDomainSeparator != domainSeparator) revert DomainMismatch();
-
-        // Window range: l2End must be strictly greater than l2Start
-        if (l2End <= l2Start) revert InvalidWindowRange();
-
-        // Contiguity: l2Start must equal lastL2EndBlock (or genesisL2Block for the first window).
-        // LOW-003 remediation: genesis window l2Start is validated against the constructor anchor.
-        if (nextWindowIndex == 0) {
-            if (l2Start != genesisL2Block) revert GenesisStartMismatch(genesisL2Block, l2Start);
-        } else {
-            if (l2Start != lastL2EndBlock) revert NotContiguous();
-        }
-
-        // Staleness
-        if (maxAcceptanceDelay > 0 && block.timestamp > windowCloseTimestamp + maxAcceptanceDelay) {
-            revert TooOld();
-        }
-
-        // Suppress unused variable warnings — l1BlockHash and outputRoot are
-        // bound inside publicInputs and verified through the adapter's
-        // stfCommitment check. We decode them to ensure the ABI is well-formed
-        // but do not need to reference them individually here.
-        l1BlockHash;
-        outputRoot;
 
         // ── Effects (LOW-005 CEI remediation) ─────────────────────────────────
         // Update state BEFORE the external adapter.verify() call to prevent
@@ -298,6 +299,7 @@ contract WorldlineFinalizer is Ownable {
         // Emit events
         emit OutputProposed(windowIndex, outputRoot, l2Start, l2End, stfCommitment);
         emit ZkProofAccepted(windowIndex, programVKey, policyHash, proverSetDigest);
+        emit ProofConsumed(windowIndex, keccak256(proof));
 
         return proverSetDigest;
     }
