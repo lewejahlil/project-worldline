@@ -178,6 +178,11 @@ jobs:
           node-version: "20"
           cache: "npm"
       - run: npm ci
+      - name: Install circom 2.1.6
+        run: |
+          curl -sL https://github.com/iden3/circom/releases/download/v2.1.6/circom-linux-amd64 -o /usr/local/bin/circom
+          chmod +x /usr/local/bin/circom
+          circom --version
       - name: Compile circuit
         run: npm run c:compile
       - name: Download ptau (with integrity check)
