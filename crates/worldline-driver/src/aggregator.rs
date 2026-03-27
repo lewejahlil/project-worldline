@@ -7,10 +7,10 @@
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use tracing::info;
+use tracing::{info, warn};
 use worldline_registry::canonical::canonical_keccak;
 use worldline_registry::directory::{verify_directory_signature, SignedDirectory};
-use worldline_registry::selection::{select, Policy};
+use worldline_registry::selection::{select, Policy, SelectionEvent};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -113,6 +113,31 @@ pub fn run_aggregator(config: &AggregatorConfig) -> Result<AggregatorOutput> {
     info!("running deterministic prover selection");
     let result = select(&directory.entries, &policy)
         .with_context(|| "prover selection failed — no valid selection satisfies policy")?;
+    // Log selection events for observability.
+    for event in &result.events {
+        match event {
+            SelectionEvent::PrimarySelected { count } => {
+                info!(count, "primary selection succeeded");
+            }
+            SelectionEvent::FallbackTriggered {
+                tier_index,
+                families,
+            } => {
+                warn!(
+                    tier_index,
+                    families = ?families,
+                    "primary selection failed — fallback tier activated"
+                );
+            }
+            SelectionEvent::ProverExcluded { prover_id, reason } => {
+                warn!(
+                    prover_id = %prover_id,
+                    reason = ?reason,
+                    "prover excluded from selection"
+                );
+            }
+        }
+    }
     info!(
         selected = result.selected.len(),
         prover_set_digest = %hex::encode(result.prover_set_digest),

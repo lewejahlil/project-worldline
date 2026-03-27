@@ -70,6 +70,7 @@ pub struct ManifestEntry {
 }
 
 /// Output of the deterministic selection algorithm.
+#[derive(Debug)]
 pub struct SelectionResult {
     /// Selected directory entries (in selection order).
     pub selected: Vec<DirectoryEntry>,
@@ -77,11 +78,58 @@ pub struct SelectionResult {
     pub manifest_json: String,
     /// `keccak256(manifest_json)` — the on-chain `proverSetDigest`.
     pub prover_set_digest: [u8; 32],
+    /// Observable events emitted during selection.
+    pub events: Vec<SelectionEvent>,
 }
 
 /// Hard bound for selection set size; protects gas and selection determinism.
 /// MED-002 remediation: enforced after prefix selection.
 pub const MAX_MANIFEST_ENTRIES: usize = 8;
+
+/// Events emitted during selection for observability.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SelectionEvent {
+    /// Primary selection succeeded without fallback.
+    PrimarySelected { count: usize },
+    /// Primary selection failed; a fallback tier was used.
+    FallbackTriggered {
+        tier_index: usize,
+        families: Vec<String>,
+    },
+    /// A prover was excluded from the eligible set.
+    ProverExcluded {
+        prover_id: String,
+        reason: ExclusionReason,
+    },
+}
+
+/// Reason a prover was excluded from selection.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ExclusionReason {
+    Offline,
+    Degraded,
+    NotInAllowlist,
+    HealthCheckFailed,
+}
+
+/// Default fallback chain: halo2 → plonk → groth16.
+/// Used when the policy has no explicit fallback tiers.
+pub const DEFAULT_FALLBACK_CHAIN: &[&str] = &["halo2", "plonk", "groth16"];
+
+/// Build default fallback tiers from the canonical family priority chain.
+pub fn default_fallback_tiers() -> Vec<FallbackTier> {
+    // Each tier allows the families at that priority level and below.
+    // Tier 0: plonk + groth16 (halo2 failed)
+    // Tier 1: groth16 only (plonk also failed)
+    vec![
+        FallbackTier {
+            families: vec!["plonk".to_string(), "groth16".to_string()],
+        },
+        FallbackTier {
+            families: vec!["groth16".to_string()],
+        },
+    ]
+}
 
 #[derive(Debug, Error)]
 pub enum SelectionError {
@@ -112,20 +160,41 @@ pub fn select(
     entries: &[DirectoryEntry],
     policy: &Policy,
 ) -> Result<SelectionResult, SelectionError> {
+    let mut events = Vec::new();
+
     // Step 1: Filter eligible entries.
     // LOW-006 remediation: exclude Degraded provers unless allow_degraded is set.
-    let mut eligible: Vec<&DirectoryEntry> = entries
-        .iter()
-        .filter(|e| match e.health {
-            HealthStatus::Offline => false,
-            HealthStatus::Degraded => policy.allow_degraded,
-            HealthStatus::Healthy => true,
-        })
-        .collect();
+    let mut eligible: Vec<&DirectoryEntry> = Vec::new();
+    for e in entries {
+        match e.health {
+            HealthStatus::Offline => {
+                events.push(SelectionEvent::ProverExcluded {
+                    prover_id: e.prover_id.clone(),
+                    reason: ExclusionReason::Offline,
+                });
+            }
+            HealthStatus::Degraded if !policy.allow_degraded => {
+                events.push(SelectionEvent::ProverExcluded {
+                    prover_id: e.prover_id.clone(),
+                    reason: ExclusionReason::Degraded,
+                });
+            }
+            _ => eligible.push(e),
+        }
+    }
 
     if let Some(allowlist) = &policy.allowlist_provers {
         let set: HashSet<&str> = allowlist.iter().map(|s| s.as_str()).collect();
-        eligible.retain(|e| set.contains(e.prover_id.as_str()));
+        let (kept, excluded): (Vec<_>, Vec<_>) = eligible
+            .into_iter()
+            .partition(|e| set.contains(e.prover_id.as_str()));
+        for e in &excluded {
+            events.push(SelectionEvent::ProverExcluded {
+                prover_id: e.prover_id.clone(),
+                reason: ExclusionReason::NotInAllowlist,
+            });
+        }
+        eligible = kept;
     }
 
     // Step 2: Sort by composite key, then tie-break by latency/cost.
@@ -149,11 +218,20 @@ pub fn select(
         policy.min_inclusion_ratio,
         eligible_count,
     ) {
+        events.push(SelectionEvent::PrimarySelected { count: sel.len() });
         sel
     } else {
-        // Step 4: Try fallback tiers.
+        // Step 4: Try fallback tiers. Use default chain if policy has none.
+        let effective_tiers: Vec<FallbackTier>;
+        let tiers = if policy.fallback_tiers.is_empty() {
+            effective_tiers = default_fallback_tiers();
+            &effective_tiers
+        } else {
+            &policy.fallback_tiers
+        };
+
         let mut fallback = None;
-        for tier in &policy.fallback_tiers {
+        for (idx, tier) in tiers.iter().enumerate() {
             if let Some(sel) = try_prefix_select(
                 &eligible,
                 policy.min_count,
@@ -162,6 +240,10 @@ pub fn select(
                 policy.min_inclusion_ratio,
                 eligible_count,
             ) {
+                events.push(SelectionEvent::FallbackTriggered {
+                    tier_index: idx,
+                    families: tier.families.clone(),
+                });
                 fallback = Some(sel);
                 break;
             }
@@ -214,6 +296,7 @@ pub fn select(
         selected: selected.iter().map(|e| (*e).clone()).collect(),
         manifest_json,
         prover_set_digest,
+        events,
     })
 }
 
@@ -671,5 +754,199 @@ mod tests {
             ..basic_policy()
         };
         assert!(select(&entries, &policy).is_err());
+    }
+
+    // ── P3: Multi-prover fallback routing ──────────────────────────────────
+
+    #[test]
+    fn halo2_offline_falls_back_to_plonk() {
+        let entries = vec![
+            entry("h1", "halo2", 100, 10, HealthStatus::Offline),
+            entry("p1", "plonk", 200, 20, HealthStatus::Healthy),
+            entry("g1", "groth16", 300, 30, HealthStatus::Healthy),
+        ];
+        let policy = Policy {
+            min_count: 1,
+            min_distinct_families: 1,
+            required_families: vec!["halo2".to_string()],
+            fallback_tiers: default_fallback_tiers(),
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy).unwrap();
+        let families: Vec<&str> = result.selected.iter().map(|e| e.family.as_str()).collect();
+        // halo2 is offline, so plonk or groth16 should be selected via fallback
+        assert!(!families.contains(&"halo2"));
+        assert!(families.contains(&"plonk") || families.contains(&"groth16"));
+    }
+
+    #[test]
+    fn fallback_emits_event() {
+        let entries = vec![
+            entry("p1", "plonk", 200, 20, HealthStatus::Healthy),
+            entry("g1", "groth16", 300, 30, HealthStatus::Healthy),
+        ];
+        let policy = Policy {
+            min_count: 1,
+            min_distinct_families: 1,
+            required_families: vec!["halo2".to_string()],
+            fallback_tiers: default_fallback_tiers(),
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy).unwrap();
+        let has_fallback = result
+            .events
+            .iter()
+            .any(|e| matches!(e, SelectionEvent::FallbackTriggered { .. }));
+        assert!(has_fallback, "expected FallbackTriggered event");
+    }
+
+    #[test]
+    fn offline_prover_emits_exclusion_event() {
+        let entries = vec![
+            entry("h1", "halo2", 100, 10, HealthStatus::Offline),
+            entry("g1", "groth16", 300, 30, HealthStatus::Healthy),
+        ];
+        let policy = Policy {
+            min_count: 1,
+            min_distinct_families: 1,
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy).unwrap();
+        let excluded = result.events.iter().any(|e| {
+            matches!(
+                e,
+                SelectionEvent::ProverExcluded {
+                    prover_id,
+                    reason: ExclusionReason::Offline,
+                } if prover_id == "h1"
+            )
+        });
+        assert!(excluded, "expected ProverExcluded event for h1");
+    }
+
+    #[test]
+    fn default_fallback_tiers_structure() {
+        let tiers = default_fallback_tiers();
+        assert_eq!(tiers.len(), 2);
+        assert!(tiers[0].families.contains(&"plonk".to_string()));
+        assert!(tiers[0].families.contains(&"groth16".to_string()));
+        assert_eq!(tiers[1].families, vec!["groth16".to_string()]);
+    }
+
+    // ── P4: Aggregation edge cases ───────────────────────────────────────
+
+    #[test]
+    fn single_proof_batch_produces_valid_manifest() {
+        let entries = vec![entry("g1", "groth16", 100, 10, HealthStatus::Healthy)];
+        let policy = Policy {
+            min_count: 1,
+            min_distinct_families: 1,
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy).unwrap();
+        assert_eq!(result.selected.len(), 1);
+        assert_ne!(result.prover_set_digest, [0u8; 32]);
+        // Manifest JSON must be valid and non-empty.
+        let parsed: serde_json::Value = serde_json::from_str(&result.manifest_json).unwrap();
+        assert_eq!(parsed.as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn zero_proof_batch_returns_structured_error() {
+        let policy = Policy {
+            min_count: 1,
+            min_distinct_families: 1,
+            ..basic_policy()
+        };
+        let err = select(&[], &policy).unwrap_err();
+        assert!(
+            matches!(err, SelectionError::NoValidSelection),
+            "empty directory must return NoValidSelection, got: {err}"
+        );
+    }
+
+    #[test]
+    fn max_size_batch_at_limit_succeeds() {
+        let entries: Vec<DirectoryEntry> = (0..MAX_MANIFEST_ENTRIES)
+            .map(|i| {
+                entry(
+                    &format!("p{i}"),
+                    &format!("f{i}"),
+                    100,
+                    10,
+                    HealthStatus::Healthy,
+                )
+            })
+            .collect();
+        let policy = Policy {
+            min_count: MAX_MANIFEST_ENTRIES,
+            min_distinct_families: MAX_MANIFEST_ENTRIES,
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy).unwrap();
+        assert_eq!(result.selected.len(), MAX_MANIFEST_ENTRIES);
+    }
+
+    #[test]
+    fn max_size_batch_exceeded_returns_error() {
+        let count = MAX_MANIFEST_ENTRIES + 1;
+        let entries: Vec<DirectoryEntry> = (0..count)
+            .map(|i| {
+                entry(
+                    &format!("p{i}"),
+                    &format!("f{i}"),
+                    100,
+                    10,
+                    HealthStatus::Healthy,
+                )
+            })
+            .collect();
+        let policy = Policy {
+            min_count: count,
+            min_distinct_families: count,
+            ..basic_policy()
+        };
+        let err = select(&entries, &policy).unwrap_err();
+        assert!(matches!(err, SelectionError::ManifestTooLarge(_)));
+    }
+
+    #[test]
+    fn mixed_proof_systems_in_one_batch() {
+        // All three families in one selection.
+        let entries = vec![
+            entry("g1", "groth16", 100, 10, HealthStatus::Healthy),
+            entry("p1", "plonk", 200, 20, HealthStatus::Healthy),
+            entry("h1", "halo2", 300, 30, HealthStatus::Healthy),
+        ];
+        let policy = Policy {
+            min_count: 3,
+            min_distinct_families: 3,
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy).unwrap();
+        let families: HashSet<&str> = result.selected.iter().map(|e| e.family.as_str()).collect();
+        assert_eq!(families.len(), 3, "all three families must be selected");
+        assert!(families.contains("groth16"));
+        assert!(families.contains("plonk"));
+        assert!(families.contains("halo2"));
+    }
+
+    #[test]
+    fn primary_selection_emits_primary_event() {
+        let entries = vec![
+            entry("g1", "groth16", 100, 10, HealthStatus::Healthy),
+            entry("s1", "sp1", 200, 20, HealthStatus::Healthy),
+        ];
+        let policy = Policy {
+            min_count: 2,
+            min_distinct_families: 2,
+            ..basic_policy()
+        };
+        let result = select(&entries, &policy).unwrap();
+        let has_primary = result
+            .events
+            .iter()
+            .any(|e| matches!(e, SelectionEvent::PrimarySelected { .. }));
+        assert!(has_primary, "expected PrimarySelected event");
     }
 }

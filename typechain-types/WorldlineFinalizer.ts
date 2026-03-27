@@ -66,6 +66,7 @@ export interface WorldlineFinalizerInterface extends Interface {
       | "OwnershipTransferred"
       | "PausedSet"
       | "PermissionlessSet"
+      | "ProofConsumed"
       | "SubmitterSet"
       | "ZkProofAccepted"
   ): EventFragment;
@@ -387,6 +388,19 @@ export namespace PermissionlessSetEvent {
   export type OutputTuple = [permissionless: boolean];
   export interface OutputObject {
     permissionless: boolean;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace ProofConsumedEvent {
+  export type InputTuple = [windowIndex: BigNumberish, proofHash: BytesLike];
+  export type OutputTuple = [windowIndex: bigint, proofHash: string];
+  export interface OutputObject {
+    windowIndex: bigint;
+    proofHash: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -725,6 +739,13 @@ export interface WorldlineFinalizer extends BaseContract {
     PermissionlessSetEvent.OutputObject
   >;
   getEvent(
+    key: "ProofConsumed"
+  ): TypedContractEvent<
+    ProofConsumedEvent.InputTuple,
+    ProofConsumedEvent.OutputTuple,
+    ProofConsumedEvent.OutputObject
+  >;
+  getEvent(
     key: "SubmitterSet"
   ): TypedContractEvent<
     SubmitterSetEvent.InputTuple,
@@ -848,6 +869,17 @@ export interface WorldlineFinalizer extends BaseContract {
       PermissionlessSetEvent.InputTuple,
       PermissionlessSetEvent.OutputTuple,
       PermissionlessSetEvent.OutputObject
+    >;
+
+    "ProofConsumed(uint256,bytes32)": TypedContractEvent<
+      ProofConsumedEvent.InputTuple,
+      ProofConsumedEvent.OutputTuple,
+      ProofConsumedEvent.OutputObject
+    >;
+    ProofConsumed: TypedContractEvent<
+      ProofConsumedEvent.InputTuple,
+      ProofConsumedEvent.OutputTuple,
+      ProofConsumedEvent.OutputObject
     >;
 
     "SubmitterSet(address,bool)": TypedContractEvent<

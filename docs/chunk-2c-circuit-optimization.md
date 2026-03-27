@@ -10,18 +10,19 @@
 **Compiler:** circom 2.1.6
 **Curve:** BN-128 (BN254)
 
-| Metric           | Value |
-| ---------------- | ----- |
-| Constraints      | 1     |
-| Wires            | 3     |
-| Private Inputs   | 1     |
-| Public Inputs    | 1     |
-| Labels           | 4     |
-| Outputs          | 0     |
+| Metric         | Value |
+| -------------- | ----- |
+| Constraints    | 1     |
+| Wires          | 3     |
+| Private Inputs | 1     |
+| Public Inputs  | 1     |
+| Labels         | 4     |
+| Outputs        | 0     |
 
 **Assessment:** The circuit is already at its minimum (1 non-linear constraint for `secret * secret === publicHash`). The previous INF-005 remediation removed a redundant `isValid` output signal that contributed 1 unnecessary constraint. No further reduction is possible.
 
 Artifacts generated:
+
 - `circuits/artifacts/worldline.r1cs` — R1CS constraint system
 - `circuits/artifacts/worldline_js/worldline.wasm` — WASM witness generator
 
@@ -32,6 +33,7 @@ Artifacts generated:
 **Status: N/A — No async witness generation queue exists.**
 
 The codebase has no async witness generation pipeline. The only async code in `worldline-driver` is:
+
 - `main.rs:58` — `async fn main()` (tokio entry point)
 - `lib.rs:18` — `pub async fn sync_registry()` (registry HTTP fetch)
 
@@ -63,12 +65,12 @@ Per the Chunk 1 analysis (finding PSP-4), the recursion circuits (`accum.circom`
 
 ## Summary
 
-| Item | Status | Action Taken |
-| ---- | ------ | ------------ |
-| Circuit compilation | Done | Compiled, 1 constraint (minimal) |
-| Constraint reduction | Done | Already minimal after INF-005 fix |
-| Witness async queue | N/A | No async queue exists |
-| Halo2 lookup tables | N/A | No Halo2 implementation |
-| Aggregation inner verifiers | N/A | Recursion circuits not implemented |
+| Item                        | Status | Action Taken                       |
+| --------------------------- | ------ | ---------------------------------- |
+| Circuit compilation         | Done   | Compiled, 1 constraint (minimal)   |
+| Constraint reduction        | Done   | Already minimal after INF-005 fix  |
+| Witness async queue         | N/A    | No async queue exists              |
+| Halo2 lookup tables         | N/A    | No Halo2 implementation            |
+| Aggregation inner verifiers | N/A    | Recursion circuits not implemented |
 
 **Chunk 2C is complete.** Most items are N/A due to the early implementation state (only a demo SquareHash circuit exists). The circuit is already optimized at 1 constraint. Meaningful circuit-level optimization work will begin when production circuits and recursion modes are implemented.

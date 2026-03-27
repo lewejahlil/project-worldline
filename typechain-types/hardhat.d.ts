@@ -14,6 +14,18 @@ import * as Contracts from ".";
 declare module "hardhat/types/runtime" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
     getContractFactory(
+      name: "BlobVerifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.BlobVerifier__factory>;
+    getContractFactory(
+      name: "BlobVerifierHarness",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.BlobVerifierHarness__factory>;
+    getContractFactory(
+      name: "IBlobSubmission",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IBlobSubmission__factory>;
+    getContractFactory(
       name: "IZkAggregatorVerifier",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IZkAggregatorVerifier__factory>;
@@ -51,6 +63,21 @@ declare module "hardhat/types/runtime" {
     ): Promise<Contracts.Verifier__factory>;
 
     getContractAt(
+      name: "BlobVerifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.BlobVerifier>;
+    getContractAt(
+      name: "BlobVerifierHarness",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.BlobVerifierHarness>;
+    getContractAt(
+      name: "IBlobSubmission",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IBlobSubmission>;
+    getContractAt(
       name: "IZkAggregatorVerifier",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -97,6 +124,18 @@ declare module "hardhat/types/runtime" {
     ): Promise<Contracts.Verifier>;
 
     deployContract(
+      name: "BlobVerifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BlobVerifier>;
+    deployContract(
+      name: "BlobVerifierHarness",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BlobVerifierHarness>;
+    deployContract(
+      name: "IBlobSubmission",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IBlobSubmission>;
+    deployContract(
       name: "IZkAggregatorVerifier",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IZkAggregatorVerifier>;
@@ -133,6 +172,21 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Verifier>;
 
+    deployContract(
+      name: "BlobVerifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BlobVerifier>;
+    deployContract(
+      name: "BlobVerifierHarness",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BlobVerifierHarness>;
+    deployContract(
+      name: "IBlobSubmission",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IBlobSubmission>;
     deployContract(
       name: "IZkAggregatorVerifier",
       args: any[],

@@ -166,6 +166,65 @@ async function main() {
     console.log("8. Skipping ownership transfer (dev network).");
   }
 
+  // ── 9. Post-deploy verification ──────────────────────────────────────────────
+  console.log("9. Running post-deploy verification checks…");
+
+  // Verify WorldlineRegistry owner
+  const registryOwner = await registry.owner();
+  if (registryOwner !== deployer.address) {
+    throw new Error(
+      `WorldlineRegistry owner mismatch: expected ${deployer.address}, got ${registryOwner}`
+    );
+  }
+  console.log("   WorldlineRegistry.owner() matches deployer");
+
+  // Verify WorldlineFinalizer adapter is set correctly
+  const currentAdapter = await finalizer.adapter();
+  if (currentAdapter !== adapterAddr) {
+    throw new Error(
+      `WorldlineFinalizer adapter mismatch: expected ${adapterAddr}, got ${currentAdapter}`
+    );
+  }
+  console.log("   WorldlineFinalizer.adapter() matches deployed adapter");
+
+  // Verify WorldlineFinalizer domain separator
+  const currentDomain = await finalizer.domainSeparator();
+  if (currentDomain !== DOMAIN_SEPARATOR) {
+    throw new Error(`WorldlineFinalizer domainSeparator mismatch`);
+  }
+  console.log("   WorldlineFinalizer.domainSeparator() matches config");
+
+  // Verify WorldlineFinalizer is not paused and nextWindowIndex is 0
+  const isPaused = await finalizer.paused();
+  if (isPaused) {
+    throw new Error("WorldlineFinalizer is unexpectedly paused after deployment");
+  }
+  console.log("   WorldlineFinalizer is not paused");
+
+  const nextWindow = await finalizer.nextWindowIndex();
+  if (nextWindow !== 0n) {
+    throw new Error(`WorldlineFinalizer.nextWindowIndex expected 0, got ${nextWindow}`);
+  }
+  console.log("   WorldlineFinalizer.nextWindowIndex() is 0");
+
+  // Verify WorldlineOutputsRegistry owner
+  const outputsOwner = await outputsRegistry.owner();
+  if (outputsOwner !== deployer.address) {
+    throw new Error(`WorldlineOutputsRegistry owner mismatch`);
+  }
+  console.log("   WorldlineOutputsRegistry.owner() matches deployer");
+
+  // Verify WorldlineCompat is wired to registry
+  const compatFacade = await registry.compatFacade();
+  if (compatFacade !== compatAddr) {
+    throw new Error(
+      `WorldlineRegistry.compatFacade mismatch: expected ${compatAddr}, got ${compatFacade}`
+    );
+  }
+  console.log("   WorldlineRegistry.compatFacade() matches deployed WorldlineCompat");
+  console.log("   All post-deploy checks passed.");
+  console.log();
+
   // ── Print deployment summary ─────────────────────────────────────────────────
   const deploymentRecord = {
     network: network.name,

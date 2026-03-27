@@ -412,6 +412,49 @@ describe("WorldlineFinalizer", function () {
         finalizer.connect(owner).submitZkValidityProof(proof2, inputs2)
       ).to.be.revertedWithCustomError(finalizer, "NotContiguous");
     });
+
+    it("emits ProofConsumed with correct proof hash (NUL-1 hardening)", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      const ts = BigInt(await time.latest()) + 200n;
+
+      const { inputs, stf } = encodePublicInputs(
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+      const expectedHash = ethers.keccak256(proof);
+
+      await expect(finalizer.connect(owner).submitZkValidityProof(proof, inputs))
+        .to.emit(finalizer, "ProofConsumed")
+        .withArgs(0n, expectedHash);
+    });
+
+    it("identical proof bytes submitted twice reverts on second attempt", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      const ts = BigInt(await time.latest()) + 200n;
+
+      const { inputs, stf } = encodePublicInputs(
+        0n,
+        100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        DOMAIN,
+        ts
+      );
+      const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+
+      // First submission succeeds
+      await finalizer.connect(owner).submitZkValidityProof(proof, inputs);
+
+      // Second submission with identical proof bytes fails (contiguity prevents replay)
+      await expect(
+        finalizer.connect(owner).submitZkValidityProof(proof, inputs)
+      ).to.be.revertedWithCustomError(finalizer, "NotContiguous");
+    });
   });
 
   describe("StfMismatch", function () {

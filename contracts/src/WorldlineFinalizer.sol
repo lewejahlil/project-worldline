@@ -56,6 +56,12 @@ contract WorldlineFinalizer is Ownable {
     event AdapterChangeScheduled(address indexed adapter, uint256 activationTime);
     event AdapterChangeDelaySet(uint256 delay);
 
+    /// @notice Emitted when a proof is consumed for a window, providing an explicit
+    ///         on-chain audit trail for proof deduplication (NUL-1 hardening).
+    /// @param windowIndex The sequential window index this proof was consumed for.
+    /// @param proofHash   keccak256 of the raw proof bytes.
+    event ProofConsumed(uint256 indexed windowIndex, bytes32 proofHash);
+
     /// @notice Emitted when a proof submission includes a manifest locator hint (LOW-004 remediation).
     /// @param proverSetDigest The keccak256 digest of the canonical prover manifest.
     /// @param metaLocator     Off-chain locator for the manifest data.
@@ -293,6 +299,7 @@ contract WorldlineFinalizer is Ownable {
         // Emit events
         emit OutputProposed(windowIndex, outputRoot, l2Start, l2End, stfCommitment);
         emit ZkProofAccepted(windowIndex, programVKey, policyHash, proverSetDigest);
+        emit ProofConsumed(windowIndex, keccak256(proof));
 
         return proverSetDigest;
     }
