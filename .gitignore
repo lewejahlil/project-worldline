@@ -12,6 +12,7 @@ circuits/build/
 circuits/artifacts/*.r1cs
 circuits/artifacts/*.wasm
 circuits/artifacts/*.zkey
+circuits/artifacts/*_js/
 circuits/ptau/
 
 # Hardhat
