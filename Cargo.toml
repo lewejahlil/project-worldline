@@ -5,6 +5,8 @@ members = [
     "crates/worldline-compat",
     "crates/worldline-devnet",
     "crates/benches",
+    "crates/aggregation",
+    "crates/recursion",
     "crates/registry"
 ]
 resolver = "2"
