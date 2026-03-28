@@ -1,6 +1,4 @@
-use worldline_aggregation::{
-    AggregationStrategy, IndividualProof, ProofAggregator, ProofSystemId,
-};
+use worldline_aggregation::{AggregationStrategy, IndividualProof, ProofAggregator, ProofSystemId};
 use worldline_recursion::{RecursionError, RecursionMode, RecursiveVerifier};
 
 fn batch_commitment() -> [u8; 32] {
@@ -37,7 +35,10 @@ fn test_new_max_depth_5_errors() {
     let result = RecursiveVerifier::new(5);
     assert!(matches!(
         result,
-        Err(RecursionError::MaxDepthExceeded { max: 4, requested: 5 })
+        Err(RecursionError::MaxDepthExceeded {
+            max: 4,
+            requested: 5
+        })
     ));
 }
 
@@ -72,9 +73,13 @@ fn test_wrap_empty_aggregated_proof_returns_empty_inner() {
 fn test_recurse_incremental_depth_increments() {
     let verifier = RecursiveVerifier::new(4).unwrap();
     let aggregated = make_aggregated_proof(1, 1);
-    let wrapped = verifier.wrap(aggregated, RecursionMode::Incremental).unwrap();
+    let wrapped = verifier
+        .wrap(aggregated, RecursionMode::Incremental)
+        .unwrap();
     assert_eq!(wrapped.recursion_depth, 1);
-    let recursed = verifier.recurse(wrapped, RecursionMode::Incremental).unwrap();
+    let recursed = verifier
+        .recurse(wrapped, RecursionMode::Incremental)
+        .unwrap();
     assert_eq!(recursed.recursion_depth, 2);
 }
 
@@ -83,7 +88,9 @@ fn test_recurse_incremental_depth_increments() {
 fn test_recurse_beyond_max_depth_returns_error() {
     let verifier = RecursiveVerifier::new(2).unwrap();
     let aggregated = make_aggregated_proof(1, 1);
-    let mut proof = verifier.wrap(aggregated, RecursionMode::Incremental).unwrap();
+    let mut proof = verifier
+        .wrap(aggregated, RecursionMode::Incremental)
+        .unwrap();
     // depth=1, recurse to 2 (ok)
     proof = verifier.recurse(proof, RecursionMode::Incremental).unwrap();
     assert_eq!(proof.recursion_depth, 2);
@@ -142,9 +149,13 @@ fn test_full_chain_aggregate_wrap_recurse_verify() {
     let verifier = RecursiveVerifier::new(4).unwrap();
     let aggregated = make_aggregated_proof(2, 3);
     assert_eq!(aggregated.proofs.len(), 3);
-    let wrapped = verifier.wrap(aggregated, RecursionMode::Incremental).unwrap();
+    let wrapped = verifier
+        .wrap(aggregated, RecursionMode::Incremental)
+        .unwrap();
     assert_eq!(wrapped.recursion_depth, 1);
-    let recursed = verifier.recurse(wrapped, RecursionMode::Incremental).unwrap();
+    let recursed = verifier
+        .recurse(wrapped, RecursionMode::Incremental)
+        .unwrap();
     assert_eq!(recursed.recursion_depth, 2);
     assert!(verifier.verify_structure(&recursed));
 }
