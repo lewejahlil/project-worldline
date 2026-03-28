@@ -4,5 +4,5 @@ export const FORK_CONFIG = {
   blockNumber: "latest",
   chainId: 1,
   gasLimit: 30_000_000,
-  accounts: 5,
+  accounts: 5
 };
