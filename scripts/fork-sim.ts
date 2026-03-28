@@ -53,7 +53,8 @@ function loadArtifact(name: string): { abi: ethers.InterfaceAbi; bytecode: strin
   const basePaths = [
     path.resolve(__dirname, `../artifacts/contracts/src/${name}.sol/${name}.json`),
     path.resolve(__dirname, `../artifacts/contracts/src/zk/${name}.sol/${name}.json`),
-    path.resolve(__dirname, `../artifacts/contracts/src/utils/${name}.sol/${name}.json`)
+    path.resolve(__dirname, `../artifacts/contracts/src/utils/${name}.sol/${name}.json`),
+    path.resolve(__dirname, `../artifacts/contracts/src/test/${name}.sol/${name}.json`)
   ];
   for (const p of basePaths) {
     if (fs.existsSync(p)) {
