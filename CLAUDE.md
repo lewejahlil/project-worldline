@@ -37,6 +37,7 @@ scripts/               → Deploy, simulation, CI
 | C   | Halo2 verifier (KZG/BN254)                   | ✅     |
 | D   | Independent Plonk circuit (Path B)           | ✅     |
 | E   | Poseidon circomlib compatibility             | ✅     |
+| F   | PlonkV2 swap + multi-prover quorum          | ✅     |
 
 ## Dependencies
 

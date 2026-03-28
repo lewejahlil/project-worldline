@@ -46,10 +46,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IZkAdapter__factory>;
     getContractFactory(
-      name: "PlonkVerifier",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.PlonkVerifier__factory>;
-    getContractFactory(
       name: "PlonkVerifierV2",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.PlonkVerifierV2__factory>;
@@ -61,6 +57,10 @@ declare module "hardhat/types/runtime" {
       name: "MockGroth16Verifier",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MockGroth16Verifier__factory>;
+    getContractFactory(
+      name: "MockHalo2Verifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockHalo2Verifier__factory>;
     getContractFactory(
       name: "MockPlonkVerifier",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -151,11 +151,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IZkAdapter>;
     getContractAt(
-      name: "PlonkVerifier",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.PlonkVerifier>;
-    getContractAt(
       name: "PlonkVerifierV2",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -170,6 +165,11 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.MockGroth16Verifier>;
+    getContractAt(
+      name: "MockHalo2Verifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockHalo2Verifier>;
     getContractAt(
       name: "MockPlonkVerifier",
       address: string | ethers.Addressable,
@@ -264,10 +264,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IZkAdapter>;
     deployContract(
-      name: "PlonkVerifier",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.PlonkVerifier>;
-    deployContract(
       name: "PlonkVerifierV2",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.PlonkVerifierV2>;
@@ -279,6 +275,10 @@ declare module "hardhat/types/runtime" {
       name: "MockGroth16Verifier",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockGroth16Verifier>;
+    deployContract(
+      name: "MockHalo2Verifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockHalo2Verifier>;
     deployContract(
       name: "MockPlonkVerifier",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -369,11 +369,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IZkAdapter>;
     deployContract(
-      name: "PlonkVerifier",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.PlonkVerifier>;
-    deployContract(
       name: "PlonkVerifierV2",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -388,6 +383,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockGroth16Verifier>;
+    deployContract(
+      name: "MockHalo2Verifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockHalo2Verifier>;
     deployContract(
       name: "MockPlonkVerifier",
       args: any[],
