@@ -14,6 +14,7 @@ circuits/artifacts/*.wasm
 circuits/artifacts/*.zkey
 circuits/artifacts/*_js/
 circuits/ptau/
+circuits/*.sym
 
 # Circom zkey intermediates (keep final + vkey)
 circuits/zkeys/*_0000.zkey
