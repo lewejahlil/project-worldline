@@ -18,7 +18,12 @@ const config: HardhatUserConfig = {
     sources: "./contracts/src"
   },
   networks: {
-    hardhat: {},
+    hardhat: {
+      forking: {
+        url: process.env["MAINNET_RPC_URL"] || "https://ethereum-rpc.publicnode.com",
+        enabled: false
+      }
+    },
     sepolia: {
       url: process.env["SEPOLIA_RPC_URL"] ?? "",
       accounts: process.env["PRIVATE_KEY"] ? [process.env["PRIVATE_KEY"]] : []
