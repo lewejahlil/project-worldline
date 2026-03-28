@@ -17,29 +17,29 @@ import type {
 const _abi = [
   {
     inputs: [],
-    name: "NotProductionVerifier",
+    name: "NotYetImplemented",
     type: "error",
   },
   {
     inputs: [
       {
         internalType: "uint256[2]",
-        name: "_pA",
+        name: "",
         type: "uint256[2]",
       },
       {
         internalType: "uint256[2][2]",
-        name: "_pB",
+        name: "",
         type: "uint256[2][2]",
       },
       {
         internalType: "uint256[2]",
-        name: "_pC",
+        name: "",
         type: "uint256[2]",
       },
       {
         internalType: "uint256[2]",
-        name: "_pubSignals",
+        name: "",
         type: "uint256[2]",
       },
     ],
@@ -51,13 +51,13 @@ const _abi = [
         type: "bool",
       },
     ],
-    stateMutability: "view",
+    stateMutability: "pure",
     type: "function",
   },
 ] as const;
 
 const _bytecode =
-  "0x6080806040523460135760ab908160188239f35b5f80fdfe60808060405260043610156011575f80fd5b5f3560e01c63f5c9d69e146023575f80fd5b34607157610140366003190112607157366044116071573660c41160715736610104116071573661014411607157617a69460360625780600160209252f35b63e236b26b60e01b5f5260045ffd5b5f80fdfea2646970667358221220fb7ff92644cef9e8f7c5e4647a5c4ba4c20b4ed0ba44e3a6c9dcf995821c0ffd64736f6c63430008220033";
+  "0x608080604052346013576094908160188239f35b5f80fdfe6004361015600b575f80fd5b5f3560e01c63f5c9d69e14601d575f80fd5b34605a57610140366003190112605a5736604411605a573660c411605a573661010411605a573661014411605a576306cc66ad60e31b5f5260045ffd5b5f80fdfea2646970667358221220cfc301c52c62ea456c8fc04b851a16eaa582ed33398433c9120804b84d6c5af964736f6c63430008220033";
 
 type Groth16VerifierConstructorParams =
   | [signer?: Signer]

@@ -102,6 +102,7 @@ pub fn build_recursion_witness(
         bail!("k_in_proof ({k}) exceeds max_inner ({max}) — configuration constraint violated");
     }
 
+    // PLACEHOLDER: replaced in Phase 1 Chunk 4
     // TODO: Actual inner proof collection from live prover endpoints.
     // In production, this would:
     // 1. Contact each of the first `k_in_proof` prover endpoints.

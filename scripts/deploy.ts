@@ -92,6 +92,20 @@ async function main() {
   console.log(`   WorldlineRegistry: ${registryAddr}`);
 
   // ── 3. Deploy Groth16ZkAdapter ──────────────────────────────────────────────
+  // BLOCKED: requires real Groth16Verifier from snarkjs export.
+  // The Groth16Verifier.sol is currently a stub that always reverts.
+  // In dev mode, the adapter uses the demo Verifier (SquareHash) instead.
+  // Production mode (IS_DEV_ADAPTER=false) requires a real BN254 pairing verifier
+  // generated from the circuit zkey. Do not deploy in production mode until
+  // the real verifier is generated in Phase 1, Chunk 3.
+  if (!IS_DEV_ADAPTER) {
+    console.warn(
+      "WARNING: IS_DEV_ADAPTER=false but Groth16Verifier is not yet a real pairing verifier.\n" +
+        "   The deployed verifier stub will revert on all calls.\n" +
+        "   Set IS_DEV_ADAPTER=true for development, or generate the real verifier first.\n" +
+        "   See: Phase 1, Chunk 3 — Real Groth16 Verifier Contract"
+    );
+  }
   console.log("3. Deploying Groth16ZkAdapter…");
   const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
   const adapter = await Adapter.deploy(verifierAddr, PROGRAM_VKEY, POLICY_HASH, IS_DEV_ADAPTER);
