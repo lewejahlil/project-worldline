@@ -181,7 +181,9 @@ export async function deployAllWithThreeAdapters(deployer?: Signer): Promise<Thr
   const router = await Router.deploy();
   await router.waitForDeployment();
 
-  await (await (router as any).registerAdapter(1, await (groth16Adapter as any).getAddress())).wait();
+  await (
+    await (router as any).registerAdapter(1, await (groth16Adapter as any).getAddress())
+  ).wait();
   await (await (router as any).registerAdapter(2, await (plonkAdapter as any).getAddress())).wait();
   await (await (router as any).registerAdapter(3, await (halo2Adapter as any).getAddress())).wait();
 

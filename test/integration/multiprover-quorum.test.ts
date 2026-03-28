@@ -136,13 +136,21 @@ describe("Multi-prover quorum — end-to-end", function () {
 
     // Window 0 — Groth16
     const fix0 = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
-    const tx0 = await (finalizer as any).submitZkValidityProofRouted(1, fix0.proof, fix0.publicInputs);
+    const tx0 = await (finalizer as any).submitZkValidityProofRouted(
+      1,
+      fix0.proof,
+      fix0.publicInputs
+    );
     const r0 = await tx0.wait();
     expect(findZkProofAccepted(r0, (finalizer as any).interface)).to.not.be.null;
 
     // Window 1 — Plonk (contiguous)
     const fix1 = await makePlonkWindowFixture(GENESIS_L2_BLOCK + 100n, GENESIS_L2_BLOCK + 200n);
-    const tx1 = await (finalizer as any).submitZkValidityProofRouted(2, fix1.proof, fix1.publicInputs);
+    const tx1 = await (finalizer as any).submitZkValidityProofRouted(
+      2,
+      fix1.proof,
+      fix1.publicInputs
+    );
     const r1 = await tx1.wait();
     expect(findZkProofAccepted(r1, (finalizer as any).interface)).to.not.be.null;
 
@@ -157,10 +165,16 @@ describe("Multi-prover quorum — end-to-end", function () {
     const { finalizer } = await deployAllWithThreeAdapters(owner);
 
     const fix0 = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
-    await (await (finalizer as any).submitZkValidityProofRouted(1, fix0.proof, fix0.publicInputs)).wait();
+    await (
+      await (finalizer as any).submitZkValidityProofRouted(1, fix0.proof, fix0.publicInputs)
+    ).wait();
 
     const fix1 = await makeHalo2WindowFixture(GENESIS_L2_BLOCK + 100n, GENESIS_L2_BLOCK + 200n);
-    const tx1 = await (finalizer as any).submitZkValidityProofRouted(3, fix1.proof, fix1.publicInputs);
+    const tx1 = await (finalizer as any).submitZkValidityProofRouted(
+      3,
+      fix1.proof,
+      fix1.publicInputs
+    );
     const r1 = await tx1.wait();
 
     expect(findZkProofAccepted(r1, (finalizer as any).interface)).to.not.be.null;
@@ -174,10 +188,16 @@ describe("Multi-prover quorum — end-to-end", function () {
     const { finalizer } = await deployAllWithThreeAdapters(owner);
 
     const fix0 = await makePlonkWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
-    await (await (finalizer as any).submitZkValidityProofRouted(2, fix0.proof, fix0.publicInputs)).wait();
+    await (
+      await (finalizer as any).submitZkValidityProofRouted(2, fix0.proof, fix0.publicInputs)
+    ).wait();
 
     const fix1 = await makeHalo2WindowFixture(GENESIS_L2_BLOCK + 100n, GENESIS_L2_BLOCK + 200n);
-    const tx1 = await (finalizer as any).submitZkValidityProofRouted(3, fix1.proof, fix1.publicInputs);
+    const tx1 = await (finalizer as any).submitZkValidityProofRouted(
+      3,
+      fix1.proof,
+      fix1.publicInputs
+    );
     const r1 = await tx1.wait();
 
     expect(findZkProofAccepted(r1, (finalizer as any).interface)).to.not.be.null;
@@ -233,13 +253,19 @@ describe("Multi-prover quorum — end-to-end", function () {
 
     // Static-call routeProofAggregated to read return values without state effects
     const [, stfG16] = await (router as any).routeProofAggregated.staticCall(
-      1, proofG16, publicInputs
+      1,
+      proofG16,
+      publicInputs
     );
     const [, stfPlonk] = await (router as any).routeProofAggregated.staticCall(
-      2, proofPlonk, publicInputs
+      2,
+      proofPlonk,
+      publicInputs
     );
     const [, stfHalo2] = await (router as any).routeProofAggregated.staticCall(
-      3, proofHalo2, publicInputs
+      3,
+      proofHalo2,
+      publicInputs
     );
 
     // All three adapters must extract the same stfCommitment from their respective proof formats
@@ -268,14 +294,20 @@ describe("Multi-prover quorum — end-to-end", function () {
     const proofHalo2 = encodeHalo2Proof(l2Start, l2End, wct, DOMAIN, PROVER_SET_DIGEST);
     const publicInputs = encodePublicInputs(l2Start, l2End, wct);
 
-    const [,, , , psdG16] = await (router as any).routeProofAggregated.staticCall(
-      1, proofG16, publicInputs
+    const [, , , , psdG16] = await (router as any).routeProofAggregated.staticCall(
+      1,
+      proofG16,
+      publicInputs
     );
-    const [,, , , psdPlonk] = await (router as any).routeProofAggregated.staticCall(
-      2, proofPlonk, publicInputs
+    const [, , , , psdPlonk] = await (router as any).routeProofAggregated.staticCall(
+      2,
+      proofPlonk,
+      publicInputs
     );
-    const [,, , , psdHalo2] = await (router as any).routeProofAggregated.staticCall(
-      3, proofHalo2, publicInputs
+    const [, , , , psdHalo2] = await (router as any).routeProofAggregated.staticCall(
+      3,
+      proofHalo2,
+      publicInputs
     );
 
     // All three adapters extract the embedded proverSetDigest identically
@@ -318,7 +350,9 @@ describe("Multi-prover quorum — end-to-end", function () {
 
     const Groth16Adapter = await ethers.getContractFactory("Groth16ZkAdapter", owner);
     const groth16Adapter = await Groth16Adapter.deploy(
-      await groth16Verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH
+      await groth16Verifier.getAddress(),
+      PROGRAM_VKEY,
+      POLICY_HASH
     );
     await groth16Adapter.waitForDeployment();
 
@@ -328,20 +362,29 @@ describe("Multi-prover quorum — end-to-end", function () {
 
     const PlonkAdapter = await ethers.getContractFactory("PlonkZkAdapter", owner);
     const plonkAdapter = await PlonkAdapter.deploy(
-      await plonkVerifier.getAddress(), PROGRAM_VKEY, POLICY_HASH
+      await plonkVerifier.getAddress(),
+      PROGRAM_VKEY,
+      POLICY_HASH
     );
     await plonkAdapter.waitForDeployment();
 
     const Router = await ethers.getContractFactory("ProofRouter", owner);
     const router = await Router.deploy();
     await router.waitForDeployment();
-    await (await (router as any).registerAdapter(1, await (groth16Adapter as any).getAddress())).wait();
-    await (await (router as any).registerAdapter(2, await (plonkAdapter as any).getAddress())).wait();
+    await (
+      await (router as any).registerAdapter(1, await (groth16Adapter as any).getAddress())
+    ).wait();
+    await (
+      await (router as any).registerAdapter(2, await (plonkAdapter as any).getAddress())
+    ).wait();
     // ID=3 intentionally NOT registered — simulates quorum=3 requirement unachievable
 
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", owner);
     const finalizer = await Finalizer.deploy(
-      await groth16Adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK
+      await groth16Adapter.getAddress(),
+      DOMAIN,
+      MAX_ACCEPTANCE_DELAY,
+      GENESIS_L2_BLOCK
     );
     await finalizer.waitForDeployment();
     await (await (finalizer as any).setProofRouter(await (router as any).getAddress())).wait();
@@ -349,11 +392,15 @@ describe("Multi-prover quorum — end-to-end", function () {
 
     // Window 0 — Groth16 ✓
     const fix0 = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
-    await (await (finalizer as any).submitZkValidityProofRouted(1, fix0.proof, fix0.publicInputs)).wait();
+    await (
+      await (finalizer as any).submitZkValidityProofRouted(1, fix0.proof, fix0.publicInputs)
+    ).wait();
 
     // Window 1 — Plonk ✓
     const fix1 = await makePlonkWindowFixture(GENESIS_L2_BLOCK + 100n, GENESIS_L2_BLOCK + 200n);
-    await (await (finalizer as any).submitZkValidityProofRouted(2, fix1.proof, fix1.publicInputs)).wait();
+    await (
+      await (finalizer as any).submitZkValidityProofRouted(2, fix1.proof, fix1.publicInputs)
+    ).wait();
 
     expect(await (finalizer as any).nextWindowIndex()).to.equal(2n);
 
