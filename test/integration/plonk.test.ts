@@ -29,9 +29,7 @@ describe("Plonk adapter", function () {
 
     // Plonk at ID=2
     expect(await (router as any).isSupported(2)).to.equal(true);
-    expect(await (router as any).getAdapter(2)).to.equal(
-      await (plonkAdapter as any).getAddress()
-    );
+    expect(await (router as any).getAdapter(2)).to.equal(await (plonkAdapter as any).getAddress());
   });
 
   // ── 2. Router reports ID=1 supported ─────────────────────────────────────
@@ -175,10 +173,7 @@ describe("Plonk adapter", function () {
     await expect(
       (finalizer as any).submitZkValidityProofRouted(3, proof, publicInputs)
     ).to.be.revertedWithCustomError(
-      await ethers.getContractAt(
-        "ProofRouter",
-        await (finalizer as any).proofRouter()
-      ),
+      await ethers.getContractAt("ProofRouter", await (finalizer as any).proofRouter()),
       "AdapterNotRegistered"
     );
   });
