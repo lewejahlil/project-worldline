@@ -196,12 +196,7 @@ impl PoseidonCompatChip {
                     || hash_val,
                 )?;
 
-                inputs[0].copy_advice(
-                    || "input_ref",
-                    &mut region,
-                    self.config.advice[0],
-                    0,
-                )?;
+                inputs[0].copy_advice(|| "input_ref", &mut region, self.config.advice[0], 0)?;
 
                 Ok(hash_cell)
             },
@@ -244,12 +239,7 @@ impl PoseidonCompatChip {
                     || hash_val,
                 )?;
 
-                inputs[0].copy_advice(
-                    || "input_ref",
-                    &mut region,
-                    self.config.advice[0],
-                    0,
-                )?;
+                inputs[0].copy_advice(|| "input_ref", &mut region, self.config.advice[0], 0)?;
 
                 Ok(hash_cell)
             },
