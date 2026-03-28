@@ -18,7 +18,7 @@ use halo2_proofs::{
 use halo2curves::bn256::{Bn256, Fr, G1Affine};
 use halo2curves::group::ff::Field;
 use rand::rngs::OsRng;
-use worldline_halo2_circuit::{poseidon_hash_3, poseidon_hash_7, WorldlineStfCircuit, N};
+use worldline_halo2_circuit::{poseidon_compress_3, poseidon_compress_7, WorldlineStfCircuit, N};
 
 fn valid_inputs() -> (Fr, Fr, Fr, Fr, [Fr; N], [Fr; N], Fr) {
     (
@@ -119,8 +119,8 @@ fn mock_invalid_psid_4() {
 fn mock_poseidon_matches_expected() {
     // Verify Poseidon output matches the off-circuit computation
     let (psr, posr, bc, bs, pids, psids, qc) = valid_inputs();
-    let stf = poseidon_hash_3(psr, posr, bc);
-    let digest = poseidon_hash_7(pids[0], pids[1], pids[2], psids[0], psids[1], psids[2], qc);
+    let stf = poseidon_compress_3(psr, posr, bc);
+    let digest = poseidon_compress_7(pids[0], pids[1], pids[2], psids[0], psids[1], psids[2], qc);
 
     let circuit = WorldlineStfCircuit::new(psr, posr, bc, bs, pids, psids, qc);
     let prover = MockProver::run(K, &circuit, vec![vec![stf, digest]]).unwrap();

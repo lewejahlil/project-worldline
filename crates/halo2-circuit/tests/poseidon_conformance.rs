@@ -59,7 +59,7 @@
 
 use halo2curves::bn256::Fr;
 use halo2curves::group::ff::PrimeField;
-use worldline_halo2_circuit::{poseidon_hash_3, poseidon_hash_7, WorldlineStfCircuit};
+use worldline_halo2_circuit::{poseidon_compress_3, poseidon_compress_7, WorldlineStfCircuit};
 
 /// Convert a hex string (with 0x prefix) to a BN254 Fr element.
 fn fr_from_hex(hex_str: &str) -> Fr {
@@ -102,13 +102,12 @@ const CIRCOMLIB_PROVER_SET_DIGEST: &str =
 /// Halo2 PSE output:  0x06a3ec151a5931765cbe6a5c50aef89ca0b13c21432dff8ab5a2bdfc58c906e1
 /// circomlib output:   0x2e1de696850f25d0594670ee7fd253af5893e313da0d8a161d63fa9994baf9e4
 #[test]
-#[ignore = "PSE poseidon sponge != circomlib compression function — see module docs"]
 fn poseidon_3input_matches_circomlib() {
     let pre_state_root = Fr::from(1234567890u64);
     let post_state_root = Fr::from(9876543210u64);
     let batch_commitment = Fr::from(5555555555u64);
 
-    let halo2_output = poseidon_hash_3(pre_state_root, post_state_root, batch_commitment);
+    let halo2_output = poseidon_compress_3(pre_state_root, post_state_root, batch_commitment);
     let circomlib_expected = fr_from_hex(CIRCOMLIB_STF_COMMITMENT);
 
     eprintln!("Halo2 PSE stfCommitment:  {}", fr_to_hex(&halo2_output));
@@ -137,9 +136,8 @@ fn poseidon_3input_matches_circomlib() {
 /// Halo2 PSE output:  0x1e5f4a068ea1e76965749081cc5e80d077198ceeb91169e295fbdf0d7b489711
 /// circomlib output:   0x1fd78c89d17a4450342e2a585e8d944473b80295914aa47d519d7ee0e5cc453f
 #[test]
-#[ignore = "PSE poseidon sponge != circomlib compression function — see module docs"]
 fn poseidon_7input_matches_circomlib() {
-    let halo2_output = poseidon_hash_7(
+    let halo2_output = poseidon_compress_7(
         Fr::from(101u64),
         Fr::from(102u64),
         Fr::from(103u64),
@@ -174,7 +172,6 @@ fn poseidon_7input_matches_circomlib() {
 ///
 /// IGNORED: The Poseidon mismatch propagates to the circuit's public outputs.
 #[test]
-#[ignore = "PSE poseidon sponge != circomlib compression function — see module docs"]
 fn stf_commitment_cross_system() {
     use halo2_proofs::dev::MockProver;
 
@@ -236,7 +233,6 @@ fn stf_commitment_cross_system() {
 ///
 /// IGNORED: The Poseidon mismatch propagates to the circuit's public outputs.
 #[test]
-#[ignore = "PSE poseidon sponge != circomlib compression function — see module docs"]
 fn prover_set_digest_cross_system() {
     use halo2_proofs::dev::MockProver;
 
