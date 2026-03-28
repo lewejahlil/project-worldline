@@ -1,6 +1,6 @@
 # Project Worldline
 
-Multi-ZK-prover rollup architecture. Groth16/Plonk/Halo2 provers submit validity proofs for state transitions, aggregated via quorum-based verification. Target: L2BEAT Stage 2.
+Multi-ZK-prover verification architecture. Groth16/Plonk/Halo2 provers submit validity proofs for state transitions, aggregated via quorum-based verification.
 
 ## Repo Layout
 
@@ -21,17 +21,17 @@ scripts/               → Deploy, simulation, CI
 
 ## Chunk Status
 
-| #   | Scope                                        | Status |
-| --- | -------------------------------------------- | ------ |
-| 1   | Circuit design + Poseidon constraints        | ✅     |
-| 2   | Trusted setup + circuit tests (8/8 pass)     | ✅     |
-| 3   | Solidity verifier contracts (175 tests pass) | ✅     |
-| 4   | Rust registry crate                          | ⬜     |
-| 5   | Proof aggregation + recursion                | ⬜     |
-| 6   | Benchmarks (Solidity gas + Criterion)        | ⬜     |
-| 7   | Devnet hardening + integration tests         | ⬜     |
-| 8   | Mainnet fork simulation                      | ⬜     |
-| 9   | Testnet deploy + CI pipeline                 | ⬜     |
+| # | Scope | Status |
+|---|-------|--------|
+| 1 | Circuit design + Poseidon constraints | ✅ |
+| 2 | Trusted setup + circuit tests (8/8 pass) | ✅ |
+| 3 | Solidity verifier contracts (175 tests pass) | ✅ |
+| 4 | Rust registry crate | ✅ |
+| 5 | Proof aggregation + recursion | ✅ |
+| 6 | Benchmarks (Solidity gas + Criterion) | ✅ |
+| 7 | Devnet hardening + integration tests | ⬜ |
+| 8 | Mainnet fork simulation | ⬜ |
+| 9 | Testnet deploy + CI pipeline | ⬜ |
 
 ## Dependencies
 
@@ -41,8 +41,6 @@ scripts/               → Deploy, simulation, CI
    2 → 5 ───┤     │
         4 ──┴→ 6 ─┘
 ```
-
-Parallel-safe: 4+5 (Wave 1), gas+criterion within 6 (Wave 2).
 
 ## Domain Quick-Ref
 
@@ -54,6 +52,12 @@ Parallel-safe: 4+5 (Wave 1), gas+criterion within 6 (Wave 2).
 - proverSetDigest = Poseidon(proverIds[], proofSystemIds[], quorumCount)
 - Proof format: 320-byte production (BN254 pairing)
 - Powers of Tau: 2^11 ptau, 1867 constraints, 1859 wires
+
+## RPC Endpoints
+
+- Mainnet (fork sim): `https://ethereum-rpc.publicnode.com` (free, no key) — fallback: `https://eth.llamarpc.com`
+- Testnet (deploy): Sepolia (chain ID 11155111) — active, sunsetting Sept 2026
+- Sepolia RPC: `https://sepolia-rpc.publicnode.com`
 
 ## Commands
 
@@ -68,7 +72,6 @@ cargo bench                                        # criterion benchmarks
 ## Standards
 
 See `docs/coding-standards.md` for full conventions. Key rules:
-
 - Circom: pragma 2.1.6, BN254 only, zero unconstrained signals
 - Solidity: ^0.8.20, Hardhat + ethers v6, Forge for fuzz tests
 - Rust: edition 2021, stable, `#[deny(clippy::all)]`, no `unwrap()` outside tests
