@@ -43,14 +43,17 @@ export interface WorldlineFinalizerInterface extends Interface {
       | "pendingAdapterActivation"
       | "pendingOwner"
       | "permissionless"
+      | "proofRouter"
       | "scheduleAdapterChange"
       | "setAdapterChangeDelay"
       | "setBlobKzgVerifier"
       | "setMaxAcceptanceDelay"
       | "setPaused"
       | "setPermissionless"
+      | "setProofRouter"
       | "setSubmitter"
       | "submitZkValidityProof"
+      | "submitZkValidityProofRouted"
       | "submitZkValidityProofWithBlob"
       | "submitZkValidityProofWithMeta"
       | "submitters"
@@ -72,6 +75,7 @@ export interface WorldlineFinalizerInterface extends Interface {
       | "PausedSet"
       | "PermissionlessSet"
       | "ProofConsumed"
+      | "ProofRouterSet"
       | "SubmitterSet"
       | "ZkProofAccepted"
   ): EventFragment;
@@ -136,6 +140,10 @@ export interface WorldlineFinalizerInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "proofRouter",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "scheduleAdapterChange",
     values: [AddressLike]
   ): string;
@@ -157,12 +165,20 @@ export interface WorldlineFinalizerInterface extends Interface {
     values: [boolean]
   ): string;
   encodeFunctionData(
+    functionFragment: "setProofRouter",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setSubmitter",
     values: [AddressLike, boolean]
   ): string;
   encodeFunctionData(
     functionFragment: "submitZkValidityProof",
     values: [BytesLike, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "submitZkValidityProofRouted",
+    values: [BigNumberish, BytesLike, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "submitZkValidityProofWithBlob",
@@ -253,6 +269,10 @@ export interface WorldlineFinalizerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "proofRouter",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "scheduleAdapterChange",
     data: BytesLike
   ): Result;
@@ -274,11 +294,19 @@ export interface WorldlineFinalizerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setProofRouter",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "setSubmitter",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "submitZkValidityProof",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "submitZkValidityProofRouted",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -483,6 +511,18 @@ export namespace ProofConsumedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace ProofRouterSetEvent {
+  export type InputTuple = [proofRouter: AddressLike];
+  export type OutputTuple = [proofRouter: string];
+  export interface OutputObject {
+    proofRouter: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace SubmitterSetEvent {
   export type InputTuple = [account: AddressLike, allowed: boolean];
   export type OutputTuple = [account: string, allowed: boolean];
@@ -598,6 +638,8 @@ export interface WorldlineFinalizer extends BaseContract {
 
   permissionless: TypedContractMethod<[], [boolean], "view">;
 
+  proofRouter: TypedContractMethod<[], [string], "view">;
+
   scheduleAdapterChange: TypedContractMethod<
     [_adapter: AddressLike],
     [void],
@@ -630,6 +672,12 @@ export interface WorldlineFinalizer extends BaseContract {
     "nonpayable"
   >;
 
+  setProofRouter: TypedContractMethod<
+    [_proofRouter: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   setSubmitter: TypedContractMethod<
     [account: AddressLike, allowed: boolean],
     [void],
@@ -638,6 +686,12 @@ export interface WorldlineFinalizer extends BaseContract {
 
   submitZkValidityProof: TypedContractMethod<
     [proof: BytesLike, publicInputs: BytesLike],
+    [void],
+    "nonpayable"
+  >;
+
+  submitZkValidityProofRouted: TypedContractMethod<
+    [proofSystemId: BigNumberish, proof: BytesLike, publicInputs: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -730,6 +784,9 @@ export interface WorldlineFinalizer extends BaseContract {
     nameOrSignature: "permissionless"
   ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
+    nameOrSignature: "proofRouter"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "scheduleAdapterChange"
   ): TypedContractMethod<[_adapter: AddressLike], [void], "nonpayable">;
   getFunction(
@@ -748,6 +805,9 @@ export interface WorldlineFinalizer extends BaseContract {
     nameOrSignature: "setPermissionless"
   ): TypedContractMethod<[_permissionless: boolean], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "setProofRouter"
+  ): TypedContractMethod<[_proofRouter: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "setSubmitter"
   ): TypedContractMethod<
     [account: AddressLike, allowed: boolean],
@@ -758,6 +818,13 @@ export interface WorldlineFinalizer extends BaseContract {
     nameOrSignature: "submitZkValidityProof"
   ): TypedContractMethod<
     [proof: BytesLike, publicInputs: BytesLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "submitZkValidityProofRouted"
+  ): TypedContractMethod<
+    [proofSystemId: BigNumberish, proof: BytesLike, publicInputs: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -884,6 +951,13 @@ export interface WorldlineFinalizer extends BaseContract {
     ProofConsumedEvent.InputTuple,
     ProofConsumedEvent.OutputTuple,
     ProofConsumedEvent.OutputObject
+  >;
+  getEvent(
+    key: "ProofRouterSet"
+  ): TypedContractEvent<
+    ProofRouterSetEvent.InputTuple,
+    ProofRouterSetEvent.OutputTuple,
+    ProofRouterSetEvent.OutputObject
   >;
   getEvent(
     key: "SubmitterSet"
@@ -1042,6 +1116,17 @@ export interface WorldlineFinalizer extends BaseContract {
       ProofConsumedEvent.InputTuple,
       ProofConsumedEvent.OutputTuple,
       ProofConsumedEvent.OutputObject
+    >;
+
+    "ProofRouterSet(address)": TypedContractEvent<
+      ProofRouterSetEvent.InputTuple,
+      ProofRouterSetEvent.OutputTuple,
+      ProofRouterSetEvent.OutputObject
+    >;
+    ProofRouterSet: TypedContractEvent<
+      ProofRouterSetEvent.InputTuple,
+      ProofRouterSetEvent.OutputTuple,
+      ProofRouterSetEvent.OutputObject
     >;
 
     "SubmitterSet(address,bool)": TypedContractEvent<

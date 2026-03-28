@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Ownable} from "./utils/Ownable.sol";
 import {IZkAggregatorVerifier} from "./interfaces/IZkAggregatorVerifier.sol";
+import {IProofRouter} from "./interfaces/IProofRouter.sol";
 import {BlobVerifier} from "./blob/BlobVerifier.sol";
 import {BlobKzgVerifier} from "./blob/BlobKzgVerifier.sol";
 
@@ -31,6 +32,8 @@ contract WorldlineFinalizer is Ownable {
     error AdapterDelayTooShort(uint256 required, uint256 given);
     error GenesisStartMismatch(uint256 expected, uint256 actual);
     error BlobKzgVerifierZero();
+    error ProofRouterZero();
+    error UnsupportedProofSystem(uint8 proofSystemId);
 
     // ── Events ──────────────────────────────────────────────────────────────────
 
@@ -71,6 +74,7 @@ contract WorldlineFinalizer is Ownable {
     event ManifestAnnounced(bytes32 indexed proverSetDigest, bytes metaLocator);
     event BlobKzgVerifierSet(address indexed verifier);
     event BlobProofSubmitted(uint256 indexed windowIndex, bytes32 versionedHash, bytes32 blobDataHash);
+    event ProofRouterSet(address indexed proofRouter);
 
     // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -115,6 +119,11 @@ contract WorldlineFinalizer is Ownable {
 
     /// @notice Optional BlobKzgVerifier for EIP-4844 blob-carrying submissions.
     BlobKzgVerifier public blobKzgVerifier;
+
+    /// @notice Optional ProofRouter for multi-proof-system routing.
+    ///         When set, submitZkValidityProofRouted() dispatches to this router
+    ///         instead of calling the default adapter directly.
+    IProofRouter public proofRouter;
 
     // ── Constructor ─────────────────────────────────────────────────────────────
 
@@ -206,6 +215,15 @@ contract WorldlineFinalizer is Ownable {
         emit BlobKzgVerifierSet(_blobKzgVerifier);
     }
 
+    /// @notice Set the ProofRouter for multi-proof-system routing.
+    ///         Once set, submitZkValidityProofRouted() dispatches through this router.
+    ///         Pass address(0) to disable routing (only submitZkValidityProof remains available).
+    /// @param _proofRouter Address of the ProofRouter contract.
+    function setProofRouter(address _proofRouter) external onlyOwner {
+        proofRouter = IProofRouter(_proofRouter);
+        emit ProofRouterSet(_proofRouter);
+    }
+
     // ── Submission ──────────────────────────────────────────────────────────────
 
     /// @notice Submit a ZK validity proof for the next contiguous window.
@@ -232,6 +250,22 @@ contract WorldlineFinalizer is Ownable {
         if (metaLocator.length > 96) revert LocatorTooLong();
         bytes32 proverSetDigest = _submit(proof, publicInputs);
         emit ManifestAnnounced(proverSetDigest, metaLocator);
+    }
+
+    /// @notice Submit a ZK validity proof via the ProofRouter routing layer.
+    ///         Dispatches to the adapter registered for the given proofSystemId.
+    ///         Enforces the same domain, contiguity, and staleness constraints as
+    ///         submitZkValidityProof(). Requires proofRouter to be configured.
+    /// @param proofSystemId  Numeric identifier of the proof system (1=Groth16, 2=Plonk, 3=Halo2).
+    /// @param proof          Encoded proof bytes (adapter-specific format).
+    /// @param publicInputs   224-byte ABI-encoded public inputs.
+    function submitZkValidityProofRouted(
+        uint8 proofSystemId,
+        bytes calldata proof,
+        bytes calldata publicInputs
+    ) external whenNotPaused {
+        if (address(proofRouter) == address(0)) revert ProofRouterZero();
+        _submitRouted(proofSystemId, proof, publicInputs);
     }
 
     /// @notice Submit a ZK validity proof carried in an EIP-4844 blob transaction.
@@ -368,6 +402,86 @@ contract WorldlineFinalizer is Ownable {
             bytes32 policyHash,
             bytes32 proverSetDigest
         ) = adapter.verify(proof, publicInputs);
+        if (!valid) revert ProofInvalid();
+        if (verifiedStfCommitment != stfCommitment) revert StfMismatch();
+
+        // Emit events
+        emit OutputProposed(windowIndex, outputRoot, l2Start, l2End, stfCommitment);
+        emit ZkProofAccepted(windowIndex, programVKey, policyHash, proverSetDigest);
+        emit ProofConsumed(windowIndex, keccak256(proof));
+
+        return proverSetDigest;
+    }
+
+    /// @dev Routed submission logic. Mirrors _submit() validation exactly, but
+    ///      dispatches verification through the ProofRouter instead of calling
+    ///      the default adapter directly.
+    function _submitRouted(
+        uint8 proofSystemId,
+        bytes calldata proof,
+        bytes calldata publicInputs
+    ) internal returns (bytes32) {
+        // Auth check
+        if (!permissionless && !submitters[msg.sender] && msg.sender != owner()) {
+            revert NotAuthorized();
+        }
+
+        // ABI length check
+        if (publicInputs.length != PUBLIC_INPUTS_LEN) revert BadInputsLen();
+
+        // Decode the seven public input words
+        (
+            bytes32 stfCommitment,
+            uint256 l2Start,
+            uint256 l2End,
+            bytes32 outputRoot,
+            bytes32 l1BlockHash,
+            bytes32 inputDomainSeparator,
+            uint256 windowCloseTimestamp
+        ) = abi.decode(
+            publicInputs,
+            (bytes32, uint256, uint256, bytes32, bytes32, bytes32, uint256)
+        );
+
+        // Domain binding
+        if (inputDomainSeparator != domainSeparator) revert DomainMismatch();
+
+        // Window range
+        if (l2End <= l2Start) revert InvalidWindowRange();
+
+        // Contiguity
+        if (nextWindowIndex == 0) {
+            if (l2Start != genesisL2Block) revert GenesisStartMismatch(genesisL2Block, l2Start);
+        } else {
+            if (l2Start != lastL2EndBlock) revert NotContiguous();
+        }
+
+        // Staleness
+        if (maxAcceptanceDelay > 0 && block.timestamp > windowCloseTimestamp + maxAcceptanceDelay) {
+            revert TooOld();
+        }
+
+        // StfCommitment binding (MED-001)
+        {
+            bytes32 expectedStf = keccak256(
+                abi.encode(l2Start, l2End, outputRoot, l1BlockHash, inputDomainSeparator, windowCloseTimestamp)
+            );
+            if (stfCommitment != expectedStf) revert StfBindingMismatch();
+        }
+
+        // Effects (CEI: state update before external call)
+        uint256 windowIndex = nextWindowIndex;
+        nextWindowIndex = windowIndex + 1;
+        lastL2EndBlock = l2End;
+
+        // Interactions: route through ProofRouter
+        (
+            bool valid,
+            bytes32 verifiedStfCommitment,
+            bytes32 programVKey,
+            bytes32 policyHash,
+            bytes32 proverSetDigest
+        ) = proofRouter.routeProofAggregated(proofSystemId, proof, publicInputs);
         if (!valid) revert ProofInvalid();
         if (verifiedStfCommitment != stfCommitment) revert StfMismatch();
 
