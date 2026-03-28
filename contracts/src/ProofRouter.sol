@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Ownable} from "./utils/Ownable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {IZkAdapter} from "./IZkAdapter.sol";
 import {IZkAggregatorVerifier} from "./interfaces/IZkAggregatorVerifier.sol";
 
@@ -21,7 +23,8 @@ import {IZkAggregatorVerifier} from "./interfaces/IZkAggregatorVerifier.sol";
 ///      and the thin path). Adapters used via routeProofAggregated must additionally
 ///      implement IZkAggregatorVerifier — this is enforced at call-time, not at
 ///      registration time, to keep the registration interface minimal.
-contract ProofRouter is Ownable {
+/// @custom:oz-upgrades-from ProofRouter
+contract ProofRouter is Initializable, Ownable2StepUpgradeable, UUPSUpgradeable {
     // ── Errors ──────────────────────────────────────────────────────────────────
 
     /// @notice Adapter address must be non-zero.
@@ -52,6 +55,24 @@ contract ProofRouter is Ownable {
 
     /// @dev Maps proofSystemId to the registered adapter address.
     mapping(uint8 => address) private _adapters;
+
+    // ── Constructor ─────────────────────────────────────────────────────────────
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    // ── Initializer ─────────────────────────────────────────────────────────────
+
+    function initialize() external initializer {
+        __Ownable_init(msg.sender);
+        __Ownable2Step_init();
+    }
+
+    // ── UUPS ────────────────────────────────────────────────────────────────────
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     // ── Admin ───────────────────────────────────────────────────────────────────
 

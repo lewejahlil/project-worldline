@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Ownable} from "./utils/Ownable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {IZkAggregatorVerifier} from "./interfaces/IZkAggregatorVerifier.sol";
 import {IProofRouter} from "./interfaces/IProofRouter.sol";
 import {BlobVerifier} from "./blob/BlobVerifier.sol";
@@ -11,7 +13,8 @@ import {BlobKzgVerifier} from "./blob/BlobKzgVerifier.sol";
 /// @notice Accepts one ZK proof per contiguous window, verifies it via an adapter,
 ///         and emits canonical finality events. Enforces domain binding, contiguity,
 ///         and staleness constraints as specified in the Worldline technical spec.
-contract WorldlineFinalizer is Ownable {
+/// @custom:oz-upgrades-from WorldlineFinalizer
+contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgradeable {
     // ── Errors ──────────────────────────────────────────────────────────────────
 
     error Paused();
@@ -34,6 +37,9 @@ contract WorldlineFinalizer is Ownable {
     error BlobKzgVerifierZero();
     error ProofRouterZero();
     error UnsupportedProofSystem(uint8 proofSystemId);
+    error NoPendingBlobKzgVerifier();
+    error NoPendingDomainSeparator();
+    error NoPendingGenesisL2Block();
 
     // ── Events ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +81,11 @@ contract WorldlineFinalizer is Ownable {
     event BlobKzgVerifierSet(address indexed verifier);
     event BlobProofSubmitted(uint256 indexed windowIndex, bytes32 versionedHash, bytes32 blobDataHash);
     event ProofRouterSet(address indexed proofRouter);
+    event BlobKzgVerifierChangeScheduled(address indexed verifier, uint256 activationTime);
+    event DomainSeparatorChangeScheduled(bytes32 domainSeparator, uint256 activationTime);
+    event DomainSeparatorSet(bytes32 domainSeparator);
+    event GenesisL2BlockChangeScheduled(uint256 genesisL2Block, uint256 activationTime);
+    event GenesisL2BlockSet(uint256 genesisL2Block);
 
     // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -103,7 +114,7 @@ contract WorldlineFinalizer is Ownable {
     uint256 public lastL2EndBlock;
 
     /// @notice The expected l2Start for the genesis window (LOW-003 remediation).
-    uint256 public immutable genesisL2Block;
+    uint256 public genesisL2Block;
 
     mapping(address => bool) public submitters;
 
@@ -125,18 +136,45 @@ contract WorldlineFinalizer is Ownable {
     ///         instead of calling the default adapter directly.
     IProofRouter public proofRouter;
 
+    // ── New storage appended after existing storage (UUPS upgrade) ──────────────
+
+    bool public blobKzgVerifierChangeScheduled;
+    address public pendingBlobKzgVerifier;
+    uint256 public pendingBlobKzgVerifierActivation;
+
+    // domainSeparator timelock
+    bytes32 public pendingDomainSeparator;
+    uint256 public pendingDomainSeparatorActivation;
+    bool public domainSeparatorChangeScheduled;
+
+    // genesisL2Block timelock
+    uint256 public pendingGenesisL2Block;
+    uint256 public pendingGenesisL2BlockActivation;
+    bool public genesisL2BlockChangeScheduled;
+
     // ── Constructor ─────────────────────────────────────────────────────────────
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    // ── Initializer ─────────────────────────────────────────────────────────────
 
     /// @param _adapter            Address of the ZK adapter (must be non-zero).
     /// @param _domainSeparator    Domain separator binding proofs to this chain/deployment.
     /// @param _maxAcceptanceDelay Maximum age (seconds) of a window before it is rejected.
     /// @param _genesisL2Block     Expected l2Start for the genesis window (LOW-003 remediation).
-    constructor(
+    /// @param _blobKzgVerifier    Optional BlobKzgVerifier address (pass address(0) to skip).
+    function initialize(
         address _adapter,
         bytes32 _domainSeparator,
         uint256 _maxAcceptanceDelay,
-        uint256 _genesisL2Block
-    ) {
+        uint256 _genesisL2Block,
+        address _blobKzgVerifier
+    ) external initializer {
+        __Ownable_init(msg.sender);
+        __Ownable2Step_init();
         if (_adapter == address(0)) revert AdapterZero();
         if (_maxAcceptanceDelay == 0) revert MaxAcceptanceDelayZero();
         adapter = IZkAggregatorVerifier(_adapter);
@@ -144,7 +182,15 @@ contract WorldlineFinalizer is Ownable {
         maxAcceptanceDelay = _maxAcceptanceDelay;
         adapterChangeDelay = 1 days;
         genesisL2Block = _genesisL2Block;
+        if (_blobKzgVerifier != address(0)) {
+            blobKzgVerifier = BlobKzgVerifier(_blobKzgVerifier);
+            emit BlobKzgVerifierSet(_blobKzgVerifier);
+        }
     }
+
+    // ── UUPS ────────────────────────────────────────────────────────────────────
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     // ── Modifiers ───────────────────────────────────────────────────────────────
 
@@ -208,11 +254,62 @@ contract WorldlineFinalizer is Ownable {
         emit AdapterChangeDelaySet(_delay);
     }
 
-    /// @notice Set the BlobKzgVerifier address for EIP-4844 blob submissions.
-    /// @param _blobKzgVerifier Address of the BlobKzgVerifier contract (zero to disable).
-    function setBlobKzgVerifier(address _blobKzgVerifier) external onlyOwner {
-        blobKzgVerifier = BlobKzgVerifier(_blobKzgVerifier);
-        emit BlobKzgVerifierSet(_blobKzgVerifier);
+    /// @notice Schedule a timelocked BlobKzgVerifier change.
+    ///         Pass address(0) to schedule disabling the verifier.
+    function scheduleBlobKzgVerifierChange(address _verifier) external onlyOwner {
+        pendingBlobKzgVerifier = _verifier;
+        pendingBlobKzgVerifierActivation = block.timestamp + adapterChangeDelay;
+        blobKzgVerifierChangeScheduled = true;
+        emit BlobKzgVerifierChangeScheduled(_verifier, pendingBlobKzgVerifierActivation);
+    }
+
+    /// @notice Activate a previously scheduled BlobKzgVerifier change.
+    function activateBlobKzgVerifierChange() external onlyOwner {
+        if (!blobKzgVerifierChangeScheduled) revert NoPendingBlobKzgVerifier();
+        if (block.timestamp < pendingBlobKzgVerifierActivation) revert TimelockActive(pendingBlobKzgVerifierActivation);
+        blobKzgVerifier = BlobKzgVerifier(pendingBlobKzgVerifier);
+        emit BlobKzgVerifierSet(pendingBlobKzgVerifier);
+        pendingBlobKzgVerifier = address(0);
+        pendingBlobKzgVerifierActivation = 0;
+        blobKzgVerifierChangeScheduled = false;
+    }
+
+    /// @notice Schedule a timelocked domainSeparator change.
+    function scheduleDomainSeparatorChange(bytes32 _domainSeparator) external onlyOwner {
+        pendingDomainSeparator = _domainSeparator;
+        pendingDomainSeparatorActivation = block.timestamp + adapterChangeDelay;
+        domainSeparatorChangeScheduled = true;
+        emit DomainSeparatorChangeScheduled(_domainSeparator, pendingDomainSeparatorActivation);
+    }
+
+    /// @notice Activate a previously scheduled domainSeparator change.
+    function activateDomainSeparatorChange() external onlyOwner {
+        if (!domainSeparatorChangeScheduled) revert NoPendingDomainSeparator();
+        if (block.timestamp < pendingDomainSeparatorActivation) revert TimelockActive(pendingDomainSeparatorActivation);
+        domainSeparator = pendingDomainSeparator;
+        emit DomainSeparatorSet(pendingDomainSeparator);
+        pendingDomainSeparator = bytes32(0);
+        pendingDomainSeparatorActivation = 0;
+        domainSeparatorChangeScheduled = false;
+    }
+
+    /// @notice Schedule a timelocked genesisL2Block change.
+    function scheduleGenesisL2BlockChange(uint256 _genesisL2Block) external onlyOwner {
+        pendingGenesisL2Block = _genesisL2Block;
+        pendingGenesisL2BlockActivation = block.timestamp + adapterChangeDelay;
+        genesisL2BlockChangeScheduled = true;
+        emit GenesisL2BlockChangeScheduled(_genesisL2Block, pendingGenesisL2BlockActivation);
+    }
+
+    /// @notice Activate a previously scheduled genesisL2Block change.
+    function activateGenesisL2BlockChange() external onlyOwner {
+        if (!genesisL2BlockChangeScheduled) revert NoPendingGenesisL2Block();
+        if (block.timestamp < pendingGenesisL2BlockActivation) revert TimelockActive(pendingGenesisL2BlockActivation);
+        genesisL2Block = pendingGenesisL2Block;
+        emit GenesisL2BlockSet(pendingGenesisL2Block);
+        pendingGenesisL2Block = 0;
+        pendingGenesisL2BlockActivation = 0;
+        genesisL2BlockChangeScheduled = false;
     }
 
     /// @notice Set the ProofRouter for multi-proof-system routing.
