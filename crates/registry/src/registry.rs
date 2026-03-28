@@ -21,13 +21,23 @@ impl ProverRegistry {
         if self.provers.contains_key(&id) {
             return Err(RegistryError::ProverAlreadyRegistered(id));
         }
-        self.provers.insert(id, ProverRecord { id, proof_system: system, active: true });
+        self.provers.insert(
+            id,
+            ProverRecord {
+                id,
+                proof_system: system,
+                active: true,
+            },
+        );
         Ok(())
     }
 
     /// Deregister a prover (sets active=false). Errors if not found.
     pub fn deregister(&mut self, id: ProverId) -> Result<(), RegistryError> {
-        let record = self.provers.get_mut(&id).ok_or(RegistryError::ProverNotFound(id))?;
+        let record = self
+            .provers
+            .get_mut(&id)
+            .ok_or(RegistryError::ProverNotFound(id))?;
         record.active = false;
         Ok(())
     }

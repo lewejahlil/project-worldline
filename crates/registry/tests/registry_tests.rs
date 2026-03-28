@@ -81,7 +81,13 @@ fn check_quorum_not_met() {
     reg.register(1, ProofSystemId::Groth16).unwrap();
     reg.register(2, ProofSystemId::Plonk).unwrap();
     let err = reg.check_quorum(3).unwrap_err();
-    assert_eq!(err, RegistryError::QuorumNotMet { required: 3, active: 2 });
+    assert_eq!(
+        err,
+        RegistryError::QuorumNotMet {
+            required: 3,
+            active: 2
+        }
+    );
 }
 
 // 10. check_quorum(0) — returns QuorumOutOfRange
