@@ -12,13 +12,13 @@
 
 The Worldline codebase demonstrates strong security posture across all layers. All v1.0 findings (HI-001 through LOW-005) have been successfully remediated. No critical or high-severity findings were identified in this v2.0 re-audit.
 
-| Severity | Count |
-|---|---|
-| Critical | 0 |
-| High | 0 |
-| Medium | 0 |
-| Low | 0 |
-| Informational/Advisory | 7 |
+| Severity               | Count |
+| ---------------------- | ----- |
+| Critical               | 0     |
+| High                   | 0     |
+| Medium                 | 0     |
+| Low                    | 0     |
+| Informational/Advisory | 7     |
 
 All 49 checklist items across 4 audit domains passed, with 7 items flagged as informational advisories that require no immediate action but are documented for production-readiness awareness.
 
@@ -26,15 +26,15 @@ All 49 checklist items across 4 audit domains passed, with 7 items flagged as in
 
 ## 2. Findings Table
 
-| ID | Severity | Layer | Title | Status |
-|----|----------|-------|-------|--------|
-| W2-001 | Informational | Circuit | circomlib LessThan bit-width wrapping (theoretical) | ⚠️ ADVISORY |
-| W2-002 | Informational | Circuit | Replay prevention deferred to contract layer | ⚠️ ADVISORY |
+| ID     | Severity      | Layer    | Title                                                     | Status      |
+| ------ | ------------- | -------- | --------------------------------------------------------- | ----------- |
+| W2-001 | Informational | Circuit  | circomlib LessThan bit-width wrapping (theoretical)       | ⚠️ ADVISORY |
+| W2-002 | Informational | Circuit  | Replay prevention deferred to contract layer              | ⚠️ ADVISORY |
 | W2-003 | Informational | Solidity | Fork tests use MockGroth16Verifier (no real pairing test) | ⚠️ ADVISORY |
-| W2-004 | Informational | Rust | Three unused error variants in aggregation/recursion | ⚠️ ADVISORY |
-| W2-005 | Informational | Rust | Placeholder proof data in recursion and aggregation | ⚠️ ADVISORY |
-| W2-006 | Informational | Infra | Deploy order cosmetic divergence (prod vs integration) | ⚠️ ADVISORY |
-| W2-007 | Informational | Infra | Sepolia smoke test omits registry registration step | ⚠️ ADVISORY |
+| W2-004 | Informational | Rust     | Three unused error variants in aggregation/recursion      | ⚠️ ADVISORY |
+| W2-005 | Informational | Rust     | Placeholder proof data in recursion and aggregation       | ⚠️ ADVISORY |
+| W2-006 | Informational | Infra    | Deploy order cosmetic divergence (prod vs integration)    | ⚠️ ADVISORY |
+| W2-007 | Informational | Infra    | Sepolia smoke test omits registry registration step       | ⚠️ ADVISORY |
 
 ---
 
@@ -166,85 +166,85 @@ Prioritized production-readiness improvements:
 
 ### A. Gas Comparison: Chunk 6 (Local) vs Chunk 8 (Fork)
 
-| Operation | Chunk 6 (Local Hardhat) | Chunk 8 (Mainnet Fork) | Notes |
-|---|---|---|---|
-| Groth16Verifier.verifyProof | ~1B gas (real pairing) | N/A (mock used) | Local uses real verifier in Forge |
-| MockGroth16Verifier.verifyProof | ~25K gas | ~25K gas | Mock returns true, no precompile |
-| submitZkValidityProof (mock) | ~120K gas | ~120K gas | Dominated by storage writes + keccak |
-| registerDriver | ~95K gas | ~95K gas | Storage-write dominated |
+| Operation                       | Chunk 6 (Local Hardhat) | Chunk 8 (Mainnet Fork) | Notes                                |
+| ------------------------------- | ----------------------- | ---------------------- | ------------------------------------ |
+| Groth16Verifier.verifyProof     | ~1B gas (real pairing)  | N/A (mock used)        | Local uses real verifier in Forge    |
+| MockGroth16Verifier.verifyProof | ~25K gas                | ~25K gas               | Mock returns true, no precompile     |
+| submitZkValidityProof (mock)    | ~120K gas               | ~120K gas              | Dominated by storage writes + keccak |
+| registerDriver                  | ~95K gas                | ~95K gas               | Storage-write dominated              |
 
 **Note:** Fork gas for `submitZkValidityProof` uses MockGroth16Verifier, so gas is expected to be lower than a real verifier deployment (~1B local reflects actual BN254 ecPairing precompile cost under Hardhat's JS implementation, not representative of mainnet precompile pricing which is ~113K gas).
 
 ### B. Test Coverage
 
-| Suite | Test Count | Files |
-|---|---|---|
-| Circuit (Mocha) | 8 | 1 |
-| Solidity — Forge | 50 | 5 (.t.sol) |
-| Solidity — Hardhat | 136 | 11 (.test.ts) |
-| Integration | 14 | 3 |
-| Fork | 17 | 2 |
-| Rust | 34 | 3 (registry: 12, aggregation: 12, recursion: 10) |
-| Benchmarks | 11 | 2 (Criterion) |
-| **Total** | **270** | **27** |
+| Suite              | Test Count | Files                                            |
+| ------------------ | ---------- | ------------------------------------------------ |
+| Circuit (Mocha)    | 8          | 1                                                |
+| Solidity — Forge   | 50         | 5 (.t.sol)                                       |
+| Solidity — Hardhat | 136        | 11 (.test.ts)                                    |
+| Integration        | 14         | 3                                                |
+| Fork               | 17         | 2                                                |
+| Rust               | 34         | 3 (registry: 12, aggregation: 12, recursion: 10) |
+| Benchmarks         | 11         | 2 (Criterion)                                    |
+| **Total**          | **270**    | **27**                                           |
 
 ### C. Circuit Constraints
 
-| Metric | Value |
-|---|---|
-| Constraints | 1,867 |
-| Wires | 1,859 |
-| Powers of Tau | 2^11 = 2,048 |
-| Headroom | 181 constraints (8.8%) |
+| Metric         | Value                              |
+| -------------- | ---------------------------------- |
+| Constraints    | 1,867                              |
+| Wires          | 1,859                              |
+| Powers of Tau  | 2^11 = 2,048                       |
+| Headroom       | 181 constraints (8.8%)             |
 | Public outputs | 2 (stfCommitment, proverSetDigest) |
 
 ### D. Automated Check Results
 
-| Check | Result |
-|---|---|
-| Secret detection (64-char hex in scripts/CI/devnet) | 2 hits: Hardhat default account #0 (`0xac0974...`) in `devnet/index.js` and `devnet/smoke.ts` -- well-known test key, not a real secret |
-| TODO/FIXME scan | 2 hits: `crates/worldline-driver/src/recursion.rs:76,106` -- TODO for live prover endpoint integration |
-| CI YAML syntax (ci.yml) | Valid |
-| CI YAML syntax (deploy-sepolia.yml) | Valid |
-| Clippy (--workspace -D warnings) | Clean -- 0 warnings |
-| 320-byte consistency | Consistent across Solidity (`PROD_PROOF_MIN_LEN=320`), Rust (`Groth16 => 320`), TypeScript tests, and comments |
-| Proof system ID consistency | Consistent: circuit (`proofSystemIds` constrained 1-3), Rust (`ProofSystemId::Groth16/Plonk/Halo2`), Solidity (comment-level, adapter is Groth16-specific) |
+| Check                                               | Result                                                                                                                                                     |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Secret detection (64-char hex in scripts/CI/devnet) | 2 hits: Hardhat default account #0 (`0xac0974...`) in `devnet/index.js` and `devnet/smoke.ts` -- well-known test key, not a real secret                    |
+| TODO/FIXME scan                                     | 2 hits: `crates/worldline-driver/src/recursion.rs:76,106` -- TODO for live prover endpoint integration                                                     |
+| CI YAML syntax (ci.yml)                             | Valid                                                                                                                                                      |
+| CI YAML syntax (deploy-sepolia.yml)                 | Valid                                                                                                                                                      |
+| Clippy (--workspace -D warnings)                    | Clean -- 0 warnings                                                                                                                                        |
+| 320-byte consistency                                | Consistent across Solidity (`PROD_PROOF_MIN_LEN=320`), Rust (`Groth16 => 320`), TypeScript tests, and comments                                             |
+| Proof system ID consistency                         | Consistent: circuit (`proofSystemIds` constrained 1-3), Rust (`ProofSystemId::Groth16/Plonk/Halo2`), Solidity (comment-level, adapter is Groth16-specific) |
 
 ### E. Cross-Layer Consistency Analysis
 
-| # | Check | Result |
-|---|---|---|
-| 44 | 320-byte proof format across all layers | ✅ CONSISTENT -- Solidity `PROD_PROOF_MIN_LEN=320`, Rust `Groth16 => 320`, all test helpers encode 10x32=320 bytes |
-| 45 | Proof system IDs (1,2,3) across circuit/contracts/Rust | ✅ CONSISTENT -- Circuit constrains `proofSystemIds` to {1,2,3}, Rust enum `ProofSystemId` maps Groth16=1/Plonk=2/Halo2=3 |
-| 46 | Quorum/submitter model consistency | ✅ CONSISTENT -- Circuit: `proverSetDigest = Poseidon(proverIds, proofSystemIds, quorumCount)` with quorum 1-3. Contracts: submitter whitelist gates submission. Rust: quorum enforced 1-3 in registry and aggregation. |
-| 47 | Prover/driver ID validation across layers | ✅ CONSISTENT -- Circuit: non-zero proverIds enforced via IsZero. Contracts: bytes32(0) rejected for all entity types. Rust: ProverID 0 rejected. |
-| 48 | Batch size (1-1024) where referenced | ✅ CONSISTENT -- Circuit constrains batchSize 1-1024. Not directly referenced in contracts (batch semantics are off-chain). Rust aggregation has no explicit batch-size cap (proofs are added individually). |
-| 49 | Gas: Chunk 6 local vs Chunk 8 fork | ✅ EXPECTED -- Fork uses MockGroth16Verifier (~25K gas for verifyProof) vs local Forge using real verifier (~1B gas under Hardhat JS EVM). Fork gas is lower as expected due to mock usage. Real mainnet precompile pricing for ecPairing is ~113K gas. |
+| #   | Check                                                  | Result                                                                                                                                                                                                                                                  |
+| --- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 44  | 320-byte proof format across all layers                | ✅ CONSISTENT -- Solidity `PROD_PROOF_MIN_LEN=320`, Rust `Groth16 => 320`, all test helpers encode 10x32=320 bytes                                                                                                                                      |
+| 45  | Proof system IDs (1,2,3) across circuit/contracts/Rust | ✅ CONSISTENT -- Circuit constrains `proofSystemIds` to {1,2,3}, Rust enum `ProofSystemId` maps Groth16=1/Plonk=2/Halo2=3                                                                                                                               |
+| 46  | Quorum/submitter model consistency                     | ✅ CONSISTENT -- Circuit: `proverSetDigest = Poseidon(proverIds, proofSystemIds, quorumCount)` with quorum 1-3. Contracts: submitter whitelist gates submission. Rust: quorum enforced 1-3 in registry and aggregation.                                 |
+| 47  | Prover/driver ID validation across layers              | ✅ CONSISTENT -- Circuit: non-zero proverIds enforced via IsZero. Contracts: bytes32(0) rejected for all entity types. Rust: ProverID 0 rejected.                                                                                                       |
+| 48  | Batch size (1-1024) where referenced                   | ✅ CONSISTENT -- Circuit constrains batchSize 1-1024. Not directly referenced in contracts (batch semantics are off-chain). Rust aggregation has no explicit batch-size cap (proofs are added individually).                                            |
+| 49  | Gas: Chunk 6 local vs Chunk 8 fork                     | ✅ EXPECTED -- Fork uses MockGroth16Verifier (~25K gas for verifyProof) vs local Forge using real verifier (~1B gas under Hardhat JS EVM). Fork gas is lower as expected due to mock usage. Real mainnet precompile pricing for ecPairing is ~113K gas. |
 
 ### F. Agent File Coverage Map
 
-| Agent | Files Audited |
-|---|---|
-| 1 — Circuit | `circuits/stf/worldline_stf.circom`, `circuits/lib/poseidon_utils.circom`, `circuits/test/worldline_stf.test.ts`, `circuits/zkeys/worldline_stf_vkey.json`, `circuits/zkeys/README.md` |
-| 2 — Solidity | `contracts/src/**/*.sol` (14 files), `contracts/test/*.t.sol` (5 files), `test/**/*.test.ts` (16 files) |
-| 3 — Rust | `crates/registry/src/`, `crates/aggregation/src/`, `crates/recursion/src/`, associated `tests/` dirs, `crates/benches/benches/` |
-| 4 — Infra | `.github/workflows/ci.yml`, `.github/workflows/deploy-sepolia.yml`, `scripts/deploy.ts`, `scripts/verify-deployment.ts`, `scripts/smoke.ts`, `scripts/fork-sim-config.ts`, `devnet/Dockerfile`, `devnet/docker-compose.yml`, `devnet/smoke.ts`, `hardhat.config.ts` |
+| Agent        | Files Audited                                                                                                                                                                                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 — Circuit  | `circuits/stf/worldline_stf.circom`, `circuits/lib/poseidon_utils.circom`, `circuits/test/worldline_stf.test.ts`, `circuits/zkeys/worldline_stf_vkey.json`, `circuits/zkeys/README.md`                                                                              |
+| 2 — Solidity | `contracts/src/**/*.sol` (14 files), `contracts/test/*.t.sol` (5 files), `test/**/*.test.ts` (16 files)                                                                                                                                                             |
+| 3 — Rust     | `crates/registry/src/`, `crates/aggregation/src/`, `crates/recursion/src/`, associated `tests/` dirs, `crates/benches/benches/`                                                                                                                                     |
+| 4 — Infra    | `.github/workflows/ci.yml`, `.github/workflows/deploy-sepolia.yml`, `scripts/deploy.ts`, `scripts/verify-deployment.ts`, `scripts/smoke.ts`, `scripts/fork-sim-config.ts`, `devnet/Dockerfile`, `devnet/docker-compose.yml`, `devnet/smoke.ts`, `hardhat.config.ts` |
 
 ### G. v1.0 Remediation Verification
 
-| Finding | Remediation | Verified |
-|---|---|---|
-| HI-001: Instant adapter swap | Timelocked `scheduleAdapterChange`/`activateAdapterChange` with `MIN_ADAPTER_DELAY = 1 days` | ✅ |
-| HI-002: Zero timelock on outputs registry | `MIN_TIMELOCK_FLOOR = 1 days` enforced in constructor and `setMinTimelock` | ✅ |
-| HI-003: Single-step ownership transfer | Two-step `Ownable` with `transferOwnership` -> `acceptOwnership` | ✅ |
-| MED-001: stfCommitment not bound on-chain | Keccak256 recomputation + `StfBindingMismatch` revert in `_submit()` | ✅ |
-| MED-003: Zero-value oracle/vkey/policy accepted | `OracleZero`, `VKeyZero`, `PolicyHashZero` reverts added | ✅ |
-| MED-005: Instant facade swap | Timelocked `scheduleCompatFacade`/`activateCompatFacade` with `MIN_FACADE_DELAY = 1 days` | ✅ |
-| LOW-003: Arbitrary genesis block | `genesisL2Block` immutable constructor param + `GenesisStartMismatch` check | ✅ |
-| LOW-004: No manifest observability | `ManifestAnnounced` event with 96-byte locator cap | ✅ |
-| LOW-005: CEI violation in _submit | State updates before external `adapter.verify()` call | ✅ |
-| NUL-1: No proof deduplication trail | `ProofConsumed` event with `keccak256(proof)` | ✅ |
+| Finding                                         | Remediation                                                                                  | Verified |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------- | -------- |
+| HI-001: Instant adapter swap                    | Timelocked `scheduleAdapterChange`/`activateAdapterChange` with `MIN_ADAPTER_DELAY = 1 days` | ✅       |
+| HI-002: Zero timelock on outputs registry       | `MIN_TIMELOCK_FLOOR = 1 days` enforced in constructor and `setMinTimelock`                   | ✅       |
+| HI-003: Single-step ownership transfer          | Two-step `Ownable` with `transferOwnership` -> `acceptOwnership`                             | ✅       |
+| MED-001: stfCommitment not bound on-chain       | Keccak256 recomputation + `StfBindingMismatch` revert in `_submit()`                         | ✅       |
+| MED-003: Zero-value oracle/vkey/policy accepted | `OracleZero`, `VKeyZero`, `PolicyHashZero` reverts added                                     | ✅       |
+| MED-005: Instant facade swap                    | Timelocked `scheduleCompatFacade`/`activateCompatFacade` with `MIN_FACADE_DELAY = 1 days`    | ✅       |
+| LOW-003: Arbitrary genesis block                | `genesisL2Block` immutable constructor param + `GenesisStartMismatch` check                  | ✅       |
+| LOW-004: No manifest observability              | `ManifestAnnounced` event with 96-byte locator cap                                           | ✅       |
+| LOW-005: CEI violation in \_submit              | State updates before external `adapter.verify()` call                                        | ✅       |
+| NUL-1: No proof deduplication trail             | `ProofConsumed` event with `keccak256(proof)`                                                | ✅       |
 
 ---
 
-*Report generated by automated multi-agent security audit pipeline. All findings should be reviewed by the development team and prioritized according to the deployment timeline.*
+_Report generated by automated multi-agent security audit pipeline. All findings should be reviewed by the development team and prioritized according to the deployment timeline._
