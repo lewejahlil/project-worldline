@@ -1,7 +1,7 @@
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import { WorldlineRegistry } from "../typechain-types";
 
 const CIRCUIT_ID = ethers.encodeBytes32String("circuit-1");
@@ -17,7 +17,12 @@ describe("WorldlineRegistry", function () {
     const mockVerifier = await MockVerifier.deploy();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry: WorldlineRegistry = await Registry.deploy(await mockVerifier.getAddress());
+    const registry: WorldlineRegistry = await upgrades.deployProxy(
+      Registry,
+      [await mockVerifier.getAddress()],
+      { kind: "uups" }
+    ) as any;
+    await registry.waitForDeployment();
 
     return { registry, mockVerifier, owner, admin, stranger };
   }
@@ -37,10 +42,9 @@ describe("WorldlineRegistry", function () {
 
     it("reverts if deployed with zero verifier address", async function () {
       const Registry = await ethers.getContractFactory("WorldlineRegistry");
-      await expect(Registry.deploy(ethers.ZeroAddress)).to.be.revertedWithCustomError(
-        Registry,
-        "InvalidVerifier"
-      );
+      await expect(
+        upgrades.deployProxy(Registry, [ethers.ZeroAddress], { kind: "uups" })
+      ).to.be.revertedWithCustomError(Registry, "InvalidVerifier");
     });
   });
 

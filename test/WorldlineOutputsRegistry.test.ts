@@ -1,6 +1,6 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 
 const CHAIN_HASH = ethers.keccak256(ethers.toUtf8Bytes("chain-1"));
 const DOMAIN_TAG = ethers.keccak256(ethers.toUtf8Bytes("domain-tag"));
@@ -15,7 +15,12 @@ describe("WorldlineOutputsRegistry", function () {
     const [owner, oracle, stranger] = await ethers.getSigners();
 
     const Registry = await ethers.getContractFactory("WorldlineOutputsRegistry");
-    const registry = await Registry.deploy(MIN_TIMELOCK);
+    const registry = await upgrades.deployProxy(
+      Registry,
+      [MIN_TIMELOCK],
+      { kind: "uups" }
+    ) as any;
+    await registry.waitForDeployment();
 
     const dKey = await registry.domainKey(CHAIN_HASH, DOMAIN_TAG);
 
@@ -30,7 +35,9 @@ describe("WorldlineOutputsRegistry", function () {
 
     it("reverts if timelock is zero", async function () {
       const Registry = await ethers.getContractFactory("WorldlineOutputsRegistry");
-      await expect(Registry.deploy(0)).to.be.revertedWithCustomError(Registry, "TimelockTooShort");
+      await expect(
+        upgrades.deployProxy(Registry, [0], { kind: "uups" })
+      ).to.be.revertedWithCustomError(Registry, "TimelockTooShort");
     });
   });
 

@@ -1,6 +1,6 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 
 /**
  * End-to-end integration test exercising the full contract stack:
@@ -16,7 +16,12 @@ describe("E2E Integration", function () {
 
     // Deploy Registry
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await Registry.deploy(await mockVerifier.getAddress());
+    const registry = await upgrades.deployProxy(
+      Registry,
+      [await mockVerifier.getAddress()],
+      { kind: "uups" }
+    ) as any;
+    await registry.waitForDeployment();
 
     // Deploy Compat facade
     const Compat = await ethers.getContractFactory("WorldlineCompat");
