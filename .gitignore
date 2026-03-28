@@ -32,3 +32,4 @@ lcov.info
 # Rust
 Cargo.lock
 
+deployments/*.json
