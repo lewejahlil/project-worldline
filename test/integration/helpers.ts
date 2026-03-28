@@ -32,6 +32,11 @@ export interface DeployedContractsWithRouter extends DeployedContracts {
   router: Awaited<ReturnType<ContractFactory["deploy"]>>;
 }
 
+export interface DeployedContractsWithPlonkRouter extends DeployedContractsWithRouter {
+  plonkVerifier: Awaited<ReturnType<ContractFactory["deploy"]>>;
+  plonkAdapter: Awaited<ReturnType<ContractFactory["deploy"]>>;
+}
+
 /**
  * Deploy the full Worldline contract stack for integration testing.
  * Uses MockGroth16Verifier so no real ZK proofs are required.
@@ -80,6 +85,38 @@ export async function deployAllWithRouter(deployer?: Signer): Promise<DeployedCo
   await (await (base.finalizer as any).setProofRouter(await (router as any).getAddress())).wait();
 
   return { ...base, router };
+}
+
+/**
+ * Deploy the full Worldline contract stack including a ProofRouter with both
+ * Groth16 (ID=1) and Plonk (ID=2) adapters registered.
+ * Uses mock verifiers so no real ZK proofs are required.
+ */
+export async function deployAllWithPlonkRouter(
+  deployer?: Signer
+): Promise<DeployedContractsWithPlonkRouter> {
+  const base = await deployAllWithRouter(deployer);
+
+  // Deploy MockPlonkVerifier
+  const MockPlonk = await ethers.getContractFactory("MockPlonkVerifier", deployer);
+  const plonkVerifier = await MockPlonk.deploy();
+  await plonkVerifier.waitForDeployment();
+
+  // Deploy PlonkZkAdapter
+  const PlonkAdapter = await ethers.getContractFactory("PlonkZkAdapter", deployer);
+  const plonkAdapter = await PlonkAdapter.deploy(
+    await plonkVerifier.getAddress(),
+    PROGRAM_VKEY,
+    POLICY_HASH
+  );
+  await plonkAdapter.waitForDeployment();
+
+  // Register Plonk adapter at proofSystemId=2
+  await (
+    await (base.router as any).registerAdapter(2, await (plonkAdapter as any).getAddress())
+  ).wait();
+
+  return { ...base, plonkVerifier, plonkAdapter };
 }
 
 // ── Proof encoding helpers ───────────────────────────────────────────────────
@@ -165,6 +202,47 @@ export async function makeWindowFixture(
   const windowCloseTimestamp = BigInt(block!.timestamp) + BigInt(7200); // 2 hours ahead
   return {
     proof: encodeProof(l2Start, l2End, windowCloseTimestamp, domain, proverSetDigest),
+    publicInputs: encodePublicInputs(l2Start, l2End, windowCloseTimestamp, domain)
+  };
+}
+
+/**
+ * Encode a production-format 832-byte Plonk proof:
+ *   uint256[24] proofWords, stfCommitment, proverSetDigest
+ *
+ * The stfCommitment embedded in the proof must match the one in publicInputs
+ * (checked by StfMismatch). MockPlonkVerifier always returns true so the
+ * BN254 pairing step is skipped in tests.
+ */
+export function encodePlonkProof(
+  l2Start: bigint,
+  l2End: bigint,
+  windowCloseTimestamp: bigint,
+  domain: string = DOMAIN,
+  proverSetDigest: string = PROVER_SET_DIGEST
+): string {
+  const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp, domain);
+  // 24 dummy proof words
+  const proofWords = Array.from({ length: 24 }, (_, i) => BigInt(i + 1));
+  return ethers.AbiCoder.defaultAbiCoder().encode(
+    ["uint256[24]", "uint256", "uint256"],
+    [proofWords, BigInt(stfCommitment), BigInt(proverSetDigest)]
+  );
+}
+
+/**
+ * Returns { proof, publicInputs } for a single window submission using a Plonk proof.
+ */
+export async function makePlonkWindowFixture(
+  l2Start: bigint,
+  l2End: bigint,
+  domain: string = DOMAIN,
+  proverSetDigest: string = PROVER_SET_DIGEST
+): Promise<{ proof: string; publicInputs: string }> {
+  const block = await ethers.provider.getBlock("latest");
+  const windowCloseTimestamp = BigInt(block!.timestamp) + BigInt(7200); // 2 hours ahead
+  return {
+    proof: encodePlonkProof(l2Start, l2End, windowCloseTimestamp, domain, proverSetDigest),
     publicInputs: encodePublicInputs(l2Start, l2End, windowCloseTimestamp, domain)
   };
 }

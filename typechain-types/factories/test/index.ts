@@ -2,4 +2,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export { MockGroth16Verifier__factory } from "./MockGroth16Verifier__factory";
+export { MockPlonkVerifier__factory } from "./MockPlonkVerifier__factory";
 export { MockZkAdapter__factory } from "./MockZkAdapter__factory";

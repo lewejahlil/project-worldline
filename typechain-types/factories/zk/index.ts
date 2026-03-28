@@ -3,3 +3,4 @@
 /* eslint-disable */
 export { Groth16Verifier__factory } from "./Groth16Verifier__factory";
 export { Groth16ZkAdapter__factory } from "./Groth16ZkAdapter__factory";
+export { PlonkZkAdapter__factory } from "./PlonkZkAdapter__factory";
