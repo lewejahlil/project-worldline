@@ -1,4 +1,5 @@
 use crate::types::{AggregatedProof, AggregationStrategy, IndividualProof, ProofSystemId};
+use std::collections::HashMap;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -15,6 +16,16 @@ pub enum AggregationError {
     InvalidProverId,
     #[error("batch commitment mismatch")]
     BatchCommitmentMismatch,
+    #[error("verifier not registered for proof system: {0:?}")]
+    VerifierNotRegistered(ProofSystemId),
+    #[error("verification failed for prover {prover_id}: {reason}")]
+    VerificationFailed { prover_id: u64, reason: String },
+}
+
+#[derive(Debug, Clone)]
+pub struct VerificationReport {
+    pub results: Vec<(u64, ProofSystemId, bool)>,
+    pub verified_count: u8,
 }
 
 fn expected_proof_size(system: ProofSystemId) -> usize {
@@ -44,6 +55,7 @@ pub struct ProofAggregator {
     quorum_required: u8,
     batch_commitment: [u8; 32],
     proofs: Vec<IndividualProof>,
+    verifiers: HashMap<u8, Box<dyn crate::verifiers::traits::ProofVerifier>>,
 }
 
 impl ProofAggregator {
@@ -58,6 +70,50 @@ impl ProofAggregator {
             quorum_required,
             batch_commitment,
             proofs: Vec::new(),
+            verifiers: HashMap::new(),
+        })
+    }
+
+    pub fn register_verifier(
+        &mut self,
+        verifier: Box<dyn crate::verifiers::traits::ProofVerifier>,
+    ) {
+        let id = verifier.proof_system_id() as u8;
+        self.verifiers.insert(id, verifier);
+    }
+
+    pub fn verify_proof(&self, proof: &IndividualProof) -> Result<bool, AggregationError> {
+        let id = proof.proof_system as u8;
+        match self.verifiers.get(&id) {
+            Some(verifier) => verifier
+                .verify(&proof.proof_data, &proof.public_inputs)
+                .map_err(|e| AggregationError::VerificationFailed {
+                    prover_id: proof.prover_id,
+                    reason: e.to_string(),
+                }),
+            None => Err(AggregationError::VerifierNotRegistered(proof.proof_system)),
+        }
+    }
+
+    pub fn verify_all(&self) -> Result<VerificationReport, AggregationError> {
+        let mut results = Vec::new();
+        for proof in &self.proofs {
+            let id = proof.proof_system as u8;
+            let passed = match self.verifiers.get(&id) {
+                Some(verifier) => verifier
+                    .verify(&proof.proof_data, &proof.public_inputs)
+                    .map_err(|e| AggregationError::VerificationFailed {
+                        prover_id: proof.prover_id,
+                        reason: e.to_string(),
+                    })?,
+                None => return Err(AggregationError::VerifierNotRegistered(proof.proof_system)),
+            };
+            results.push((proof.prover_id, proof.proof_system, passed));
+        }
+        let verified_count = results.iter().filter(|(_, _, p)| *p).count() as u8;
+        Ok(VerificationReport {
+            results,
+            verified_count,
         })
     }
 
@@ -96,6 +152,77 @@ impl ProofAggregator {
             });
         }
 
+        // If no verifiers registered, fall back to length-check only (backward compat)
+        if self.verifiers.is_empty() {
+            return self.aggregate_by_length_check(strategy);
+        }
+
+        let (included, verification_results) = match strategy {
+            AggregationStrategy::Independent => {
+                let mut results: Vec<(u64, ProofSystemId, bool)> = Vec::new();
+                for proof in &self.proofs {
+                    let passed = self.verify_proof(proof).unwrap_or(false);
+                    results.push((proof.prover_id, proof.proof_system, passed));
+                }
+                let verified_count = results.iter().filter(|(_, _, p)| *p).count() as u8;
+                if verified_count < self.quorum_required {
+                    return Err(AggregationError::QuorumNotMet {
+                        required: self.quorum_required,
+                        valid: verified_count,
+                    });
+                }
+                // Include only verified proofs
+                let included: Vec<IndividualProof> = self
+                    .proofs
+                    .iter()
+                    .zip(results.iter())
+                    .filter(|(_, (_, _, passed))| *passed)
+                    .map(|(p, _)| p.clone())
+                    .collect();
+                (included, results)
+            }
+            AggregationStrategy::Sequential => {
+                let mut collected: Vec<IndividualProof> = Vec::new();
+                let mut results: Vec<(u64, ProofSystemId, bool)> = Vec::new();
+                for proof in &self.proofs {
+                    let passed = self.verify_proof(proof).unwrap_or(false);
+                    results.push((proof.prover_id, proof.proof_system, passed));
+                    if passed {
+                        collected.push(proof.clone());
+                    } else {
+                        break; // stop at first failure
+                    }
+                }
+                let verified_count = collected.len() as u8;
+                if verified_count < self.quorum_required {
+                    return Err(AggregationError::QuorumNotMet {
+                        required: self.quorum_required,
+                        valid: verified_count,
+                    });
+                }
+                (collected, results)
+            }
+        };
+
+        let verified_count = verification_results.iter().filter(|(_, _, p)| *p).count() as u8;
+        let stf_commitment = self.compute_stf_commitment(&included);
+        let prover_set_digest = self.compute_prover_set_digest(&included);
+
+        Ok(AggregatedProof {
+            proofs: included,
+            quorum_count: self.quorum_required,
+            batch_commitment: self.batch_commitment,
+            stf_commitment,
+            prover_set_digest,
+            verified_count,
+            verification_results,
+        })
+    }
+
+    fn aggregate_by_length_check(
+        &self,
+        strategy: AggregationStrategy,
+    ) -> Result<AggregatedProof, AggregationError> {
         let included: Vec<IndividualProof> = match strategy {
             AggregationStrategy::Independent => {
                 let valid_count = self.proofs.iter().filter(|p| validate_proof(p)).count() as u8;
@@ -136,6 +263,8 @@ impl ProofAggregator {
             batch_commitment: self.batch_commitment,
             stf_commitment,
             prover_set_digest,
+            verified_count: 0,
+            verification_results: vec![],
         })
     }
 
