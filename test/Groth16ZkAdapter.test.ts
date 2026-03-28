@@ -107,10 +107,9 @@ describe("Groth16ZkAdapter", function () {
         ["bytes32", "bytes32", "bytes32", "bytes32"],
         [ethers.ZeroHash, ethers.ZeroHash, ethers.ZeroHash, ethers.ZeroHash]
       );
-      await expect((adapter as any)["verify(bytes,bytes)"](shortProof, "0x")).to.be.revertedWithCustomError(
-        adapter,
-        "ProofTooShort"
-      );
+      await expect(
+        (adapter as any)["verify(bytes,bytes)"](shortProof, "0x")
+      ).to.be.revertedWithCustomError(adapter, "ProofTooShort");
     });
   });
 });

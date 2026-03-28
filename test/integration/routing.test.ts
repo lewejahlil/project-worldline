@@ -52,7 +52,11 @@ describe("Proof routing", function () {
     const iface = (finalizer as any).interface;
     const acceptedLog = receipt.logs
       .map((log: any) => {
-        try { return iface.parseLog(log); } catch { return null; }
+        try {
+          return iface.parseLog(log);
+        } catch {
+          return null;
+        }
       })
       .find((e: any) => e?.name === "ZkProofAccepted");
 
@@ -133,7 +137,11 @@ describe("Proof routing", function () {
     const iface = (finalizer as any).interface;
     const acceptedLog = receipt.logs
       .map((log: any) => {
-        try { return iface.parseLog(log); } catch { return null; }
+        try {
+          return iface.parseLog(log);
+        } catch {
+          return null;
+        }
       })
       .find((e: any) => e?.name === "ZkProofAccepted");
 
@@ -158,9 +166,7 @@ describe("Proof routing", function () {
     );
 
     // Original path must still succeed
-    await expect(
-      (finalizer as any).submitZkValidityProof(proof, publicInputs)
-    ).to.not.be.reverted;
+    await expect((finalizer as any).submitZkValidityProof(proof, publicInputs)).to.not.be.reverted;
 
     expect(await (finalizer as any).nextWindowIndex()).to.equal(1n);
   });
@@ -199,7 +205,11 @@ describe("Proof routing", function () {
     const routerIface = (router as any).interface;
     const routedLog = receipt.logs
       .map((log: any) => {
-        try { return routerIface.parseLog(log); } catch { return null; }
+        try {
+          return routerIface.parseLog(log);
+        } catch {
+          return null;
+        }
       })
       .find((e: any) => e?.name === "ProofRouted");
 
