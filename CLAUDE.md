@@ -29,9 +29,9 @@ scripts/               → Deploy, simulation, CI
 | 4   | Rust registry crate                          | ✅     |
 | 5   | Proof aggregation + recursion                | ✅     |
 | 6   | Benchmarks (Solidity gas + Criterion)        | ✅     |
-| 7   | Devnet hardening + integration tests         | ⬜     |
-| 8   | Mainnet fork simulation                      | ⬜     |
-| 9   | Testnet deploy + CI pipeline                 | ⬜     |
+| 7   | Devnet hardening + integration tests         | ✅     |
+| 8   | Mainnet fork simulation                      | ✅     |
+| 9   | Testnet deploy + CI pipeline                 | ✅     |
 
 ## Dependencies
 

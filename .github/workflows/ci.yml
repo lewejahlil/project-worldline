@@ -244,3 +244,58 @@ jobs:
         run: npm run devnet:smoke
         env:
           SKIP_ANVIL_LAUNCH: "1"
+
+  contracts:
+    name: Contracts (compile + test + gas)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Compile contracts
+        run: npx hardhat compile
+      - name: Hardhat tests
+        run: npx hardhat test 2>&1 | tail -40
+      - name: Forge gas report
+        run: forge test --gas-report 2>&1 | tail -40
+
+  circuits:
+    name: Circuits (mocha)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Circuit tests
+        run: cd circuits && npx mocha test/ --timeout 10000 2>&1 | tail -20
+
+  rust-workspace:
+    name: Rust workspace (test + clippy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cargo test
+        run: cargo test --workspace 2>&1 | tail -30
+      - name: Clippy
+        run: cargo clippy --workspace -- -D warnings 2>&1 | tail -20
+
+  fork-sim:
+    name: Fork simulation tests
+    runs-on: ubuntu-latest
+    needs: [contracts]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Fork tests
+        run: npx hardhat test test/fork/*.test.ts 2>&1 | tail -20
