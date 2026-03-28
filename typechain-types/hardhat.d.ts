@@ -101,6 +101,7 @@ declare module "hardhat/types/runtime" {
       name: "Halo2ZkAdapter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Halo2ZkAdapter__factory>;
+    getContractFactory(
       name: "PlonkZkAdapter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.PlonkZkAdapter__factory>;
@@ -215,6 +216,7 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.Halo2ZkAdapter>;
+    getContractAt(
       name: "PlonkZkAdapter",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -308,6 +310,7 @@ declare module "hardhat/types/runtime" {
       name: "Halo2ZkAdapter",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Halo2ZkAdapter>;
+    deployContract(
       name: "PlonkZkAdapter",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.PlonkZkAdapter>;
@@ -422,6 +425,7 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Halo2ZkAdapter>;
+    deployContract(
       name: "PlonkZkAdapter",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
