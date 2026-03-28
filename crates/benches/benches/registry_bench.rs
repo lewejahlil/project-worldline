@@ -13,7 +13,9 @@ fn bench_register_prover(c: &mut Criterion) {
     c.bench_function("register_prover", |b| {
         b.iter(|| {
             let mut registry = ProverRegistry::new();
-            registry.register(black_box(1), black_box(ProofSystemId::Groth16)).unwrap();
+            registry
+                .register(black_box(1), black_box(ProofSystemId::Groth16))
+                .unwrap();
         });
     });
 }
