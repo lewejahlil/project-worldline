@@ -27,7 +27,7 @@ const config: HardhatUserConfig = {
     sepolia: {
       url: process.env["SEPOLIA_RPC_URL"] || "https://sepolia-rpc.publicnode.com",
       accounts: process.env["DEPLOYER_PRIVATE_KEY"] ? [process.env["DEPLOYER_PRIVATE_KEY"]] : [],
-      chainId: 11155111,
+      chainId: 11155111
     },
     holesky: {
       url: process.env["HOLESKY_RPC_URL"] ?? "",

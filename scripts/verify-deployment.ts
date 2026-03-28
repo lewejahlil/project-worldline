@@ -100,10 +100,7 @@ async function main(): Promise<void> {
 
   // BlobKzgVerifier
   try {
-    const BlobVerifier = await ethers.getContractAt(
-      "BlobKzgVerifier",
-      contracts.BlobKzgVerifier
-    );
+    const BlobVerifier = await ethers.getContractAt("BlobKzgVerifier", contracts.BlobKzgVerifier);
     const blobFee = await (BlobVerifier as any).currentBlobBaseFee();
     check("BlobKzgVerifier.currentBlobBaseFee()", true, blobFee.toString());
   } catch (e) {

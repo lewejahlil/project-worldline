@@ -142,9 +142,7 @@ async function main(): Promise<void> {
 
     const latestFile = files[files.length - 1];
     console.log(`\nUsing deployment: ${latestFile}`);
-    const deployment = JSON.parse(
-      fs.readFileSync(path.join(deploymentsDir, latestFile), "utf-8")
-    );
+    const deployment = JSON.parse(fs.readFileSync(path.join(deploymentsDir, latestFile), "utf-8"));
     finalizerAddr = deployment.contracts.WorldlineFinalizer;
     domain =
       deployment.config?.domainSeparator ??
@@ -187,7 +185,9 @@ async function main(): Promise<void> {
     const proof = encodeProof(l2Start, l2End, windowCloseTimestamp, domain);
     const publicInputs = encodePublicInputs(l2Start, l2End, windowCloseTimestamp, domain);
 
-    const tx = await (Finalizer as any).connect(deployer).submitZkValidityProof(proof, publicInputs);
+    const tx = await (Finalizer as any)
+      .connect(deployer)
+      .submitZkValidityProof(proof, publicInputs);
     const receipt = await tx.wait();
     log("submitZkValidityProof", true, `gasUsed=${receipt!.gasUsed}, tx=${tx.hash}`);
   } catch (e: unknown) {
