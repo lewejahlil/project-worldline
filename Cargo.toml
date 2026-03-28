@@ -7,7 +7,8 @@ members = [
     "crates/benches",
     "crates/aggregation",
     "crates/recursion",
-    "crates/registry"
+    "crates/registry",
+    "crates/halo2-circuit"
 ]
 resolver = "2"
 

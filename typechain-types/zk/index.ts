@@ -3,4 +3,6 @@
 /* eslint-disable */
 export type { Groth16Verifier } from "./Groth16Verifier";
 export type { Groth16ZkAdapter } from "./Groth16ZkAdapter";
+export type { Halo2Verifier } from "./Halo2Verifier";
+export type { Halo2ZkAdapter } from "./Halo2ZkAdapter";
 export type { PlonkZkAdapter } from "./PlonkZkAdapter";

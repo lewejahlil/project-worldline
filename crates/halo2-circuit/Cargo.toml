@@ -1,0 +1,12 @@
+[package]
+name = "worldline-halo2-circuit"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v0.3.0", features = ["circuit-params"] }
+halo2curves = "0.6"
+poseidon = { git = "https://github.com/privacy-scaling-explorations/poseidon" }
+rand = "0.8"
+hex = "0.4"
