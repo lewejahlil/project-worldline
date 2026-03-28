@@ -8,6 +8,9 @@ publish = false
 serde_json = { workspace = true }
 worldline-driver = { path = "../worldline-driver" }
 worldline-registry = { path = "../worldline-registry" }
+prover-registry = { package = "worldline-prover-registry", path = "../registry" }
+worldline-aggregation = { package = "worldline-aggregation", path = "../aggregation" }
+worldline-recursion = { package = "worldline-recursion", path = "../recursion" }
 
 [dev-dependencies]
 criterion = { workspace = true }
@@ -30,4 +33,12 @@ harness = false
 [[bench]]
 name = "bench_canonical"
 path = "src/bench_canonical.rs"
+harness = false
+
+[[bench]]
+name = "registry_bench"
+harness = false
+
+[[bench]]
+name = "aggregation_bench"
 harness = false

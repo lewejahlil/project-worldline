@@ -1,6 +1,6 @@
 # Project Worldline
 
-Multi-ZK-prover rollup architecture. Groth16/Plonk/Halo2 provers submit validity proofs for state transitions, aggregated via quorum-based verification. Target: L2BEAT Stage 2.
+Multi-ZK-prover verification architecture. Groth16/Plonk/Halo2 provers submit validity proofs for state transitions, aggregated via quorum-based verification.
 
 ## Repo Layout
 
@@ -26,9 +26,9 @@ scripts/               → Deploy, simulation, CI
 | 1   | Circuit design + Poseidon constraints        | ✅     |
 | 2   | Trusted setup + circuit tests (8/8 pass)     | ✅     |
 | 3   | Solidity verifier contracts (175 tests pass) | ✅     |
-| 4   | Rust registry crate                          | ⬜     |
-| 5   | Proof aggregation + recursion                | ⬜     |
-| 6   | Benchmarks (Solidity gas + Criterion)        | ⬜     |
+| 4   | Rust registry crate                          | ✅     |
+| 5   | Proof aggregation + recursion                | ✅     |
+| 6   | Benchmarks (Solidity gas + Criterion)        | ✅     |
 | 7   | Devnet hardening + integration tests         | ⬜     |
 | 8   | Mainnet fork simulation                      | ⬜     |
 | 9   | Testnet deploy + CI pipeline                 | ⬜     |
@@ -42,8 +42,6 @@ scripts/               → Deploy, simulation, CI
         4 ──┴→ 6 ─┘
 ```
 
-Parallel-safe: 4+5 (Wave 1), gas+criterion within 6 (Wave 2).
-
 ## Domain Quick-Ref
 
 - Proof systems: Groth16=1, Plonk=2, Halo2=3
@@ -54,6 +52,12 @@ Parallel-safe: 4+5 (Wave 1), gas+criterion within 6 (Wave 2).
 - proverSetDigest = Poseidon(proverIds[], proofSystemIds[], quorumCount)
 - Proof format: 320-byte production (BN254 pairing)
 - Powers of Tau: 2^11 ptau, 1867 constraints, 1859 wires
+
+## RPC Endpoints
+
+- Mainnet (fork sim): `https://ethereum-rpc.publicnode.com` (free, no key) — fallback: `https://eth.llamarpc.com`
+- Testnet (deploy): Sepolia (chain ID 11155111) — active, sunsetting Sept 2026
+- Sepolia RPC: `https://sepolia-rpc.publicnode.com`
 
 ## Commands
 
