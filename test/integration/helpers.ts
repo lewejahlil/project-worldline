@@ -28,6 +28,10 @@ export interface DeployedContracts {
   finalizer: Awaited<ReturnType<ContractFactory["deploy"]>>;
 }
 
+export interface DeployedContractsWithRouter extends DeployedContracts {
+  router: Awaited<ReturnType<ContractFactory["deploy"]>>;
+}
+
 /**
  * Deploy the full Worldline contract stack for integration testing.
  * Uses MockGroth16Verifier so no real ZK proofs are required.
@@ -55,6 +59,27 @@ export async function deployAll(deployer?: Signer): Promise<DeployedContracts> {
   await finalizer.waitForDeployment();
 
   return { verifier, adapter, registry, finalizer };
+}
+
+/**
+ * Deploy the full Worldline contract stack including the ProofRouter.
+ * Registers the Groth16ZkAdapter at proofSystemId=1 in the router and
+ * configures WorldlineFinalizer to use the router.
+ */
+export async function deployAllWithRouter(deployer?: Signer): Promise<DeployedContractsWithRouter> {
+  const base = await deployAll(deployer);
+
+  const Router = await ethers.getContractFactory("ProofRouter", deployer);
+  const router = await Router.deploy();
+  await router.waitForDeployment();
+
+  // Register Groth16 adapter at proofSystemId=1
+  await (await (router as any).registerAdapter(1, await (base.adapter as any).getAddress())).wait();
+
+  // Wire router into finalizer
+  await (await (base.finalizer as any).setProofRouter(await (router as any).getAddress())).wait();
+
+  return { ...base, router };
 }
 
 // ── Proof encoding helpers ───────────────────────────────────────────────────

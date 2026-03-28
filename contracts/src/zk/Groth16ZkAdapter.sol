@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {IZkAggregatorVerifier} from "../interfaces/IZkAggregatorVerifier.sol";
+import {IZkAdapter} from "../IZkAdapter.sol";
 import {Groth16Verifier} from "./Groth16Verifier.sol";
 
 /// @title Groth16ZkAdapter
@@ -28,7 +29,7 @@ import {Groth16Verifier} from "./Groth16Verifier.sol";
 ///
 ///      programVKey and policyHash are pinned immutables. They are NOT included in
 ///      pubSignals — the circuit does not constrain them directly.
-contract Groth16ZkAdapter is IZkAggregatorVerifier {
+contract Groth16ZkAdapter is IZkAggregatorVerifier, IZkAdapter {
     error ProofInvalid();
     error ProofTooShort(uint256 required, uint256 given);
 
@@ -55,6 +56,49 @@ contract Groth16ZkAdapter is IZkAggregatorVerifier {
         policyHashPinned = _policyHashPinned;
     }
 
+    // ── IZkAdapter implementation ────────────────────────────────────────────
+
+    /// @inheritdoc IZkAdapter
+    function proofSystemId() external pure override(IZkAdapter) returns (uint8) {
+        return 1; // Groth16
+    }
+
+    /// @inheritdoc IZkAdapter
+    function expectedProofLength() external pure override(IZkAdapter) returns (uint256) {
+        return PROD_PROOF_MIN_LEN;
+    }
+
+    /// @inheritdoc IZkAdapter
+    /// @dev Thin verify overload for IZkAdapter compatibility (takes bytes32[] public inputs).
+    ///      Delegates to the same Groth16 pairing verifier as the aggregated path.
+    ///      The publicInputs array is unused by the Groth16 adapter — signals are
+    ///      embedded in the proof bytes per the production encoding.
+    function verify(
+        bytes calldata proof,
+        bytes32[] calldata /* publicInputs */
+    ) external view override(IZkAdapter) returns (bool valid) {
+        if (proof.length < PROD_PROOF_MIN_LEN) {
+            revert ProofTooShort(PROD_PROOF_MIN_LEN, proof.length);
+        }
+
+        (
+            uint256[2] memory pA,
+            uint256[2][2] memory pB,
+            uint256[2] memory pC,
+            uint256 stfCommitmentUint,
+            uint256 proverSetDigestUint
+        ) = abi.decode(
+            proof,
+            (uint256[2], uint256[2][2], uint256[2], uint256, uint256)
+        );
+
+        valid = Groth16Verifier(verifierAddress).verifyProof(
+            pA, pB, pC, [stfCommitmentUint, proverSetDigestUint]
+        );
+    }
+
+    // ── IZkAggregatorVerifier implementation ─────────────────────────────────
+
     /// @inheritdoc IZkAggregatorVerifier
     /// @dev Decodes the full Groth16 proof, extracts pubSignals, and delegates
     ///      cryptographic verification to the real BN254 pairing verifier.
@@ -64,7 +108,7 @@ contract Groth16ZkAdapter is IZkAggregatorVerifier {
     )
         external
         view
-        override
+        override(IZkAggregatorVerifier)
         returns (
             bool valid,
             bytes32 stfCommitment,

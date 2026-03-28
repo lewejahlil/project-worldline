@@ -62,7 +62,8 @@ describe("Groth16ZkAdapter", function () {
       // publicInputs is not used by the adapter (reserved for future use) — pass empty
       const publicInputs = "0x";
 
-      const result = await adapter.verify(proof, publicInputs);
+      // Use explicit selector to disambiguate from the IZkAdapter verify(bytes,bytes32[]) overload
+      const result = await (adapter as any)["verify(bytes,bytes)"](proof, publicInputs);
       expect(result.valid).to.be.true;
       expect(result.stfCommitment).to.equal(stfCommitment);
       expect(result.programVKey).to.equal(PROGRAM_VKEY);
@@ -91,11 +92,11 @@ describe("Groth16ZkAdapter", function () {
       // So let's just verify the adapter returns its pinned values correctly.
       const stf = ethers.keccak256(ethers.toUtf8Bytes("stf"));
       const proof = encodeProof(stf, ethers.ZeroHash);
-      const result = await adapter.verify(proof, "0x");
+      const result = await (adapter as any)["verify(bytes,bytes)"](proof, "0x");
       expect(result.programVKey).to.equal(PROGRAM_VKEY);
 
       // And the wrong-keyed adapter returns its wrong key
-      const result2 = await adapterWrong.verify(proof, "0x");
+      const result2 = await (adapterWrong as any)["verify(bytes,bytes)"](proof, "0x");
       expect(result2.programVKey).to.equal(wrongVKey);
     });
 
@@ -106,10 +107,9 @@ describe("Groth16ZkAdapter", function () {
         ["bytes32", "bytes32", "bytes32", "bytes32"],
         [ethers.ZeroHash, ethers.ZeroHash, ethers.ZeroHash, ethers.ZeroHash]
       );
-      await expect(adapter.verify(shortProof, "0x")).to.be.revertedWithCustomError(
-        adapter,
-        "ProofTooShort"
-      );
+      await expect(
+        (adapter as any)["verify(bytes,bytes)"](shortProof, "0x")
+      ).to.be.revertedWithCustomError(adapter, "ProofTooShort");
     });
   });
 });

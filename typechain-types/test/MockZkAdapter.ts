@@ -19,23 +19,17 @@ import type {
   TypedContractMethod,
 } from "../common";
 
-export interface Groth16ZkAdapterInterface extends Interface {
+export interface MockZkAdapterInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "PROD_PROOF_MIN_LEN"
       | "expectedProofLength"
       | "policyHashPinned"
       | "programVKeyPinned"
       | "proofSystemId"
-      | "verifierAddress"
       | "verify(bytes,bytes32[])"
       | "verify(bytes,bytes)"
   ): FunctionFragment;
 
-  encodeFunctionData(
-    functionFragment: "PROD_PROOF_MIN_LEN",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "expectedProofLength",
     values?: undefined
@@ -50,10 +44,6 @@ export interface Groth16ZkAdapterInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "proofSystemId",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "verifierAddress",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -66,10 +56,6 @@ export interface Groth16ZkAdapterInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "PROD_PROOF_MIN_LEN",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "expectedProofLength",
     data: BytesLike
   ): Result;
@@ -86,10 +72,6 @@ export interface Groth16ZkAdapterInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "verifierAddress",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "verify(bytes,bytes32[])",
     data: BytesLike
   ): Result;
@@ -99,11 +81,11 @@ export interface Groth16ZkAdapterInterface extends Interface {
   ): Result;
 }
 
-export interface Groth16ZkAdapter extends BaseContract {
-  connect(runner?: ContractRunner | null): Groth16ZkAdapter;
+export interface MockZkAdapter extends BaseContract {
+  connect(runner?: ContractRunner | null): MockZkAdapter;
   waitForDeployment(): Promise<this>;
 
-  interface: Groth16ZkAdapterInterface;
+  interface: MockZkAdapterInterface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -142,8 +124,6 @@ export interface Groth16ZkAdapter extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  PROD_PROOF_MIN_LEN: TypedContractMethod<[], [bigint], "view">;
-
   expectedProofLength: TypedContractMethod<[], [bigint], "view">;
 
   policyHashPinned: TypedContractMethod<[], [string], "view">;
@@ -152,16 +132,14 @@ export interface Groth16ZkAdapter extends BaseContract {
 
   proofSystemId: TypedContractMethod<[], [bigint], "view">;
 
-  verifierAddress: TypedContractMethod<[], [string], "view">;
-
   "verify(bytes,bytes32[])": TypedContractMethod<
-    [proof: BytesLike, arg1: BytesLike[]],
+    [arg0: BytesLike, arg1: BytesLike[]],
     [boolean],
     "view"
   >;
 
   "verify(bytes,bytes)": TypedContractMethod<
-    [proof: BytesLike, publicInputs: BytesLike],
+    [proof: BytesLike, arg1: BytesLike],
     [
       [boolean, string, string, string, string] & {
         valid: boolean;
@@ -179,9 +157,6 @@ export interface Groth16ZkAdapter extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "PROD_PROOF_MIN_LEN"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
     nameOrSignature: "expectedProofLength"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
@@ -194,19 +169,16 @@ export interface Groth16ZkAdapter extends BaseContract {
     nameOrSignature: "proofSystemId"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
-    nameOrSignature: "verifierAddress"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
     nameOrSignature: "verify(bytes,bytes32[])"
   ): TypedContractMethod<
-    [proof: BytesLike, arg1: BytesLike[]],
+    [arg0: BytesLike, arg1: BytesLike[]],
     [boolean],
     "view"
   >;
   getFunction(
     nameOrSignature: "verify(bytes,bytes)"
   ): TypedContractMethod<
-    [proof: BytesLike, publicInputs: BytesLike],
+    [proof: BytesLike, arg1: BytesLike],
     [
       [boolean, string, string, string, string] & {
         valid: boolean;

@@ -32,6 +32,7 @@ scripts/               → Deploy, simulation, CI
 | 7   | Devnet hardening + integration tests         | ✅     |
 | 8   | Mainnet fork simulation                      | ✅     |
 | 9   | Testnet deploy + CI pipeline                 | ✅     |
+| A   | Proof routing layer                          | ✅     |
 
 ## Dependencies
 

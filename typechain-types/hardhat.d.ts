@@ -34,13 +34,29 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IBlobSubmission__factory>;
     getContractFactory(
+      name: "IProofRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IProofRouter__factory>;
+    getContractFactory(
       name: "IZkAggregatorVerifier",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IZkAggregatorVerifier__factory>;
     getContractFactory(
+      name: "IZkAdapter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IZkAdapter__factory>;
+    getContractFactory(
+      name: "ProofRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ProofRouter__factory>;
+    getContractFactory(
       name: "MockGroth16Verifier",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MockGroth16Verifier__factory>;
+    getContractFactory(
+      name: "MockZkAdapter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockZkAdapter__factory>;
     getContractFactory(
       name: "Ownable",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -96,15 +112,35 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IBlobSubmission>;
     getContractAt(
+      name: "IProofRouter",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IProofRouter>;
+    getContractAt(
       name: "IZkAggregatorVerifier",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.IZkAggregatorVerifier>;
     getContractAt(
+      name: "IZkAdapter",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IZkAdapter>;
+    getContractAt(
+      name: "ProofRouter",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ProofRouter>;
+    getContractAt(
       name: "MockGroth16Verifier",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.MockGroth16Verifier>;
+    getContractAt(
+      name: "MockZkAdapter",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockZkAdapter>;
     getContractAt(
       name: "Ownable",
       address: string | ethers.Addressable,
@@ -162,13 +198,29 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IBlobSubmission>;
     deployContract(
+      name: "IProofRouter",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IProofRouter>;
+    deployContract(
       name: "IZkAggregatorVerifier",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IZkAggregatorVerifier>;
     deployContract(
+      name: "IZkAdapter",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IZkAdapter>;
+    deployContract(
+      name: "ProofRouter",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ProofRouter>;
+    deployContract(
       name: "MockGroth16Verifier",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockGroth16Verifier>;
+    deployContract(
+      name: "MockZkAdapter",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockZkAdapter>;
     deployContract(
       name: "Ownable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -224,15 +276,35 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IBlobSubmission>;
     deployContract(
+      name: "IProofRouter",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IProofRouter>;
+    deployContract(
       name: "IZkAggregatorVerifier",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IZkAggregatorVerifier>;
     deployContract(
+      name: "IZkAdapter",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IZkAdapter>;
+    deployContract(
+      name: "ProofRouter",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ProofRouter>;
+    deployContract(
       name: "MockGroth16Verifier",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockGroth16Verifier>;
+    deployContract(
+      name: "MockZkAdapter",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockZkAdapter>;
     deployContract(
       name: "Ownable",
       args: any[],

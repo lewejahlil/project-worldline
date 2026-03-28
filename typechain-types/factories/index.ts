@@ -6,6 +6,8 @@ export * as interfaces from "./interfaces";
 export * as test from "./test";
 export * as utils from "./utils";
 export * as zk from "./zk";
+export { IZkAdapter__factory } from "./IZkAdapter__factory";
+export { ProofRouter__factory } from "./ProofRouter__factory";
 export { WorldlineCompat__factory } from "./WorldlineCompat__factory";
 export { WorldlineFinalizer__factory } from "./WorldlineFinalizer__factory";
 export { WorldlineOutputsRegistry__factory } from "./WorldlineOutputsRegistry__factory";
