@@ -37,6 +37,7 @@ export function prepareBlobFromProofBatch(proofBatchData: Uint8Array): BlobSidec
  * Logs blob transaction metadata for observability.
  */
 export function logBlobTxMetadata(sidecar: BlobSidecar, blobBaseFee: bigint): void {
+  // eslint-disable-next-line no-console
   console.log({
     event: "blob_tx_prepared",
     versionedHash: sidecar.versionedHash,

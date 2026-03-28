@@ -1,5 +1,4 @@
 import { createHash } from "crypto";
-
 import * as kzg from "c-kzg";
 import { keccak256 } from "ethers";
 
@@ -22,7 +21,7 @@ export const BLS_MODULUS = BigInt(
 
 // KZG trusted setup — load once at module level
 // Uses the official Ethereum mainnet Powers of Tau setup bundled with c-kzg
-kzg.loadTrustedSetup();
+kzg.loadTrustedSetup(0); // 0 = mainnet trusted setup preset
 
 // -------------------------------------------------------------------------
 // Types

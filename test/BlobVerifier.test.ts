@@ -167,5 +167,73 @@ describe("BlobKzgVerifier", function () {
         )
       ).to.be.revertedWithCustomError(kzgVerifier, "BlobHashZero");
     });
+
+    it("reverts with ClaimOutOfField when claimedValue >= BLS_MODULUS", async function () {
+      const { kzgVerifier } = await loadFixture(deployFixture);
+      const maxValue = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+      await expect(
+        kzgVerifier.verifyBlob(
+          0,
+          ethers.ZeroHash,
+          maxValue,
+          ethers.randomBytes(48),
+          ethers.randomBytes(48),
+          ethers.randomBytes(32),
+          ethers.parseUnits("1", "gwei")
+        )
+      ).to.be.revertedWithCustomError(kzgVerifier, "ClaimOutOfField");
+    });
+  });
+});
+
+describe("Blob Encoding (TypeScript helpers)", function () {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const {
+    encodeDataAsBlob,
+    decodeBlobToData,
+    BYTES_PER_BLOB,
+    BYTES_PER_FIELD_ELEMENT,
+    MAX_BLOB_DATA_BYTES
+  } = require("../scripts/blob-helpers");
+
+  it("encodes and decodes proof batch data without data loss", function () {
+    const original = Buffer.from("ZK proof batch data for Worldline v2.0 — test payload");
+    const blob = encodeDataAsBlob(new Uint8Array(original));
+    expect(blob.length).to.equal(BYTES_PER_BLOB);
+
+    const decoded = decodeBlobToData(blob, original.length);
+    expect(Buffer.from(decoded).toString()).to.equal(original.toString());
+  });
+
+  it("high bytes are all zero (field element constraint)", function () {
+    const data = Buffer.from("test field element constraint");
+    const blob = encodeDataAsBlob(new Uint8Array(data));
+    for (let i = 0; i < 4096; i++) {
+      expect(blob[i * BYTES_PER_FIELD_ELEMENT]).to.equal(
+        0,
+        `High byte of element ${i} should be 0x00`
+      );
+    }
+  });
+
+  it("throws when data exceeds max blob size", function () {
+    const oversized = new Uint8Array(MAX_BLOB_DATA_BYTES + 1);
+    expect(() => encodeDataAsBlob(oversized)).to.throw("Data too large for single blob");
+  });
+
+  it("handles empty data", function () {
+    const blob = encodeDataAsBlob(new Uint8Array(0));
+    expect(blob.length).to.equal(BYTES_PER_BLOB);
+    const decoded = decodeBlobToData(blob, 0);
+    expect(decoded.length).to.equal(0);
+  });
+
+  it("encodes max-size data without error", function () {
+    const maxData = new Uint8Array(MAX_BLOB_DATA_BYTES);
+    maxData.fill(0xab);
+    const blob = encodeDataAsBlob(maxData);
+    expect(blob.length).to.equal(BYTES_PER_BLOB);
+    const decoded = decodeBlobToData(blob, MAX_BLOB_DATA_BYTES);
+    expect(Buffer.from(decoded)).to.deep.equal(Buffer.from(maxData));
   });
 });
