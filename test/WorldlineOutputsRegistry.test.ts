@@ -63,7 +63,7 @@ describe("WorldlineOutputsRegistry", function () {
       const { registry, stranger, oracle, dKey } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).schedule(dKey, PROGRAM_VKEY, POLICY_HASH, oracle.address)
-      ).to.be.revertedWithCustomError(registry, "NotOwner");
+      ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
     });
 
     it("emits OutputRescheduled when overwriting a pending entry", async function () {

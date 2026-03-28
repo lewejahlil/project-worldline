@@ -26,7 +26,7 @@
  */
 
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import {
   deployAllWithThreeAdapters,
   makeWindowFixture,
@@ -369,7 +369,7 @@ describe("Multi-prover quorum — end-to-end", function () {
     await plonkAdapter.waitForDeployment();
 
     const Router = await ethers.getContractFactory("ProofRouter", owner);
-    const router = await Router.deploy();
+    const router = await upgrades.deployProxy(Router, [], { kind: "uups" }) as any;
     await router.waitForDeployment();
     await (
       await (router as any).registerAdapter(1, await (groth16Adapter as any).getAddress())
@@ -380,12 +380,11 @@ describe("Multi-prover quorum — end-to-end", function () {
     // ID=3 intentionally NOT registered — simulates quorum=3 requirement unachievable
 
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", owner);
-    const finalizer = await Finalizer.deploy(
-      await groth16Adapter.getAddress(),
-      DOMAIN,
-      MAX_ACCEPTANCE_DELAY,
-      GENESIS_L2_BLOCK
-    );
+    const finalizer = await upgrades.deployProxy(
+      Finalizer,
+      [await groth16Adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress],
+      { kind: "uups" }
+    ) as any;
     await finalizer.waitForDeployment();
     await (await (finalizer as any).setProofRouter(await (router as any).getAddress())).wait();
     await (await (finalizer as any).setPermissionless(true)).wait();

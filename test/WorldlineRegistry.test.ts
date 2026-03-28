@@ -87,14 +87,16 @@ describe("WorldlineRegistry", function () {
       const { registry, stranger } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).transferOwnership(stranger.address)
-      ).to.be.revertedWithCustomError(registry, "NotOwner");
+      ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
     });
 
-    it("transferring ownership to zero address reverts", async function () {
+    it("transferring ownership to zero address sets pendingOwner to 0 (OZ v5 two-step)", async function () {
       const { registry, owner } = await loadFixture(deployFixture);
+      // In OZ v5 Ownable2StepUpgradeable, transferOwnership(0) does NOT revert —
+      // it sets pendingOwner = 0 which can be used to cancel a pending transfer.
       await expect(
         registry.connect(owner).transferOwnership(ethers.ZeroAddress)
-      ).to.be.revertedWithCustomError(registry, "NewOwnerIsZero");
+      ).to.not.be.reverted;
     });
   });
 
@@ -113,7 +115,7 @@ describe("WorldlineRegistry", function () {
       const { registry, stranger } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).setCompatFacade(stranger.address)
-      ).to.be.revertedWithCustomError(registry, "NotOwner");
+      ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
     });
 
     it("compat facade can be disabled via timelocked two-step", async function () {
