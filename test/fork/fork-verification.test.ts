@@ -76,6 +76,11 @@ describe("Fork — Verification", function () {
     });
   });
 
+  after(async function () {
+    // Reset to clean in-process EVM so subsequent test suites are unaffected.
+    await network.provider.request({ method: "hardhat_reset", params: [] });
+  });
+
   it("fork is active — block number is a realistic mainnet height", async function () {
     const blockNumber = await ethers.provider.getBlockNumber();
     expect(blockNumber).to.be.greaterThan(0);

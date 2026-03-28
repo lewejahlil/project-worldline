@@ -76,6 +76,11 @@ describe("Fork — Gas Comparison", function () {
     });
   });
 
+  after(async function () {
+    // Reset to clean in-process EVM so subsequent test suites are unaffected.
+    await network.provider.request({ method: "hardhat_reset", params: [] });
+  });
+
   let gasTable: Array<{ operation: string; gasUsed: bigint }> = [];
 
   after(function () {
