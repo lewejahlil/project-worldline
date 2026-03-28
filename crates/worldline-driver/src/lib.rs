@@ -1,4 +1,5 @@
 pub mod aggregator;
+pub mod blob;
 pub mod recursion;
 
 use std::path::Path;
