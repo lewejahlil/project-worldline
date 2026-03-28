@@ -94,6 +94,13 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Groth16ZkAdapter__factory>;
     getContractFactory(
+      name: "Halo2Verifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Halo2Verifier__factory>;
+    getContractFactory(
+      name: "Halo2ZkAdapter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Halo2ZkAdapter__factory>;
       name: "PlonkZkAdapter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.PlonkZkAdapter__factory>;
@@ -199,6 +206,15 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.Groth16ZkAdapter>;
     getContractAt(
+      name: "Halo2Verifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Halo2Verifier>;
+    getContractAt(
+      name: "Halo2ZkAdapter",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Halo2ZkAdapter>;
       name: "PlonkZkAdapter",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -285,6 +301,13 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Groth16ZkAdapter>;
     deployContract(
+      name: "Halo2Verifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Halo2Verifier>;
+    deployContract(
+      name: "Halo2ZkAdapter",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Halo2ZkAdapter>;
       name: "PlonkZkAdapter",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.PlonkZkAdapter>;
@@ -390,6 +413,15 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Groth16ZkAdapter>;
     deployContract(
+      name: "Halo2Verifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Halo2Verifier>;
+    deployContract(
+      name: "Halo2ZkAdapter",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Halo2ZkAdapter>;
       name: "PlonkZkAdapter",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions

@@ -34,6 +34,7 @@ scripts/               → Deploy, simulation, CI
 | 9   | Testnet deploy + CI pipeline                 | ✅     |
 | A   | Proof routing layer                          | ✅     |
 | B   | Plonk verifier (Path A — snarkjs backend)    | ✅     |
+| C   | Halo2 verifier (KZG/BN254)                   | ✅     |
 
 ## Dependencies
 
