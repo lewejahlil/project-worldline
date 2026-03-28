@@ -50,6 +50,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.PlonkVerifier__factory>;
     getContractFactory(
+      name: "PlonkVerifierV2",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.PlonkVerifierV2__factory>;
+    getContractFactory(
       name: "ProofRouter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ProofRouter__factory>;
@@ -152,6 +156,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.PlonkVerifier>;
     getContractAt(
+      name: "PlonkVerifierV2",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.PlonkVerifierV2>;
+    getContractAt(
       name: "ProofRouter",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -259,6 +268,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.PlonkVerifier>;
     deployContract(
+      name: "PlonkVerifierV2",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PlonkVerifierV2>;
+    deployContract(
       name: "ProofRouter",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ProofRouter>;
@@ -360,6 +373,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.PlonkVerifier>;
+    deployContract(
+      name: "PlonkVerifierV2",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PlonkVerifierV2>;
     deployContract(
       name: "ProofRouter",
       args: any[],

@@ -8,6 +8,7 @@ export * as utils from "./utils";
 export * as zk from "./zk";
 export { IZkAdapter__factory } from "./IZkAdapter__factory";
 export { PlonkVerifier__factory } from "./PlonkVerifier__factory";
+export { PlonkVerifierV2__factory } from "./PlonkVerifierV2__factory";
 export { ProofRouter__factory } from "./ProofRouter__factory";
 export { WorldlineCompat__factory } from "./WorldlineCompat__factory";
 export { WorldlineFinalizer__factory } from "./WorldlineFinalizer__factory";
