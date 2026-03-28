@@ -5,7 +5,7 @@
  * utilities that mirror the patterns established in devnet/smoke.ts.
  */
 
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import type { ContractFactory, Signer } from "ethers";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -24,12 +24,15 @@ export const GENESIS_L2_BLOCK = 0n;
 export interface DeployedContracts {
   verifier: Awaited<ReturnType<ContractFactory["deploy"]>>;
   adapter: Awaited<ReturnType<ContractFactory["deploy"]>>;
-  registry: Awaited<ReturnType<ContractFactory["deploy"]>>;
-  finalizer: Awaited<ReturnType<ContractFactory["deploy"]>>;
+  registry: Awaited<ReturnType<ContractFactory["deploy"]>>;  // proxy
+  finalizer: Awaited<ReturnType<ContractFactory["deploy"]>>; // proxy
+  registryImplAddr?: string;
+  finalizerImplAddr?: string;
 }
 
 export interface DeployedContractsWithRouter extends DeployedContracts {
-  router: Awaited<ReturnType<ContractFactory["deploy"]>>;
+  router: Awaited<ReturnType<ContractFactory["deploy"]>>; // proxy
+  routerImplAddr?: string;
 }
 
 export interface DeployedContractsWithPlonkRouter extends DeployedContractsWithRouter {
@@ -59,19 +62,35 @@ export async function deployAll(deployer?: Signer): Promise<DeployedContracts> {
   await adapter.waitForDeployment();
 
   const Registry = await ethers.getContractFactory("WorldlineRegistry", deployer);
-  const registry = await Registry.deploy(await verifier.getAddress());
-  await registry.waitForDeployment();
+  const registryProxy = await upgrades.deployProxy(
+    Registry,
+    [await verifier.getAddress()],
+    { kind: "uups" }
+  );
+  await registryProxy.waitForDeployment();
+  const registryImplAddr = await upgrades.erc1967.getImplementationAddress(
+    await registryProxy.getAddress()
+  );
 
   const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", deployer);
-  const finalizer = await Finalizer.deploy(
-    await adapter.getAddress(),
-    DOMAIN,
-    MAX_ACCEPTANCE_DELAY,
-    GENESIS_L2_BLOCK
+  const finalizerProxy = await upgrades.deployProxy(
+    Finalizer,
+    [await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress],
+    { kind: "uups", initializer: "initialize" }
   );
-  await finalizer.waitForDeployment();
+  await finalizerProxy.waitForDeployment();
+  const finalizerImplAddr = await upgrades.erc1967.getImplementationAddress(
+    await finalizerProxy.getAddress()
+  );
 
-  return { verifier, adapter, registry, finalizer };
+  return {
+    verifier,
+    adapter,
+    registry: registryProxy,
+    finalizer: finalizerProxy,
+    registryImplAddr,
+    finalizerImplAddr
+  };
 }
 
 /**
@@ -83,16 +102,19 @@ export async function deployAllWithRouter(deployer?: Signer): Promise<DeployedCo
   const base = await deployAll(deployer);
 
   const Router = await ethers.getContractFactory("ProofRouter", deployer);
-  const router = await Router.deploy();
-  await router.waitForDeployment();
+  const routerProxy = await upgrades.deployProxy(Router, [], { kind: "uups" });
+  await routerProxy.waitForDeployment();
+  const routerImplAddr = await upgrades.erc1967.getImplementationAddress(
+    await routerProxy.getAddress()
+  );
 
   // Register Groth16 adapter at proofSystemId=1
-  await (await (router as any).registerAdapter(1, await (base.adapter as any).getAddress())).wait();
+  await (await (routerProxy as any).registerAdapter(1, await (base.adapter as any).getAddress())).wait();
 
   // Wire router into finalizer
-  await (await (base.finalizer as any).setProofRouter(await (router as any).getAddress())).wait();
+  await (await (base.finalizer as any).setProofRouter(await (routerProxy as any).getAddress())).wait();
 
-  return { ...base, router };
+  return { ...base, router: routerProxy, routerImplAddr };
 }
 
 /**
@@ -178,7 +200,7 @@ export async function deployAllWithThreeAdapters(deployer?: Signer): Promise<Thr
 
   // ── ProofRouter: register all three ──────────────────────────────────────
   const Router = await ethers.getContractFactory("ProofRouter", deployer);
-  const router = await Router.deploy();
+  const router = await upgrades.deployProxy(Router, [], { kind: "uups" });
   await router.waitForDeployment();
 
   await (
@@ -189,11 +211,10 @@ export async function deployAllWithThreeAdapters(deployer?: Signer): Promise<Thr
 
   // ── WorldlineFinalizer: wire router, set permissionless ───────────────────
   const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", deployer);
-  const finalizer = await Finalizer.deploy(
-    await groth16Adapter.getAddress(),
-    DOMAIN,
-    MAX_ACCEPTANCE_DELAY,
-    GENESIS_L2_BLOCK
+  const finalizer = await upgrades.deployProxy(
+    Finalizer,
+    [await groth16Adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress],
+    { kind: "uups", initializer: "initialize" }
   );
   await finalizer.waitForDeployment();
   await (await (finalizer as any).setProofRouter(await (router as any).getAddress())).wait();
