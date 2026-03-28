@@ -11,7 +11,7 @@
  */
 
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-gas-bench-domain"));
 const PROGRAM_VKEY = ethers.keccak256(ethers.toUtf8Bytes("program-vkey-gas"));
@@ -28,7 +28,12 @@ async function deployStack() {
   const adapter = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
 
   const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-  const finalizer = await Finalizer.deploy(await adapter.getAddress(), DOMAIN, 3600, 0);
+  const finalizer = await upgrades.deployProxy(
+    Finalizer,
+    [await adapter.getAddress(), DOMAIN, 3600, 0, ethers.ZeroAddress],
+    { kind: "uups" }
+  ) as any;
+  await finalizer.waitForDeployment();
   await finalizer.setPermissionless(true);
 
   return { finalizer, owner };

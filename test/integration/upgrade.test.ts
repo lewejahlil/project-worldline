@@ -86,7 +86,10 @@ describe("UUPS Upgrade Tests", () => {
 
     it("upgrades to V2", async () => {
       const V2Factory = await ethers.getContractFactory("WorldlineFinalizerV2", owner);
-      const upgraded = await upgrades.upgradeProxy(proxyAddr, V2Factory, { kind: "uups" });
+      const upgraded = await upgrades.upgradeProxy(proxyAddr, V2Factory, {
+        kind: "uups",
+        unsafeAllow: ["missing-initializer"]
+      });
       await upgraded.waitForDeployment();
 
       // The proxy address must not change
@@ -152,7 +155,10 @@ describe("UUPS Upgrade Tests", () => {
 
     it("upgrades to V2", async () => {
       const V2Factory = await ethers.getContractFactory("ProofRouterV2", owner);
-      const upgraded = await upgrades.upgradeProxy(proxyAddr, V2Factory, { kind: "uups" });
+      const upgraded = await upgrades.upgradeProxy(proxyAddr, V2Factory, {
+        kind: "uups",
+        unsafeAllow: ["missing-initializer"]
+      });
       await upgraded.waitForDeployment();
 
       expect(await upgraded.getAddress()).to.equal(proxyAddr);

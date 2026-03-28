@@ -19,7 +19,7 @@
  */
 
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-gov-gas-domain"));
 const PROGRAM_VKEY_V1 = ethers.keccak256(ethers.toUtf8Bytes("program-vkey-v1-gas"));
@@ -71,7 +71,12 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
 
     // Step 2: Deploy WorldlineRegistry
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await Registry.deploy(await verifier.getAddress());
+    const registry = await upgrades.deployProxy(
+      Registry,
+      [await verifier.getAddress()],
+      { kind: "uups" }
+    ) as any;
+    await registry.waitForDeployment();
 
     // Step 3: Deploy Groth16ZkAdapter v1
     const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
@@ -83,12 +88,22 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
 
     // Step 4: Deploy WorldlineFinalizer
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-    const finalizer = await Finalizer.deploy(await adapterV1.getAddress(), DOMAIN, 3600, 0);
+    const finalizer = await upgrades.deployProxy(
+      Finalizer,
+      [await adapterV1.getAddress(), DOMAIN, 3600, 0, ethers.ZeroAddress],
+      { kind: "uups" }
+    ) as any;
+    await finalizer.waitForDeployment();
     await finalizer.setPermissionless(true);
 
     // Step 5: Deploy WorldlineOutputsRegistry
     const OutputsRegistry = await ethers.getContractFactory("WorldlineOutputsRegistry");
-    const outputsRegistry = await OutputsRegistry.deploy(MIN_TIMELOCK);
+    const outputsRegistry = await upgrades.deployProxy(
+      OutputsRegistry,
+      [MIN_TIMELOCK],
+      { kind: "uups" }
+    ) as any;
+    await outputsRegistry.waitForDeployment();
 
     // Step 6: Deploy WorldlineCompat + wire
     const Compat = await ethers.getContractFactory("WorldlineCompat");
