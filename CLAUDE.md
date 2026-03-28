@@ -21,17 +21,17 @@ scripts/               → Deploy, simulation, CI
 
 ## Chunk Status
 
-| # | Scope | Status |
-|---|-------|--------|
-| 1 | Circuit design + Poseidon constraints | ✅ |
-| 2 | Trusted setup + circuit tests (8/8 pass) | ✅ |
-| 3 | Solidity verifier contracts (175 tests pass) | ✅ |
-| 4 | Rust registry crate | ⬜ |
-| 5 | Proof aggregation + recursion | ⬜ |
-| 6 | Benchmarks (Solidity gas + Criterion) | ⬜ |
-| 7 | Devnet hardening + integration tests | ⬜ |
-| 8 | Mainnet fork simulation | ⬜ |
-| 9 | Testnet deploy + CI pipeline | ⬜ |
+| #   | Scope                                        | Status |
+| --- | -------------------------------------------- | ------ |
+| 1   | Circuit design + Poseidon constraints        | ✅     |
+| 2   | Trusted setup + circuit tests (8/8 pass)     | ✅     |
+| 3   | Solidity verifier contracts (175 tests pass) | ✅     |
+| 4   | Rust registry crate                          | ⬜     |
+| 5   | Proof aggregation + recursion                | ⬜     |
+| 6   | Benchmarks (Solidity gas + Criterion)        | ⬜     |
+| 7   | Devnet hardening + integration tests         | ⬜     |
+| 8   | Mainnet fork simulation                      | ⬜     |
+| 9   | Testnet deploy + CI pipeline                 | ⬜     |
 
 ## Dependencies
 
@@ -68,6 +68,7 @@ cargo bench                                        # criterion benchmarks
 ## Standards
 
 See `docs/coding-standards.md` for full conventions. Key rules:
+
 - Circom: pragma 2.1.6, BN254 only, zero unconstrained signals
 - Solidity: ^0.8.20, Hardhat + ethers v6, Forge for fuzz tests
 - Rust: edition 2021, stable, `#[deny(clippy::all)]`, no `unwrap()` outside tests

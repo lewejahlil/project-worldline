@@ -253,7 +253,7 @@ async function main(): Promise<void> {
     // ── Step 2: Deploy all contracts ─────────────────────────────────────────
     console.log("\n[2] Deploying contracts…");
 
-    const verifier = await deployContract(wallet, "Groth16Verifier");
+    const verifier = await deployContract(wallet, "MockGroth16Verifier");
     const registry = await deployContract(wallet, "WorldlineRegistry", await verifier.getAddress());
     const adapter = await deployContract(
       wallet,

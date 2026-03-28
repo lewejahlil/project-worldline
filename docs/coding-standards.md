@@ -1,6 +1,7 @@
 # Coding Standards — Project Worldline
 
 ## Circom
+
 - `pragma circom 2.1.6` — no exceptions
 - BN254 curve only (bn-128)
 - All signals must be constrained — zero unconstrained signals policy
@@ -8,6 +9,7 @@
 - circomlib LessThan bit-decomposition warnings are expected; not soundness issues
 
 ## Solidity
+
 - Solidity ^0.8.20
 - Hardhat + ethers v6 for integration tests
 - Forge for unit tests and fuzz tests
@@ -17,6 +19,7 @@
 - MockGroth16Verifier.sol for test suites only — never deployed to mainnet
 
 ## Rust
+
 - Edition 2021, stable toolchain
 - `#[deny(clippy::all)]` enforced
 - No `unwrap()` in non-test code — use `?` or explicit error handling
@@ -24,6 +27,7 @@
 - Criterion for benchmarks
 
 ## General
+
 - No floating point in circuit or contract math
 - All PRs must pass CI before merge
 - Commit messages: `chunk-N: description`

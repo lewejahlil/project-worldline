@@ -11,6 +11,7 @@ intended behavior, and which chunk will replace it.
 ### 1. `crates/worldline-driver/src/recursion.rs:111`
 
 **Current behavior:** Returns empty proof bytes `vec![]` for each inner prover slot.
+
 ```rust
 let inner_proofs: Vec<Vec<u8>> = (0..k).map(|_| vec![]).collect();
 ```
@@ -42,6 +43,7 @@ Groth16 proof bytes from the WorldlineSTF circuit.
 inner proof collection, followed by structured placeholder construction.
 
 **What it should do:** Implement the three steps described in the comment:
+
 1. Contact prover endpoints
 2. Request proofs for the current window
 3. Validate proofs against `vkey_commitment`
@@ -132,14 +134,14 @@ No rollup logic, no STF commitment, no prover set binding.
 
 ## Summary
 
-| # | File | Chunk | Status |
-|---|------|-------|--------|
-| 1 | `recursion.rs:111` — empty proof bytes | Chunk 4 | Pending |
-| 2 | `recursion.rs:76-78` — TODO docstring | Chunk 4 | Pending |
-| 3 | `recursion.rs:105-110` — TODO comment | Chunk 4 | Pending |
-| 4 | `bench_recursion.rs:26` — placeholder bench | Chunk 4 | Pending |
-| 5 | `bench_verify.rs` — synthetic verify bench | Chunk 4 | Pending |
-| 6 | `Groth16Verifier.sol` — stub verifier | Chunk 3 | Pending |
-| 7 | `Verifier.sol` — dev verifier | N/A | Dev-only, keep |
-| 8 | `deploy.ts` — production adapter wiring | Chunk 3 | Pending |
-| 9 | `worldline.circom` — SquareHash demo | Chunk 1 | **Removed** |
+| #   | File                                        | Chunk   | Status         |
+| --- | ------------------------------------------- | ------- | -------------- |
+| 1   | `recursion.rs:111` — empty proof bytes      | Chunk 4 | Pending        |
+| 2   | `recursion.rs:76-78` — TODO docstring       | Chunk 4 | Pending        |
+| 3   | `recursion.rs:105-110` — TODO comment       | Chunk 4 | Pending        |
+| 4   | `bench_recursion.rs:26` — placeholder bench | Chunk 4 | Pending        |
+| 5   | `bench_verify.rs` — synthetic verify bench  | Chunk 4 | Pending        |
+| 6   | `Groth16Verifier.sol` — stub verifier       | Chunk 3 | Pending        |
+| 7   | `Verifier.sol` — dev verifier               | N/A     | Dev-only, keep |
+| 8   | `deploy.ts` — production adapter wiring     | Chunk 3 | Pending        |
+| 9   | `worldline.circom` — SquareHash demo        | Chunk 1 | **Removed**    |

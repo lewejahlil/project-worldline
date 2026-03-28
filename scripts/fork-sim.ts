@@ -147,8 +147,8 @@ async function main(): Promise<void> {
   // ── Step 2: Deploy full contract suite ──────────────────────────────────────
   console.log("\n[2] Deploying contracts to fork…");
 
-  const { contract: verifier, gasUsed: g1 } = await deployContract(wallet, "Groth16Verifier");
-  logGas("Groth16Verifier deploy", g1);
+  const { contract: verifier, gasUsed: g1 } = await deployContract(wallet, "MockGroth16Verifier");
+  logGas("MockGroth16Verifier deploy", g1);
 
   const { contract: registry, gasUsed: g2 } = await deployContract(
     wallet,

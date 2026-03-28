@@ -27,6 +27,7 @@ Chunk $ARGUMENTS — Complete. Report:
 ## Sub-Agent Policy
 
 If splitting work within this chunk:
+
 - Define file ownership per agent BEFORE spawning
 - Pass interface signatures (types, ABIs, trait definitions) to dependent agents
 - Each agent runs only its scoped tests
