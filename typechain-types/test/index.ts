@@ -2,5 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { MockGroth16Verifier } from "./MockGroth16Verifier";
+export type { MockHalo2Verifier } from "./MockHalo2Verifier";
 export type { MockPlonkVerifier } from "./MockPlonkVerifier";
 export type { MockZkAdapter } from "./MockZkAdapter";

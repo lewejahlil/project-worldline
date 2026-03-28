@@ -37,6 +37,14 @@ export interface DeployedContractsWithPlonkRouter extends DeployedContractsWithR
   plonkAdapter: Awaited<ReturnType<ContractFactory["deploy"]>>;
 }
 
+export interface ThreeAdapterSetup {
+  router: Awaited<ReturnType<ContractFactory["deploy"]>>;
+  finalizer: Awaited<ReturnType<ContractFactory["deploy"]>>;
+  groth16Adapter: Awaited<ReturnType<ContractFactory["deploy"]>>;
+  plonkAdapter: Awaited<ReturnType<ContractFactory["deploy"]>>;
+  halo2Adapter: Awaited<ReturnType<ContractFactory["deploy"]>>;
+}
+
 /**
  * Deploy the full Worldline contract stack for integration testing.
  * Uses MockGroth16Verifier so no real ZK proofs are required.
@@ -117,6 +125,81 @@ export async function deployAllWithPlonkRouter(
   ).wait();
 
   return { ...base, plonkVerifier, plonkAdapter };
+}
+
+/**
+ * Deploy the full Worldline contract stack with all three proof system adapters registered:
+ *   ID=1 → MockGroth16Verifier + Groth16ZkAdapter
+ *   ID=2 → MockPlonkVerifier   + PlonkZkAdapter
+ *   ID=3 → MockHalo2Verifier   + Halo2ZkAdapter
+ *
+ * ProofRouter has all three registered; WorldlineFinalizer is wired to the router
+ * and set to permissionless mode.
+ */
+export async function deployAllWithThreeAdapters(deployer?: Signer): Promise<ThreeAdapterSetup> {
+  // ── ID=1: Groth16 ────────────────────────────────────────────────────────
+  const MockGroth16 = await ethers.getContractFactory("MockGroth16Verifier", deployer);
+  const groth16Verifier = await MockGroth16.deploy();
+  await groth16Verifier.waitForDeployment();
+
+  const Groth16Adapter = await ethers.getContractFactory("Groth16ZkAdapter", deployer);
+  const groth16Adapter = await Groth16Adapter.deploy(
+    await groth16Verifier.getAddress(),
+    PROGRAM_VKEY,
+    POLICY_HASH
+  );
+  await groth16Adapter.waitForDeployment();
+
+  // ── ID=2: Plonk (V2 circuit via MockPlonkVerifier) ───────────────────────
+  const MockPlonk = await ethers.getContractFactory("MockPlonkVerifier", deployer);
+  const plonkVerifier = await MockPlonk.deploy();
+  await plonkVerifier.waitForDeployment();
+
+  const PlonkAdapter = await ethers.getContractFactory("PlonkZkAdapter", deployer);
+  const plonkAdapter = await PlonkAdapter.deploy(
+    await plonkVerifier.getAddress(),
+    PROGRAM_VKEY,
+    POLICY_HASH
+  );
+  await plonkAdapter.waitForDeployment();
+
+  // ── ID=3: Halo2 (MockHalo2Verifier + Halo2ZkAdapter) ─────────────────────
+  const MockHalo2 = await ethers.getContractFactory("MockHalo2Verifier", deployer);
+  const halo2Verifier = await MockHalo2.deploy();
+  await halo2Verifier.waitForDeployment();
+
+  const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", deployer);
+  const halo2Adapter = await Halo2Adapter.deploy(
+    await halo2Verifier.getAddress(),
+    PROGRAM_VKEY,
+    POLICY_HASH
+  );
+  await halo2Adapter.waitForDeployment();
+
+  // ── ProofRouter: register all three ──────────────────────────────────────
+  const Router = await ethers.getContractFactory("ProofRouter", deployer);
+  const router = await Router.deploy();
+  await router.waitForDeployment();
+
+  await (
+    await (router as any).registerAdapter(1, await (groth16Adapter as any).getAddress())
+  ).wait();
+  await (await (router as any).registerAdapter(2, await (plonkAdapter as any).getAddress())).wait();
+  await (await (router as any).registerAdapter(3, await (halo2Adapter as any).getAddress())).wait();
+
+  // ── WorldlineFinalizer: wire router, set permissionless ───────────────────
+  const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", deployer);
+  const finalizer = await Finalizer.deploy(
+    await groth16Adapter.getAddress(),
+    DOMAIN,
+    MAX_ACCEPTANCE_DELAY,
+    GENESIS_L2_BLOCK
+  );
+  await finalizer.waitForDeployment();
+  await (await (finalizer as any).setProofRouter(await (router as any).getAddress())).wait();
+  await (await (finalizer as any).setPermissionless(true)).wait();
+
+  return { router, finalizer, groth16Adapter, plonkAdapter, halo2Adapter };
 }
 
 // ── Proof encoding helpers ───────────────────────────────────────────────────
@@ -243,6 +326,47 @@ export async function makePlonkWindowFixture(
   const windowCloseTimestamp = BigInt(block!.timestamp) + BigInt(7200); // 2 hours ahead
   return {
     proof: encodePlonkProof(l2Start, l2End, windowCloseTimestamp, domain, proverSetDigest),
+    publicInputs: encodePublicInputs(l2Start, l2End, windowCloseTimestamp, domain)
+  };
+}
+
+/**
+ * Encode a Halo2 proof envelope:
+ *   bytes   proofBytes       — 1472 bytes of dummy data (MockHalo2Verifier accepts any)
+ *   uint256 stfCommitment    — embedded stfCommitment (extracted by Halo2ZkAdapter)
+ *   uint256 proverSetDigest  — embedded proverSetDigest
+ *
+ * ABI encoding: 32(offset) + 32(uint256) + 32(uint256) + 32(length) + 1472(data) = 1600 bytes
+ * which exactly meets the Halo2ZkAdapter HALO2_PROOF_MIN_LEN = 1600 floor.
+ */
+export function encodeHalo2Proof(
+  l2Start: bigint,
+  l2End: bigint,
+  windowCloseTimestamp: bigint,
+  domain: string = DOMAIN,
+  proverSetDigest: string = PROVER_SET_DIGEST
+): string {
+  const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp, domain);
+  const rawProofBytes = new Uint8Array(1472); // 1472 zero bytes; mock verifier accepts any input
+  return ethers.AbiCoder.defaultAbiCoder().encode(
+    ["bytes", "uint256", "uint256"],
+    [rawProofBytes, BigInt(stfCommitment), BigInt(proverSetDigest)]
+  );
+}
+
+/**
+ * Returns { proof, publicInputs } for a single window submission using a Halo2 proof.
+ */
+export async function makeHalo2WindowFixture(
+  l2Start: bigint,
+  l2End: bigint,
+  domain: string = DOMAIN,
+  proverSetDigest: string = PROVER_SET_DIGEST
+): Promise<{ proof: string; publicInputs: string }> {
+  const block = await ethers.provider.getBlock("latest");
+  const windowCloseTimestamp = BigInt(block!.timestamp) + BigInt(7200); // 2 hours ahead
+  return {
+    proof: encodeHalo2Proof(l2Start, l2End, windowCloseTimestamp, domain, proverSetDigest),
     publicInputs: encodePublicInputs(l2Start, l2End, windowCloseTimestamp, domain)
   };
 }

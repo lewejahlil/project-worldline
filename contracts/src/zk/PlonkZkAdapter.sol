@@ -3,22 +3,22 @@ pragma solidity ^0.8.24;
 
 import {IZkAggregatorVerifier} from "../interfaces/IZkAggregatorVerifier.sol";
 import {IZkAdapter} from "../IZkAdapter.sol";
-import {PlonkVerifier} from "../PlonkVerifier.sol";
+import {PlonkVerifierV2} from "../PlonkVerifierV2.sol";
 
 /// @title PlonkZkAdapter
-/// @notice Adapter that wraps the snarkjs-generated Plonk verifier.
+/// @notice Adapter that wraps the snarkjs-generated Plonk verifier (V2 circuit).
 ///         Implements IZkAdapter (thin path) and IZkAggregatorVerifier (rich path).
 ///
 /// @dev Plonk proof ABI encoding:
 ///
 ///      proof = abi.encode(uint256[24] _proof, uint256 stfCommitment, uint256 proverSetDigest)
 ///
-///      The first 768 bytes are the 24-word Plonk proof passed to PlonkVerifier.verifyProof().
+///      The first 768 bytes are the 24-word Plonk proof passed to PlonkVerifierV2.verifyProof().
 ///      The last 64 bytes encode stfCommitment and proverSetDigest as uint256 words.
 ///
 ///      Total: 24*32 + 32 + 32 = 832 bytes.
 ///
-///      PlonkVerifier.verifyProof takes:
+///      PlonkVerifierV2.verifyProof takes:
 ///        _proof: uint256[24]     — the 24-word Plonk proof
 ///        _pubSignals: uint256[2] — [stfCommitment, proverSetDigest]
 contract PlonkZkAdapter is IZkAggregatorVerifier, IZkAdapter {
@@ -28,13 +28,13 @@ contract PlonkZkAdapter is IZkAggregatorVerifier, IZkAdapter {
     /// @notice Byte length: uint256[24] proof + uint256 stfCommitment + uint256 proverSetDigest.
     uint256 public constant PROD_PROOF_MIN_LEN = 832; // 24*32 + 32 + 32
 
-    /// @notice Address of the PlonkVerifier contract (snarkjs-generated BN254 verifier).
+    /// @notice Address of the PlonkVerifierV2 contract (snarkjs-generated BN254 verifier, V2 circuit).
     address public immutable verifierAddress;
 
     bytes32 public immutable programVKeyPinned;
     bytes32 public immutable policyHashPinned;
 
-    /// @param _verifier          Address of the PlonkVerifier contract.
+    /// @param _verifier          Address of the PlonkVerifierV2 contract.
     /// @param _programVKeyPinned The pinned program verifying key.
     /// @param _policyHashPinned  The pinned policy hash.
     constructor(address _verifier, bytes32 _programVKeyPinned, bytes32 _policyHashPinned) {
@@ -75,7 +75,7 @@ contract PlonkZkAdapter is IZkAggregatorVerifier, IZkAdapter {
         pubSignals[0] = stfCommitmentUint;
         pubSignals[1] = proverSetDigestUint;
 
-        valid = PlonkVerifier(verifierAddress).verifyProof(_proof, pubSignals);
+        valid = PlonkVerifierV2(verifierAddress).verifyProof(_proof, pubSignals);
     }
 
     // ── IZkAggregatorVerifier implementation ─────────────────────────────────
@@ -120,7 +120,7 @@ contract PlonkZkAdapter is IZkAggregatorVerifier, IZkAdapter {
         pubSignals[0] = stfCommitmentUint;
         pubSignals[1] = proverSetDigestUint;
 
-        bool ok = PlonkVerifier(verifierAddress).verifyProof(_proof, pubSignals);
+        bool ok = PlonkVerifierV2(verifierAddress).verifyProof(_proof, pubSignals);
         if (!ok) revert ProofInvalid();
 
         valid = true;
