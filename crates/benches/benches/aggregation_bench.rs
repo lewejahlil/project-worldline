@@ -68,7 +68,8 @@ fn bench_aggregate_independent(c: &mut Criterion) {
         b.iter_batched(
             setup_aggregator_3,
             |agg| {
-                agg.aggregate(black_box(AggregationStrategy::Independent)).unwrap();
+                agg.aggregate(black_box(AggregationStrategy::Independent))
+                    .unwrap();
             },
             BatchSize::SmallInput,
         );
@@ -80,7 +81,8 @@ fn bench_aggregate_sequential(c: &mut Criterion) {
         b.iter_batched(
             setup_aggregator_3,
             |agg| {
-                agg.aggregate(black_box(AggregationStrategy::Sequential)).unwrap();
+                agg.aggregate(black_box(AggregationStrategy::Sequential))
+                    .unwrap();
             },
             BatchSize::SmallInput,
         );
@@ -91,9 +93,15 @@ fn bench_wrap_recursive(c: &mut Criterion) {
     let verifier = RecursiveVerifier::new(4).unwrap();
     c.bench_function("wrap_recursive", |b| {
         b.iter_batched(
-            || setup_aggregator_3().aggregate(AggregationStrategy::Independent).unwrap(),
+            || {
+                setup_aggregator_3()
+                    .aggregate(AggregationStrategy::Independent)
+                    .unwrap()
+            },
             |aggregated| {
-                verifier.wrap(black_box(aggregated), RecursionMode::Single).unwrap();
+                verifier
+                    .wrap(black_box(aggregated), RecursionMode::Single)
+                    .unwrap();
             },
             BatchSize::SmallInput,
         );
@@ -110,7 +118,9 @@ fn bench_full_pipeline(c: &mut Criterion) {
             agg.add_proof(make_halo2_proof()).unwrap();
             let aggregated = agg.aggregate(AggregationStrategy::Independent).unwrap();
             let wrapped = verifier.wrap(aggregated, RecursionMode::Single).unwrap();
-            verifier.recurse(black_box(wrapped), RecursionMode::Incremental).unwrap();
+            verifier
+                .recurse(black_box(wrapped), RecursionMode::Incremental)
+                .unwrap();
         });
     });
 }
