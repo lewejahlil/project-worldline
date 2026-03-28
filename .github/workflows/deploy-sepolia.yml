@@ -1,0 +1,38 @@
+name: Deploy — Sepolia
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to Sepolia
+    runs-on: ubuntu-latest
+    environment: sepolia
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Compile contracts
+        run: npx hardhat compile
+      - name: Deploy contracts
+        run: npx hardhat run scripts/deploy.ts --network sepolia
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          SEPOLIA_RPC_URL: "https://sepolia-rpc.publicnode.com"
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+      - name: Verify deployment
+        run: npx hardhat run scripts/verify-deployment.ts --network sepolia
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          SEPOLIA_RPC_URL: "https://sepolia-rpc.publicnode.com"
+      - name: Smoke test
+        run: npx hardhat run scripts/smoke.ts --network sepolia
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          SEPOLIA_RPC_URL: "https://sepolia-rpc.publicnode.com"
