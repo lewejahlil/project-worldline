@@ -131,12 +131,14 @@
 ## Addendum v1.1 — Solidity Upgrade & EIP-4844 Full Implementation
 
 ### Solidity Compiler
+
 - Upgraded from 0.8.20 → 0.8.34 (latest stable as of Feb 2026)
 - Set evmVersion to "cancun" — enables blobhash(), block.blobbasefee, MCOPY, TLOAD/TSTORE
 - Updated all pragma statements to ^0.8.24 minimum
 - Patched: high-severity IR pipeline bug (affected 0.8.28–0.8.33)
 
 ### EIP-4844 — On-Chain
+
 - Implemented BlobKzgVerifier.sol with blobhash() + KZG point evaluation precompile (0x0A)
 - Preserved existing BlobVerifier library (replaced assembly blobhash with native call)
 - Wired BlobKzgVerifier into WorldlineFinalizer with dual-mode verification:
@@ -145,10 +147,12 @@
 - Created BlobSubmission.sol implementing IBlobSubmission interface
 
 ### EIP-4844 — Off-Chain
+
 - scripts/blob-helpers.ts: blob encoding, KZG commitment/proof via c-kzg, SHA256 versioned hash
 - scripts/blob-tx-sender.ts: type-3 BlobTx construction helpers
 - crates/worldline-driver/src/blob.rs: encode_as_blob, decode_blob, validate_blob_field_elements
 
 ### Test Suite Delta (v1.1)
+
 - Rust: 101 → 106 (+5 blob encoding tests)
 - Hardhat: 126 → 139 (+13 tests: 8 BlobKzgVerifier + 5 blob encoding)
