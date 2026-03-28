@@ -4,7 +4,8 @@ members = [
     "crates/worldline-registry",
     "crates/worldline-compat",
     "crates/worldline-devnet",
-    "crates/benches"
+    "crates/benches",
+    "crates/registry"
 ]
 resolver = "2"
 
