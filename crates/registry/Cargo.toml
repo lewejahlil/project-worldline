@@ -1,0 +1,9 @@
+[package]
+name = "worldline-prover-registry"
+version = "1.0.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Prover registration, validation, and quorum tracking for the Worldline multi-ZK-prover system"
+
+[dependencies]
+thiserror = { workspace = true }
