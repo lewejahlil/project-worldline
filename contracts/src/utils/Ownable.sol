@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 /// @title Two-Step Ownable
 /// @notice Minimal two-step ownership transfer. The new owner must explicitly call

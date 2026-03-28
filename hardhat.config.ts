@@ -4,7 +4,7 @@ import "hardhat-gas-reporter";
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.24",
+    version: "0.8.34",
     settings: {
       viaIR: true,
       evmVersion: "cancun",
