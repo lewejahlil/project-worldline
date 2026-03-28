@@ -81,10 +81,14 @@ async function main(): Promise<void> {
   await tx3.wait();
   console.log("\n  [finalizer] permissionless = false (only registered submitters may submit)");
 
-  console.log(`\nDone. ${PROOF_SYSTEMS.length} provers registered. Quorum: ${QUORUM_COUNT}-of-${PROOF_SYSTEMS.length}.`);
+  console.log(
+    `\nDone. ${PROOF_SYSTEMS.length} provers registered. Quorum: ${QUORUM_COUNT}-of-${PROOF_SYSTEMS.length}.`
+  );
   console.log(
     `Prover accounts:\n` +
-      proverAccounts.map((a, i) => `  Prover ${i + 1} (${PROOF_SYSTEMS[i].name}): ${a.address}`).join("\n")
+      proverAccounts
+        .map((a, i) => `  Prover ${i + 1} (${PROOF_SYSTEMS[i].name}): ${a.address}`)
+        .join("\n")
   );
 }
 

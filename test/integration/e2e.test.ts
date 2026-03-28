@@ -64,7 +64,10 @@ describe("E2E — full pipeline", function () {
     // Enable permissionless so owner can submit
     await (await (finalizer as any).setPermissionless(true)).wait();
 
-    const { proof, publicInputs } = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
+    const { proof, publicInputs } = await makeWindowFixture(
+      GENESIS_L2_BLOCK,
+      GENESIS_L2_BLOCK + 100n
+    );
     expect(proof.length).to.be.greaterThan(0); // 320 bytes ABI-encoded = 0x...(640 hex chars + '0x')
 
     const tx = await (finalizer as any).submitZkValidityProof(proof, publicInputs);
@@ -73,7 +76,13 @@ describe("E2E — full pipeline", function () {
     // ZkProofAccepted event must be emitted
     const iface = (finalizer as any).interface;
     const acceptedLog = receipt.logs
-      .map((log: any) => { try { return iface.parseLog(log); } catch { return null; } })
+      .map((log: any) => {
+        try {
+          return iface.parseLog(log);
+        } catch {
+          return null;
+        }
+      })
       .find((e: any) => e?.name === "ZkProofAccepted");
 
     expect(acceptedLog).to.not.be.null;
@@ -95,12 +104,16 @@ describe("E2E — full pipeline", function () {
 
     // Prover 1 submits window 0
     const fix0 = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
-    const tx0 = await (finalizer as any).connect(prover1).submitZkValidityProof(fix0.proof, fix0.publicInputs);
+    const tx0 = await (finalizer as any)
+      .connect(prover1)
+      .submitZkValidityProof(fix0.proof, fix0.publicInputs);
     await tx0.wait();
 
     // Prover 2 submits window 1 (contiguous)
     const fix1 = await makeWindowFixture(GENESIS_L2_BLOCK + 100n, GENESIS_L2_BLOCK + 200n);
-    const tx1 = await (finalizer as any).connect(prover2).submitZkValidityProof(fix1.proof, fix1.publicInputs);
+    const tx1 = await (finalizer as any)
+      .connect(prover2)
+      .submitZkValidityProof(fix1.proof, fix1.publicInputs);
     await tx1.wait();
 
     // Both windows accepted — nextWindowIndex = 2
@@ -124,7 +137,9 @@ describe("E2E — full pipeline", function () {
     const proofSystems = ["groth16", "plonk", "halo2"];
     for (const ps of proofSystems) {
       const id = ethers.keccak256(ethers.toUtf8Bytes(`driver-${ps}`));
-      await (await (registry as any).registerDriver(id, `v1.0.0-${ps}`, `https://devnet.local/${ps}`)).wait();
+      await (
+        await (registry as any).registerDriver(id, `v1.0.0-${ps}`, `https://devnet.local/${ps}`)
+      ).wait();
     }
 
     // Authorize all 3 as submitters
@@ -138,7 +153,9 @@ describe("E2E — full pipeline", function () {
     for (let i = 0; i < 3; i++) {
       const l2End = cursor + 100n;
       const { proof, publicInputs } = await makeWindowFixture(cursor, l2End);
-      const tx = await (finalizer as any).connect(provers[i]).submitZkValidityProof(proof, publicInputs);
+      const tx = await (finalizer as any)
+        .connect(provers[i])
+        .submitZkValidityProof(proof, publicInputs);
       await tx.wait();
       cursor = l2End;
     }

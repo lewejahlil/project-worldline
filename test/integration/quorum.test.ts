@@ -33,11 +33,15 @@ describe("Quorum — submitter access control", function () {
 
     // Prover 1 → window 0
     const fix0 = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
-    await (await (finalizer as any).connect(prover1).submitZkValidityProof(fix0.proof, fix0.publicInputs)).wait();
+    await (
+      await (finalizer as any).connect(prover1).submitZkValidityProof(fix0.proof, fix0.publicInputs)
+    ).wait();
 
     // Prover 2 → window 1 (contiguous)
     const fix1 = await makeWindowFixture(GENESIS_L2_BLOCK + 100n, GENESIS_L2_BLOCK + 200n);
-    await (await (finalizer as any).connect(prover2).submitZkValidityProof(fix1.proof, fix1.publicInputs)).wait();
+    await (
+      await (finalizer as any).connect(prover2).submitZkValidityProof(fix1.proof, fix1.publicInputs)
+    ).wait();
 
     // Both contributions accepted
     expect(await (finalizer as any).nextWindowIndex()).to.equal(2n);
@@ -59,7 +63,9 @@ describe("Quorum — submitter access control", function () {
     for (let i = 0; i < provers.length; i++) {
       const l2End = cursor + 100n;
       const { proof, publicInputs } = await makeWindowFixture(cursor, l2End);
-      await (await (finalizer as any).connect(provers[i]).submitZkValidityProof(proof, publicInputs)).wait();
+      await (
+        await (finalizer as any).connect(provers[i]).submitZkValidityProof(proof, publicInputs)
+      ).wait();
       cursor = l2End;
     }
 
@@ -74,7 +80,10 @@ describe("Quorum — submitter access control", function () {
     const { finalizer } = await deployAll(owner);
 
     // permissionless defaults to false — no submitters registered
-    const { proof, publicInputs } = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
+    const { proof, publicInputs } = await makeWindowFixture(
+      GENESIS_L2_BLOCK,
+      GENESIS_L2_BLOCK + 100n
+    );
 
     await expect(
       (finalizer as any).connect(unregistered).submitZkValidityProof(proof, publicInputs)
@@ -100,7 +109,9 @@ describe("Quorum — submitter access control", function () {
     for (let i = 0; i < provers.length; i++) {
       const l2End = cursor + 100n;
       const { proof, publicInputs } = await makeWindowFixture(cursor, l2End);
-      await (await (finalizer as any).connect(provers[i]).submitZkValidityProof(proof, publicInputs)).wait();
+      await (
+        await (finalizer as any).connect(provers[i]).submitZkValidityProof(proof, publicInputs)
+      ).wait();
       cursor = l2End;
     }
 
@@ -130,7 +141,9 @@ describe("Quorum — submitter access control", function () {
 
     // Submit window 0
     const fix0 = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
-    await (await (finalizer as any).connect(prover1).submitZkValidityProof(fix0.proof, fix0.publicInputs)).wait();
+    await (
+      await (finalizer as any).connect(prover1).submitZkValidityProof(fix0.proof, fix0.publicInputs)
+    ).wait();
 
     // Deregister prover1
     await (await (finalizer as any).setSubmitter(prover1.address, false)).wait();
@@ -146,7 +159,9 @@ describe("Quorum — submitter access control", function () {
     expect(await (finalizer as any).submitters(prover1.address)).to.be.true;
 
     // Submission succeeds again (window 1 is still available)
-    await (await (finalizer as any).connect(prover1).submitZkValidityProof(fix1.proof, fix1.publicInputs)).wait();
+    await (
+      await (finalizer as any).connect(prover1).submitZkValidityProof(fix1.proof, fix1.publicInputs)
+    ).wait();
     expect(await (finalizer as any).nextWindowIndex()).to.equal(2n);
   });
 });

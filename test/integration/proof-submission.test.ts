@@ -25,14 +25,15 @@ describe("Proof submission", function () {
     const { finalizer } = await deployAll(owner);
     await (await (finalizer as any).setPermissionless(true)).wait();
 
-    const { proof, publicInputs } = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
+    const { proof, publicInputs } = await makeWindowFixture(
+      GENESIS_L2_BLOCK,
+      GENESIS_L2_BLOCK + 100n
+    );
 
     // Proof must be exactly 10 × 32 = 320 bytes ABI-encoded
     // ABI encoding adds a 32-byte length prefix per dynamic element; the raw payload is 320 bytes.
     // The adapter enforces PROD_PROOF_MIN_LEN = 320.
-    await expect(
-      (finalizer as any).submitZkValidityProof(proof, publicInputs)
-    ).to.not.be.reverted;
+    await expect((finalizer as any).submitZkValidityProof(proof, publicInputs)).to.not.be.reverted;
 
     expect(await (finalizer as any).nextWindowIndex()).to.equal(1n);
   });
@@ -49,7 +50,10 @@ describe("Proof submission", function () {
     // 128-byte proof (4 × 32 words) — well below the 320-byte minimum
     const shortProof = ethers.AbiCoder.defaultAbiCoder().encode(
       ["uint256[2]", "uint256[2]"],
-      [[1n, 2n], [3n, 4n]]
+      [
+        [1n, 2n],
+        [3n, 4n]
+      ]
     );
     expect(ethers.getBytes(shortProof).length).to.equal(128);
 
@@ -65,7 +69,10 @@ describe("Proof submission", function () {
     const { finalizer } = await deployAll(owner);
     // permissionless defaults to false; unregistered is neither owner nor submitter
 
-    const { proof, publicInputs } = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
+    const { proof, publicInputs } = await makeWindowFixture(
+      GENESIS_L2_BLOCK,
+      GENESIS_L2_BLOCK + 100n
+    );
 
     await expect(
       (finalizer as any).connect(unregistered).submitZkValidityProof(proof, publicInputs)
@@ -81,7 +88,9 @@ describe("Proof submission", function () {
     // Register and submit window 0
     await (await (finalizer as any).setSubmitter(prover.address, true)).wait();
     const fix0 = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
-    await (await (finalizer as any).connect(prover).submitZkValidityProof(fix0.proof, fix0.publicInputs)).wait();
+    await (
+      await (finalizer as any).connect(prover).submitZkValidityProof(fix0.proof, fix0.publicInputs)
+    ).wait();
 
     // Deregister
     await (await (finalizer as any).setSubmitter(prover.address, false)).wait();
@@ -108,7 +117,10 @@ describe("Proof submission", function () {
     const { finalizer } = await deployAll(owner);
     await (await (finalizer as any).setPermissionless(true)).wait();
 
-    const { proof, publicInputs } = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
+    const { proof, publicInputs } = await makeWindowFixture(
+      GENESIS_L2_BLOCK,
+      GENESIS_L2_BLOCK + 100n
+    );
 
     // First submission succeeds
     await expect((finalizer as any).submitZkValidityProof(proof, publicInputs)).to.not.be.reverted;

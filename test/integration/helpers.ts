@@ -13,7 +13,9 @@ import type { ContractFactory, Signer } from "ethers";
 export const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("integration-test-domain"));
 export const PROGRAM_VKEY = ethers.keccak256(ethers.toUtf8Bytes("integration-program-vkey"));
 export const POLICY_HASH = ethers.keccak256(ethers.toUtf8Bytes("integration-policy-hash"));
-export const PROVER_SET_DIGEST = ethers.keccak256(ethers.toUtf8Bytes("integration-prover-digest-2of3"));
+export const PROVER_SET_DIGEST = ethers.keccak256(
+  ethers.toUtf8Bytes("integration-prover-digest-2of3")
+);
 export const MAX_ACCEPTANCE_DELAY = 3600; // 1 hour
 export const GENESIS_L2_BLOCK = 0n;
 
@@ -36,11 +38,7 @@ export async function deployAll(deployer?: Signer): Promise<DeployedContracts> {
   await verifier.waitForDeployment();
 
   const Adapter = await ethers.getContractFactory("Groth16ZkAdapter", deployer);
-  const adapter = await Adapter.deploy(
-    await verifier.getAddress(),
-    PROGRAM_VKEY,
-    POLICY_HASH
-  );
+  const adapter = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
   await adapter.waitForDeployment();
 
   const Registry = await ethers.getContractFactory("WorldlineRegistry", deployer);
@@ -118,7 +116,10 @@ export function encodeProof(
     ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
     [
       [1n, 2n],
-      [[1n, 2n], [3n, 4n]],
+      [
+        [1n, 2n],
+        [3n, 4n]
+      ],
       [1n, 2n],
       BigInt(stfCommitment),
       BigInt(proverSetDigest)
