@@ -286,7 +286,7 @@ mod tests {
     #[test]
     fn poseidon_compress_differs_from_sponge() {
         // Verify that the circomlib-compatible mode differs from the PSE sponge
-        use crate::poseidon_chip::{poseidon_hash_3, poseidon_hash_7};
+        use crate::poseidon_chip::poseidon_hash_3;
 
         let a = Fr::from(1u64);
         let b = Fr::from(2u64);
