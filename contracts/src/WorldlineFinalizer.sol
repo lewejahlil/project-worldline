@@ -77,6 +77,10 @@ contract WorldlineFinalizer is Ownable {
     /// @dev Expected length of the public inputs ABI payload (7 × 32 = 224 bytes).
     uint256 private constant PUBLIC_INPUTS_LEN = 224;
 
+    /// @dev Expected length of a KZG commitment (48 bytes). Used to distinguish
+    ///      KZG mode from hash-only mode in submitZkValidityProofWithBlob().
+    uint256 private constant KZG_COMMITMENT_LENGTH = 48;
+
     // ── Constants ───────────────────────────────────────────────────────────────
 
     /// @notice Minimum floor for `adapterChangeDelay`. Prevents setting a zero delay
@@ -245,6 +249,12 @@ contract WorldlineFinalizer is Ownable {
     /// @param kzgProof           KZG proof, 48 bytes (ignored in hash-only mode).
     /// @param batchId            Proof batch identifier for the BlobVerified event.
     /// @param maxBlobBaseFee     Maximum blob base fee caller accepts (wei).
+    /// @dev Verification mode is determined at runtime:
+    ///      - KZG mode: used when blobKzgVerifier is set AND commitment is 48 bytes.
+    ///      - Hash-only mode: used when blobKzgVerifier is address(0) OR commitment
+    ///        is not 48 bytes. In hash-only mode, expectedBlobHash must match blobhash(0).
+    ///      Callers that always want KZG verification should call BlobKzgVerifier directly
+    ///      and revert if the verifier is not set.
     function submitZkValidityProofWithBlob(
         bytes calldata proof,
         bytes calldata publicInputs,
@@ -258,8 +268,9 @@ contract WorldlineFinalizer is Ownable {
         bytes32 batchId,
         uint256 maxBlobBaseFee
     ) external whenNotPaused {
-        // Route to KZG verification if verifier is configured, otherwise hash-only
-        if (address(blobKzgVerifier) != address(0) && commitment.length == 48) {
+        // KZG mode: verifier is set AND commitment is the expected 48-byte length.
+        // Falls back to hash-only if verifier is not configured or commitment is absent/malformed.
+        if (address(blobKzgVerifier) != address(0) && commitment.length == KZG_COMMITMENT_LENGTH) {
             blobKzgVerifier.verifyBlob(
                 blobIndex,
                 openingPoint,
