@@ -35,6 +35,7 @@ scripts/               → Deploy, simulation, CI
 | A   | Proof routing layer                          | ✅     |
 | B   | Plonk verifier (Path A — snarkjs backend)    | ✅     |
 | C   | Halo2 verifier (KZG/BN254)                   | ✅     |
+| D   | Independent Plonk circuit (Path B)           | ✅     |
 | E   | Poseidon circomlib compatibility             | ✅     |
 
 ## Dependencies
