@@ -33,6 +33,7 @@ scripts/               → Deploy, simulation, CI
 | 8   | Mainnet fork simulation                      | ✅     |
 | 9   | Testnet deploy + CI pipeline                 | ✅     |
 | A   | Proof routing layer                          | ✅     |
+| B   | Plonk verifier (Path A — snarkjs backend)    | ✅     |
 
 ## Dependencies
 
