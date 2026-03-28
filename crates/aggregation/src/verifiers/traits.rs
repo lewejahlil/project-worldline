@@ -68,7 +68,7 @@ mod tests {
             should_pass: true,
         };
         let proof = vec![0u8; 320];
-        assert_eq!(v.verify(&proof, &[]).unwrap(), true);
+        assert!(v.verify(&proof, &[]).unwrap());
     }
 
     #[test]
@@ -95,7 +95,7 @@ mod tests {
             should_pass: false,
         };
         let proof = vec![0u8; 256];
-        assert_eq!(v.verify(&proof, &[]).unwrap(), false);
+        assert!(!v.verify(&proof, &[]).unwrap());
     }
 
     #[test]
