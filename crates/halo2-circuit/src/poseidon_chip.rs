@@ -82,11 +82,10 @@ impl PoseidonChip {
                 // Compute witness: Poseidon(a, b, c) using PSE poseidon crate
                 // T=4, RATE=3 corresponds to circomlib's Poseidon(3) with t=4
                 let hash_val = inputs[0].value().copied().and_then(|a| {
-                    inputs[1].value().copied().and_then(|b| {
-                        inputs[2].value().copied().map(|c| {
-                            poseidon_hash_3(a, b, c)
-                        })
-                    })
+                    inputs[1]
+                        .value()
+                        .copied()
+                        .and_then(|b| inputs[2].value().copied().map(|c| poseidon_hash_3(a, b, c)))
                 });
 
                 // Assign the hash output into advice[1]
@@ -98,12 +97,7 @@ impl PoseidonChip {
                 )?;
 
                 // Copy-constrain an input to advice[0] for region coherence
-                inputs[0].copy_advice(
-                    || "input_ref",
-                    &mut region,
-                    self.config.advice[0],
-                    0,
-                )?;
+                inputs[0].copy_advice(|| "input_ref", &mut region, self.config.advice[0], 0)?;
 
                 Ok(hash_cell)
             },
@@ -132,9 +126,8 @@ impl PoseidonChip {
                             vals[3].and_then(|v3| {
                                 vals[4].and_then(|v4| {
                                     vals[5].and_then(|v5| {
-                                        vals[6].map(|v6| {
-                                            poseidon_hash_7(v0, v1, v2, v3, v4, v5, v6)
-                                        })
+                                        vals[6]
+                                            .map(|v6| poseidon_hash_7(v0, v1, v2, v3, v4, v5, v6))
                                     })
                                 })
                             })
@@ -149,12 +142,7 @@ impl PoseidonChip {
                     || hash_val,
                 )?;
 
-                inputs[0].copy_advice(
-                    || "input_ref",
-                    &mut region,
-                    self.config.advice[0],
-                    0,
-                )?;
+                inputs[0].copy_advice(|| "input_ref", &mut region, self.config.advice[0], 0)?;
 
                 Ok(hash_cell)
             },
@@ -197,8 +185,12 @@ mod tests {
     #[test]
     fn poseidon_hash7_deterministic() {
         let vals: Vec<Fr> = (0..7).map(|i| Fr::from(100u64 + i)).collect();
-        let h1 = poseidon_hash_7(vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6]);
-        let h2 = poseidon_hash_7(vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6]);
+        let h1 = poseidon_hash_7(
+            vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6],
+        );
+        let h2 = poseidon_hash_7(
+            vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6],
+        );
         assert_eq!(h1, h2);
         assert_ne!(h1, Fr::ZERO);
     }

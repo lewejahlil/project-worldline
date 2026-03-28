@@ -267,16 +267,12 @@ impl Circuit<Fr> for WorldlineStfCircuit {
             |mut region| {
                 config.selector.enable(&mut region, 0)?;
                 // advice[2] = quorumCount
-                quorum_count_cell.copy_advice(
-                    || "quorum_val",
-                    &mut region,
-                    config.advice[2],
-                    0,
-                )?;
+                quorum_count_cell.copy_advice(|| "quorum_val", &mut region, config.advice[2], 0)?;
                 // advice[3] = inverse of quorumCount
-                let inv = self.inputs.quorum_count.map(|q| {
-                    q.invert().unwrap_or(Fr::ZERO)
-                });
+                let inv = self
+                    .inputs
+                    .quorum_count
+                    .map(|q| q.invert().unwrap_or(Fr::ZERO));
                 region.assign_advice(|| "quorum_inv", config.advice[3], 0, || inv)?;
                 // fixed = 1 (the expected product)
                 region.assign_fixed(|| "one", config.fixed, 0, || Value::known(Fr::ONE))?;
@@ -294,24 +290,15 @@ impl Circuit<Fr> for WorldlineStfCircuit {
             |mut region| {
                 config.selector.enable(&mut region, 0)?;
 
-                let product = self.inputs.quorum_count.map(|q| {
-                    (q - Fr::from(1)) * (q - Fr::from(2)) * (q - Fr::from(3))
-                });
+                let product = self
+                    .inputs
+                    .quorum_count
+                    .map(|q| (q - Fr::from(1)) * (q - Fr::from(2)) * (q - Fr::from(3)));
                 // Assign product to advice[2], 1 to advice[3], 0 to fixed
                 // So constraint is: product * 1 == 0
                 region.assign_advice(|| "quorum_product", config.advice[2], 0, || product)?;
-                region.assign_advice(
-                    || "one",
-                    config.advice[3],
-                    0,
-                    || Value::known(Fr::ONE),
-                )?;
-                region.assign_fixed(
-                    || "zero",
-                    config.fixed,
-                    0,
-                    || Value::known(Fr::ZERO),
-                )?;
+                region.assign_advice(|| "one", config.advice[3], 0, || Value::known(Fr::ONE))?;
+                region.assign_fixed(|| "zero", config.fixed, 0, || Value::known(Fr::ZERO))?;
                 Ok(())
             },
         )?;
@@ -322,15 +309,11 @@ impl Circuit<Fr> for WorldlineStfCircuit {
             || "batch_nonzero",
             |mut region| {
                 config.selector.enable(&mut region, 0)?;
-                batch_size_cell.copy_advice(
-                    || "batch_val",
-                    &mut region,
-                    config.advice[2],
-                    0,
-                )?;
-                let inv = self.inputs.batch_size.map(|b| {
-                    b.invert().unwrap_or(Fr::ZERO)
-                });
+                batch_size_cell.copy_advice(|| "batch_val", &mut region, config.advice[2], 0)?;
+                let inv = self
+                    .inputs
+                    .batch_size
+                    .map(|b| b.invert().unwrap_or(Fr::ZERO));
                 region.assign_advice(|| "batch_inv", config.advice[3], 0, || inv)?;
                 region.assign_fixed(|| "one", config.fixed, 0, || Value::known(Fr::ONE))?;
                 Ok(())
@@ -353,9 +336,10 @@ impl Circuit<Fr> for WorldlineStfCircuit {
             |mut region| {
                 config.selector.enable(&mut region, 0)?;
 
-                let diff = self.inputs.batch_size.map(|b| {
-                    Fr::from(MAX_BATCH_SIZE + 1) - b
-                });
+                let diff = self
+                    .inputs
+                    .batch_size
+                    .map(|b| Fr::from(MAX_BATCH_SIZE + 1) - b);
                 let diff_inv = diff.map(|d| d.invert().unwrap_or(Fr::ZERO));
 
                 region.assign_advice(|| "1025-batch", config.advice[2], 0, || diff)?;
@@ -371,15 +355,8 @@ impl Circuit<Fr> for WorldlineStfCircuit {
                 || format!("prover_id_{i}_nonzero"),
                 |mut region| {
                     config.selector.enable(&mut region, 0)?;
-                    pid_cell.copy_advice(
-                        || "pid",
-                        &mut region,
-                        config.advice[2],
-                        0,
-                    )?;
-                    let inv = self.inputs.prover_ids[i].map(|p| {
-                        p.invert().unwrap_or(Fr::ZERO)
-                    });
+                    pid_cell.copy_advice(|| "pid", &mut region, config.advice[2], 0)?;
+                    let inv = self.inputs.prover_ids[i].map(|p| p.invert().unwrap_or(Fr::ZERO));
                     region.assign_advice(|| "pid_inv", config.advice[3], 0, || inv)?;
                     region.assign_fixed(|| "one", config.fixed, 0, || Value::known(Fr::ONE))?;
                     Ok(())
@@ -395,15 +372,9 @@ impl Circuit<Fr> for WorldlineStfCircuit {
                 || format!("psid_{i}_nonzero"),
                 |mut region| {
                     config.selector.enable(&mut region, 0)?;
-                    psid_cell.copy_advice(
-                        || "psid",
-                        &mut region,
-                        config.advice[2],
-                        0,
-                    )?;
-                    let inv = self.inputs.proof_system_ids[i].map(|p| {
-                        p.invert().unwrap_or(Fr::ZERO)
-                    });
+                    psid_cell.copy_advice(|| "psid", &mut region, config.advice[2], 0)?;
+                    let inv =
+                        self.inputs.proof_system_ids[i].map(|p| p.invert().unwrap_or(Fr::ZERO));
                     region.assign_advice(|| "psid_inv", config.advice[3], 0, || inv)?;
                     region.assign_fixed(|| "one", config.fixed, 0, || Value::known(Fr::ONE))?;
                     Ok(())
@@ -415,9 +386,8 @@ impl Circuit<Fr> for WorldlineStfCircuit {
                 || format!("psid_{i}_range"),
                 |mut region| {
                     config.selector.enable(&mut region, 0)?;
-                    let product = self.inputs.proof_system_ids[i].map(|p| {
-                        (p - Fr::from(1)) * (p - Fr::from(2)) * (p - Fr::from(3))
-                    });
+                    let product = self.inputs.proof_system_ids[i]
+                        .map(|p| (p - Fr::from(1)) * (p - Fr::from(2)) * (p - Fr::from(3)));
                     region.assign_advice(|| "psid_product", config.advice[2], 0, || product)?;
                     region.assign_advice(
                         || "one",
@@ -425,12 +395,7 @@ impl Circuit<Fr> for WorldlineStfCircuit {
                         0,
                         || Value::known(Fr::ONE),
                     )?;
-                    region.assign_fixed(
-                        || "zero",
-                        config.fixed,
-                        0,
-                        || Value::known(Fr::ZERO),
-                    )?;
+                    region.assign_fixed(|| "zero", config.fixed, 0, || Value::known(Fr::ZERO))?;
                     Ok(())
                 },
             )?;
@@ -479,13 +444,13 @@ mod tests {
 
     fn valid_inputs() -> (Fr, Fr, Fr, Fr, [Fr; N], [Fr; N], Fr) {
         (
-            Fr::from(1234567890u64),    // preStateRoot
-            Fr::from(9876543210u64),    // postStateRoot
-            Fr::from(5555555555u64),    // batchCommitment
-            Fr::from(100u64),           // batchSize
+            Fr::from(1234567890u64),                                // preStateRoot
+            Fr::from(9876543210u64),                                // postStateRoot
+            Fr::from(5555555555u64),                                // batchCommitment
+            Fr::from(100u64),                                       // batchSize
             [Fr::from(101u64), Fr::from(102u64), Fr::from(103u64)], // proverIds
             [Fr::from(1u64), Fr::from(2u64), Fr::from(3u64)],       // proofSystemIds
-            Fr::from(3u64),             // quorumCount
+            Fr::from(3u64),                                         // quorumCount
         )
     }
 
@@ -527,7 +492,8 @@ mod tests {
     #[test]
     fn test_valid_quorum3() {
         let (psr, posr, bc, bs, pids, psids, qc) = valid_inputs();
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         prover.assert_satisfied();
     }
@@ -536,7 +502,8 @@ mod tests {
     fn test_valid_quorum2() {
         let (psr, posr, bc, bs, pids, psids, _) = valid_inputs();
         let qc = Fr::from(2u64);
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         prover.assert_satisfied();
     }
@@ -545,7 +512,8 @@ mod tests {
     fn test_valid_quorum1() {
         let (psr, posr, bc, bs, pids, psids, _) = valid_inputs();
         let qc = Fr::from(1u64);
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         prover.assert_satisfied();
     }
@@ -554,7 +522,8 @@ mod tests {
     fn test_invalid_quorum0() {
         let (psr, posr, bc, bs, pids, psids, _) = valid_inputs();
         let qc = Fr::from(0u64);
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         assert!(prover.verify().is_err(), "quorumCount=0 should fail");
     }
@@ -563,7 +532,8 @@ mod tests {
     fn test_invalid_quorum4() {
         let (psr, posr, bc, bs, pids, psids, _) = valid_inputs();
         let qc = Fr::from(4u64);
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         assert!(prover.verify().is_err(), "quorumCount=4 should fail");
     }
@@ -572,7 +542,8 @@ mod tests {
     fn test_invalid_batch_size_0() {
         let (psr, posr, bc, _, pids, psids, qc) = valid_inputs();
         let bs = Fr::from(0u64);
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         assert!(prover.verify().is_err(), "batchSize=0 should fail");
     }
@@ -581,7 +552,8 @@ mod tests {
     fn test_invalid_batch_size_1025() {
         let (psr, posr, bc, _, pids, psids, qc) = valid_inputs();
         let bs = Fr::from(1025u64);
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         assert!(prover.verify().is_err(), "batchSize=1025 should fail");
     }
@@ -590,7 +562,8 @@ mod tests {
     fn test_valid_batch_size_1024() {
         let (psr, posr, bc, _, pids, psids, qc) = valid_inputs();
         let bs = Fr::from(1024u64);
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         prover.assert_satisfied();
     }
@@ -599,7 +572,8 @@ mod tests {
     fn test_valid_batch_size_1() {
         let (psr, posr, bc, _, pids, psids, qc) = valid_inputs();
         let bs = Fr::from(1u64);
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         prover.assert_satisfied();
     }
@@ -608,7 +582,8 @@ mod tests {
     fn test_invalid_prover_id_zero() {
         let (psr, posr, bc, bs, _, psids, qc) = valid_inputs();
         let pids = [Fr::from(101u64), Fr::from(0u64), Fr::from(103u64)];
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         assert!(prover.verify().is_err(), "proverId=0 should fail");
     }
@@ -617,7 +592,8 @@ mod tests {
     fn test_invalid_proof_system_id_4() {
         let (psr, posr, bc, bs, pids, _, qc) = valid_inputs();
         let psids = [Fr::from(1u64), Fr::from(4u64), Fr::from(3u64)];
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         assert!(prover.verify().is_err(), "proofSystemId=4 should fail");
     }
@@ -626,7 +602,8 @@ mod tests {
     fn test_invalid_proof_system_id_0() {
         let (psr, posr, bc, bs, pids, _, qc) = valid_inputs();
         let psids = [Fr::from(0u64), Fr::from(2u64), Fr::from(3u64)];
-        let (circuit, public_inputs) = make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         assert!(prover.verify().is_err(), "proofSystemId=0 should fail");
     }
@@ -635,12 +612,10 @@ mod tests {
     fn test_poseidon_output_consistency() {
         // Verify that the circuit produces consistent Poseidon outputs
         let (psr, posr, bc, _, pids, psids, qc) = valid_inputs();
-        let (stf1, digest1) = WorldlineStfCircuit::compute_public_outputs(
-            psr, posr, bc, pids, psids, qc,
-        );
-        let (stf2, digest2) = WorldlineStfCircuit::compute_public_outputs(
-            psr, posr, bc, pids, psids, qc,
-        );
+        let (stf1, digest1) =
+            WorldlineStfCircuit::compute_public_outputs(psr, posr, bc, pids, psids, qc);
+        let (stf2, digest2) =
+            WorldlineStfCircuit::compute_public_outputs(psr, posr, bc, pids, psids, qc);
         assert_eq!(stf1, stf2);
         assert_eq!(digest1, digest2);
         assert_ne!(stf1, Fr::ZERO);
