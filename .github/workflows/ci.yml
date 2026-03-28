@@ -191,11 +191,11 @@ jobs:
         run: npm run c:setup
       - name: Verify final zkey exists
         run: |
-          if [ ! -f circuits/artifacts/worldline_final.zkey ]; then
-            echo "ERROR: worldline_final.zkey not found after c:setup"
+          if [ ! -f circuits/artifacts/worldline_stf_final.zkey ]; then
+            echo "ERROR: worldline_stf_final.zkey not found after c:setup"
             exit 1
           fi
-          echo "worldline_final.zkey exists ✓"
+          echo "worldline_stf_final.zkey exists ✓"
       - name: Verify zkey independently
         run: npm run c:setup:verify
       - name: Confirm snarkjs is pinned (no caret/tilde)

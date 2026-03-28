@@ -4,9 +4,9 @@ import { IncomingMessage } from "http";
 import { get } from "https";
 import { join } from "path";
 
-const PTAU_URL = "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_10.ptau";
+const PTAU_URL = "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_11.ptau";
 const OUTPUT_DIR = join(process.cwd(), "circuits", "ptau");
-const OUTPUT_FILE = join(OUTPUT_DIR, "powersOfTau28_hez_final_10.ptau");
+const OUTPUT_FILE = join(OUTPUT_DIR, "powersOfTau28_hez_final_11.ptau");
 
 /**
  * Expected SHA-256 hash of powersOfTau28_hez_final_10.ptau.
@@ -16,7 +16,7 @@ const OUTPUT_FILE = join(OUTPUT_DIR, "powersOfTau28_hez_final_10.ptau");
  * Cross-referenced with the snarkjs documentation and community-verified hashes.
  * See: https://github.com/iden3/snarkjs#7-prepare-phase-2
  */
-const PTAU_SHA256 = "53d0e9d1a3576412ada39a82c8ffadd7f110c1b13de56d89b52a472ce5e5edf4";
+const PTAU_SHA256 = "6889b966c9e47248e37c7346f6d6aad81980bc7ed69aa9d55ce9e3ac5ad37f96";
 
 const MAX_RETRIES = 3;
 const IDLE_TIMEOUT_MS = 30_000;

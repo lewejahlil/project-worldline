@@ -98,7 +98,6 @@ export interface WorldlineRegistryInterface extends Interface {
       | "setCompatFacade"
       | "setFacadeChangeDelay"
       | "transferOwnership"
-      | "verify"
   ): FunctionFragment;
 
   getEvent(
@@ -199,10 +198,6 @@ export interface WorldlineRegistryInterface extends Interface {
     functionFragment: "transferOwnership",
     values: [AddressLike]
   ): string;
-  encodeFunctionData(
-    functionFragment: "verify",
-    values: [BytesLike, BigNumberish, BigNumberish]
-  ): string;
 
   decodeFunctionResult(
     functionFragment: "MIN_FACADE_DELAY",
@@ -280,7 +275,6 @@ export interface WorldlineRegistryInterface extends Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
 }
 
 export namespace CircuitRegisteredEvent {
@@ -529,12 +523,6 @@ export interface WorldlineRegistry extends BaseContract {
     "nonpayable"
   >;
 
-  verify: TypedContractMethod<
-    [circuitId: BytesLike, secret: BigNumberish, publicHash: BigNumberish],
-    [boolean],
-    "view"
-  >;
-
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -634,13 +622,6 @@ export interface WorldlineRegistry extends BaseContract {
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
-  getFunction(
-    nameOrSignature: "verify"
-  ): TypedContractMethod<
-    [circuitId: BytesLike, secret: BigNumberish, publicHash: BigNumberish],
-    [boolean],
-    "view"
-  >;
 
   getEvent(
     key: "CircuitRegistered"

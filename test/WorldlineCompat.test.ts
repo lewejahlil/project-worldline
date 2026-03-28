@@ -10,11 +10,11 @@ describe("WorldlineCompat", function () {
   async function deployFixture() {
     const [owner, stranger] = await ethers.getSigners();
 
-    const Verifier = await ethers.getContractFactory("Verifier");
-    const verifier = await Verifier.deploy();
+    const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier");
+    const mockVerifier = await MockVerifier.deploy();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await Registry.deploy(await verifier.getAddress());
+    const registry = await Registry.deploy(await mockVerifier.getAddress());
 
     const Compat = await ethers.getContractFactory("WorldlineCompat");
     const compat = await Compat.deploy(await registry.getAddress());
@@ -22,7 +22,7 @@ describe("WorldlineCompat", function () {
     // Wire compat as the facade on the registry
     await registry.connect(owner).setCompatFacade(await compat.getAddress());
 
-    return { registry, compat, verifier, owner, stranger };
+    return { registry, compat, mockVerifier, owner, stranger };
   }
 
   describe("deployment", function () {
@@ -47,8 +47,8 @@ describe("WorldlineCompat", function () {
 
   describe("registerCircuit", function () {
     it("owner can register a circuit through the facade", async function () {
-      const { compat, registry, owner, verifier } = await loadFixture(deployFixture);
-      const verifierAddr = await verifier.getAddress();
+      const { compat, registry, owner, mockVerifier } = await loadFixture(deployFixture);
+      const verifierAddr = await mockVerifier.getAddress();
       await compat.connect(owner).registerCircuit(CIRCUIT_ID, "test", verifierAddr, "ipfs://a");
       const circuit = await registry.getCircuit(CIRCUIT_ID);
       expect(circuit.description).to.equal("test");
@@ -113,12 +113,6 @@ describe("WorldlineCompat", function () {
       await compat.connect(owner).registerPlugin(PLUGIN_ID, "1.0.0", stranger.address, CIRCUIT_ID);
       const plugin = await compat.getPlugin(PLUGIN_ID);
       expect(plugin.version).to.equal("1.0.0");
-    });
-
-    it("verify delegates to registry", async function () {
-      const { compat, owner } = await loadFixture(deployFixture);
-      await compat.connect(owner).registerCircuit(CIRCUIT_ID, "sq", ethers.ZeroAddress, "");
-      expect(await compat.verify(CIRCUIT_ID, 5n, 25n)).to.be.true;
     });
   });
 });

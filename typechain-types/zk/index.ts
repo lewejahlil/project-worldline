@@ -3,4 +3,3 @@
 /* eslint-disable */
 export type { Groth16Verifier } from "./Groth16Verifier";
 export type { Groth16ZkAdapter } from "./Groth16ZkAdapter";
-export type { Verifier } from "./Verifier";

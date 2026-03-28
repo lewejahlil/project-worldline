@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import "../src/zk/Groth16ZkAdapter.sol";
 import "../src/zk/Groth16Verifier.sol";
-import "../src/zk/Verifier.sol";
 
 /// @title ViewMockGroth16Verifier
 /// @notice View-compatible mock that always returns a pre-set result.
@@ -52,54 +51,18 @@ contract PubSignalsCheckingMock {
 }
 
 /// @title Groth16ZkAdapterTest
-/// @notice Tests for the Groth16ZkAdapter, covering both dev and production branches.
+/// @notice Tests for the Groth16ZkAdapter (production mode only).
 ///         Run with: forge test --match-contract Groth16ZkAdapter -v
 contract Groth16ZkAdapterTest is Test {
     bytes32 constant PROGRAM_VKEY = keccak256("program-vkey");
     bytes32 constant POLICY_HASH = keccak256("policy-hash");
-
-    // ── Dev mode tests ──────────────────────────────────────────────────────
-
-    function test_devMode_decodesDevProofLayout() public {
-        Verifier verifier = new Verifier();
-        Groth16ZkAdapter adapter = new Groth16ZkAdapter(
-            address(verifier), PROGRAM_VKEY, POLICY_HASH, true
-        );
-
-        bytes32 stfCommitment = keccak256("stf");
-        bytes32 proverDigest = keccak256("digest");
-        bytes memory proof = abi.encode(stfCommitment, PROGRAM_VKEY, POLICY_HASH, proverDigest);
-        bytes memory publicInputs = new bytes(0);
-
-        (bool valid, bytes32 stf, bytes32 vkey, bytes32 policy, bytes32 digest) =
-            adapter.verify(proof, publicInputs);
-
-        assertTrue(valid);
-        assertEq(stf, stfCommitment);
-        assertEq(vkey, PROGRAM_VKEY);
-        assertEq(policy, POLICY_HASH);
-        assertEq(digest, proverDigest);
-    }
-
-    function test_devMode_revertsOnProgramVKeyMismatch() public {
-        Verifier verifier = new Verifier();
-        Groth16ZkAdapter adapter = new Groth16ZkAdapter(
-            address(verifier), PROGRAM_VKEY, POLICY_HASH, true
-        );
-
-        bytes memory proof = abi.encode(
-            keccak256("stf"), keccak256("wrong-vkey"), POLICY_HASH, keccak256("digest")
-        );
-        vm.expectRevert(Groth16ZkAdapter.ProgramVKeyMismatch.selector);
-        adapter.verify(proof, new bytes(0));
-    }
 
     // ── Production mode tests ───────────────────────────────────────────────
 
     function test_prodMode_decodesProductionProofLayout() public {
         ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier(true);
         Groth16ZkAdapter adapter = new Groth16ZkAdapter(
-            address(mock), PROGRAM_VKEY, POLICY_HASH, false
+            address(mock), PROGRAM_VKEY, POLICY_HASH
         );
 
         // Construct a production-format proof.
@@ -126,7 +89,7 @@ contract Groth16ZkAdapterTest is Test {
     function test_prodMode_revertsOnUndersizedProof() public {
         ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier(true);
         Groth16ZkAdapter adapter = new Groth16ZkAdapter(
-            address(mock), PROGRAM_VKEY, POLICY_HASH, false
+            address(mock), PROGRAM_VKEY, POLICY_HASH
         );
 
         // 128 bytes < 320 byte minimum.
@@ -147,7 +110,7 @@ contract Groth16ZkAdapterTest is Test {
     function test_prodMode_revertsWhenVerifierReturnsFalse() public {
         ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier(false);
         Groth16ZkAdapter adapter = new Groth16ZkAdapter(
-            address(mock), PROGRAM_VKEY, POLICY_HASH, false
+            address(mock), PROGRAM_VKEY, POLICY_HASH
         );
 
         uint256[2] memory pA = [uint256(1), uint256(2)];
@@ -168,7 +131,7 @@ contract Groth16ZkAdapterTest is Test {
         uint256 digest = 0x5678;
         PubSignalsCheckingMock mock = new PubSignalsCheckingMock(stf, digest);
         Groth16ZkAdapter adapter = new Groth16ZkAdapter(
-            address(mock), PROGRAM_VKEY, POLICY_HASH, false
+            address(mock), PROGRAM_VKEY, POLICY_HASH
         );
 
         uint256[2] memory pA = [uint256(10), uint256(20)];
@@ -185,7 +148,7 @@ contract Groth16ZkAdapterTest is Test {
     function test_PROD_PROOF_MIN_LEN_is_320() public {
         ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier(true);
         Groth16ZkAdapter adapter = new Groth16ZkAdapter(
-            address(mock), PROGRAM_VKEY, POLICY_HASH, false
+            address(mock), PROGRAM_VKEY, POLICY_HASH
         );
         assertEq(adapter.PROD_PROOF_MIN_LEN(), 320);
     }

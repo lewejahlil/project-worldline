@@ -4,19 +4,19 @@ import { ethers } from "hardhat";
 
 /**
  * End-to-end integration test exercising the full contract stack:
- * Deploy → Register → Prove → Verify
+ * Deploy → Register → Read back metadata
  */
 describe("E2E Integration", function () {
   async function deployFullStack() {
     const [deployer] = await ethers.getSigners();
 
-    // Deploy Verifier
-    const Verifier = await ethers.getContractFactory("Verifier");
-    const verifier = await Verifier.deploy();
+    // Deploy MockGroth16Verifier (always returns true)
+    const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier");
+    const mockVerifier = await MockVerifier.deploy();
 
     // Deploy Registry
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await Registry.deploy(await verifier.getAddress());
+    const registry = await Registry.deploy(await mockVerifier.getAddress());
 
     // Deploy Compat facade
     const Compat = await ethers.getContractFactory("WorldlineCompat");
@@ -25,11 +25,11 @@ describe("E2E Integration", function () {
     // Wire compat facade
     await registry.setCompatFacade(await compat.getAddress());
 
-    return { verifier, registry, compat, deployer };
+    return { mockVerifier, registry, compat, deployer };
   }
 
-  it("full lifecycle: deploy → register → verify via registry", async function () {
-    const { verifier, registry, deployer } = await loadFixture(deployFullStack);
+  it("full lifecycle: deploy → register → read back metadata", async function () {
+    const { mockVerifier, registry, deployer } = await loadFixture(deployFullStack);
 
     const circuitId = ethers.encodeBytes32String("squarehash-v1");
     const pluginId = ethers.encodeBytes32String("squarehash-groth16");
@@ -39,7 +39,7 @@ describe("E2E Integration", function () {
     await registry.registerCircuit(
       circuitId,
       "SquareHash demo circuit",
-      await verifier.getAddress(),
+      await mockVerifier.getAddress(),
       "ipfs://QmTest"
     );
 
@@ -48,14 +48,6 @@ describe("E2E Integration", function () {
 
     // Register plugin
     await registry.registerPlugin(pluginId, "1.0.0", deployer.address, circuitId);
-
-    // Verify: 7² = 49
-    const result = await registry.verify(circuitId, 7n, 49n);
-    expect(result).to.be.true;
-
-    // Verify: 12² = 144
-    const result2 = await registry.verify(circuitId, 12n, 144n);
-    expect(result2).to.be.true;
 
     // Read back metadata
     const circuit = await registry.getCircuit(circuitId);
@@ -70,7 +62,7 @@ describe("E2E Integration", function () {
   });
 
   it("full lifecycle via compat facade", async function () {
-    const { verifier, compat, deployer } = await loadFixture(deployFullStack);
+    const { mockVerifier, compat, deployer } = await loadFixture(deployFullStack);
 
     const circuitId = ethers.encodeBytes32String("compat-circuit");
     const pluginId = ethers.encodeBytes32String("compat-plugin");
@@ -79,41 +71,24 @@ describe("E2E Integration", function () {
     await compat.registerCircuit(
       circuitId,
       "Compat test circuit",
-      await verifier.getAddress(),
+      await mockVerifier.getAddress(),
       "ipfs://compat"
     );
 
     await compat.registerPlugin(pluginId, "2.0.0", deployer.address, circuitId);
-
-    // Verify through compat
-    const result = await compat.verify(circuitId, 5n, 25n);
-    expect(result).to.be.true;
 
     // Read through compat
     const circuit = await compat.getCircuit(circuitId);
     expect(circuit.description).to.equal("Compat test circuit");
   });
 
-  it("invalid proof reverts", async function () {
-    const { verifier, registry } = await loadFixture(deployFullStack);
-
-    const circuitId = ethers.encodeBytes32String("revert-test");
-    await registry.registerCircuit(circuitId, "Revert test", await verifier.getAddress(), "");
-
-    // 7² ≠ 50
-    await expect(registry.verify(circuitId, 7n, 50n)).to.be.revertedWithCustomError(
-      verifier,
-      "InvalidProof"
-    );
-  });
-
   it("deprecating a plugin marks it but keeps it queryable", async function () {
-    const { verifier, registry, deployer } = await loadFixture(deployFullStack);
+    const { mockVerifier, registry, deployer } = await loadFixture(deployFullStack);
 
     const circuitId = ethers.encodeBytes32String("dep-circuit");
     const pluginId = ethers.encodeBytes32String("dep-plugin");
 
-    await registry.registerCircuit(circuitId, "c", await verifier.getAddress(), "");
+    await registry.registerCircuit(circuitId, "c", await mockVerifier.getAddress(), "");
     await registry.registerPlugin(pluginId, "1.0.0", deployer.address, circuitId);
 
     await registry.deprecatePlugin(pluginId);

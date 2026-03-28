@@ -3,7 +3,6 @@
 /* eslint-disable */
 import type {
   BaseContract,
-  BigNumberish,
   BytesLike,
   FunctionFragment,
   Result,
@@ -88,7 +87,6 @@ export interface WorldlineCompatInterface extends Interface {
       | "registerPlugin"
       | "registry"
       | "transferOwnership"
-      | "verify"
   ): FunctionFragment;
 
   getEvent(
@@ -137,10 +135,6 @@ export interface WorldlineCompatInterface extends Interface {
     functionFragment: "transferOwnership",
     values: [AddressLike]
   ): string;
-  encodeFunctionData(
-    functionFragment: "verify",
-    values: [BytesLike, BigNumberish, BigNumberish]
-  ): string;
 
   decodeFunctionResult(
     functionFragment: "acceptOwnership",
@@ -175,7 +169,6 @@ export interface WorldlineCompatInterface extends Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
 }
 
 export namespace OwnershipTransferStartedEvent {
@@ -304,12 +297,6 @@ export interface WorldlineCompat extends BaseContract {
     "nonpayable"
   >;
 
-  verify: TypedContractMethod<
-    [circuitId: BytesLike, secret: BigNumberish, publicHash: BigNumberish],
-    [boolean],
-    "view"
-  >;
-
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -379,13 +366,6 @@ export interface WorldlineCompat extends BaseContract {
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
-  getFunction(
-    nameOrSignature: "verify"
-  ): TypedContractMethod<
-    [circuitId: BytesLike, secret: BigNumberish, publicHash: BigNumberish],
-    [boolean],
-    "view"
-  >;
 
   getEvent(
     key: "OwnershipTransferStarted"

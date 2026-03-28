@@ -3,6 +3,7 @@
 /* eslint-disable */
 export * as blob from "./blob";
 export * as interfaces from "./interfaces";
+export * as test from "./test";
 export * as utils from "./utils";
 export * as zk from "./zk";
 export { WorldlineCompat__factory } from "./WorldlineCompat__factory";

@@ -2,7 +2,7 @@ import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { WorldlineRegistry, Verifier } from "../typechain-types";
+import { WorldlineRegistry } from "../typechain-types";
 
 const CIRCUIT_ID = ethers.encodeBytes32String("circuit-1");
 const DRIVER_ID = ethers.encodeBytes32String("driver-1");
@@ -13,13 +13,13 @@ describe("WorldlineRegistry", function () {
   async function deployFixture() {
     const [owner, admin, stranger] = await ethers.getSigners();
 
-    const Verifier = await ethers.getContractFactory("Verifier");
-    const verifier: Verifier = await Verifier.deploy();
+    const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier");
+    const mockVerifier = await MockVerifier.deploy();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry: WorldlineRegistry = await Registry.deploy(await verifier.getAddress());
+    const registry: WorldlineRegistry = await Registry.deploy(await mockVerifier.getAddress());
 
-    return { registry, verifier, owner, admin, stranger };
+    return { registry, mockVerifier, owner, admin, stranger };
   }
 
   // ─── Deployment ──────────────────────────────────────────────────────────────
@@ -31,8 +31,8 @@ describe("WorldlineRegistry", function () {
     });
 
     it("stores the default verifier address", async function () {
-      const { registry, verifier } = await loadFixture(deployFixture);
-      expect(await registry.defaultVerifier()).to.equal(await verifier.getAddress());
+      const { registry, mockVerifier } = await loadFixture(deployFixture);
+      expect(await registry.defaultVerifier()).to.equal(await mockVerifier.getAddress());
     });
 
     it("reverts if deployed with zero verifier address", async function () {
@@ -143,8 +143,8 @@ describe("WorldlineRegistry", function () {
 
   describe("registerCircuit", function () {
     it("admin can register a circuit", async function () {
-      const { registry, owner, verifier } = await loadFixture(deployFixture);
-      const verifierAddr = await verifier.getAddress();
+      const { registry, owner, mockVerifier } = await loadFixture(deployFixture);
+      const verifierAddr = await mockVerifier.getAddress();
       await expect(
         registry
           .connect(owner)
@@ -190,8 +190,8 @@ describe("WorldlineRegistry", function () {
 
   describe("getCircuit", function () {
     it("returns correct metadata for a registered circuit", async function () {
-      const { registry, owner, verifier } = await loadFixture(deployFixture);
-      const verifierAddr = await verifier.getAddress();
+      const { registry, owner, mockVerifier } = await loadFixture(deployFixture);
+      const verifierAddr = await mockVerifier.getAddress();
       await registry
         .connect(owner)
         .registerCircuit(CIRCUIT_ID, "my circuit", verifierAddr, "ipfs://abc");
@@ -410,43 +410,6 @@ describe("WorldlineRegistry", function () {
       await expect(registry.getPlugin(PLUGIN_ID)).to.be.revertedWithCustomError(
         registry,
         "PluginMissing"
-      );
-    });
-  });
-
-  // ─── verify ──────────────────────────────────────────────────────────────────
-
-  describe("verify", function () {
-    it("returns true for a valid proof using the defaultVerifier (circuit verifier=0)", async function () {
-      const { registry, owner } = await loadFixture(deployFixture);
-      // Register circuit with verifier=0 → falls back to defaultVerifier
-      await registry.connect(owner).registerCircuit(CIRCUIT_ID, "sq", ethers.ZeroAddress, "");
-      // 3² = 9
-      expect(await registry.verify(CIRCUIT_ID, 3n, 9n)).to.be.true;
-    });
-
-    it("returns true for a valid proof using a circuit-specific verifier", async function () {
-      const { registry, owner, verifier } = await loadFixture(deployFixture);
-      const verifierAddr = await verifier.getAddress();
-      await registry.connect(owner).registerCircuit(CIRCUIT_ID, "sq", verifierAddr, "");
-      expect(await registry.verify(CIRCUIT_ID, 7n, 49n)).to.be.true;
-    });
-
-    it("reverts with InvalidProof for an invalid proof", async function () {
-      const { registry, owner, verifier } = await loadFixture(deployFixture);
-      await registry.connect(owner).registerCircuit(CIRCUIT_ID, "sq", ethers.ZeroAddress, "");
-      // 3² ≠ 10
-      await expect(registry.verify(CIRCUIT_ID, 3n, 10n)).to.be.revertedWithCustomError(
-        verifier,
-        "InvalidProof"
-      );
-    });
-
-    it("reverts when circuit ID is not registered", async function () {
-      const { registry } = await loadFixture(deployFixture);
-      await expect(registry.verify(CIRCUIT_ID, 3n, 9n)).to.be.revertedWithCustomError(
-        registry,
-        "CircuitMissing"
       );
     });
   });

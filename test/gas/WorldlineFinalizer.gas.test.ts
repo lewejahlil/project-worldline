@@ -21,16 +21,11 @@ const PROVER_DIGEST = ethers.keccak256(ethers.toUtf8Bytes("prover-set-gas"));
 async function deployStack() {
   const [owner] = await ethers.getSigners();
 
-  const Verifier = await ethers.getContractFactory("Verifier");
-  const verifier = await Verifier.deploy();
+  const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier");
+  const verifier = await MockVerifier.deploy();
 
   const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
-  const adapter = await Adapter.deploy(
-    await verifier.getAddress(),
-    PROGRAM_VKEY,
-    POLICY_HASH,
-    true
-  );
+  const adapter = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
 
   const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
   const finalizer = await Finalizer.deploy(await adapter.getAddress(), DOMAIN, 3600, 0);
@@ -62,9 +57,16 @@ function encodePublicInputs(
 }
 
 function encodeProof(stfCommitment: string): string {
+  // Production format: pA[2], pB[2][2], pC[2], stfCommitment, proverSetDigest (320 bytes)
+  const pA = [1, 2];
+  const pB = [
+    [3, 4],
+    [5, 6]
+  ];
+  const pC = [7, 8];
   return ethers.AbiCoder.defaultAbiCoder().encode(
-    ["bytes32", "bytes32", "bytes32", "bytes32"],
-    [stfCommitment, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST]
+    ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
+    [pA, pB, pC, stfCommitment, PROVER_DIGEST]
   );
 }
 

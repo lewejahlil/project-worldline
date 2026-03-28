@@ -11,17 +11,16 @@ describe("WorldlineFinalizer", function () {
   async function deployFixture() {
     const [owner, submitter, stranger] = await ethers.getSigners();
 
-    // Deploy the demo Verifier
-    const Verifier = await ethers.getContractFactory("Verifier");
-    const verifier = await Verifier.deploy();
+    // Deploy mock Groth16 verifier (always returns true)
+    const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier");
+    const mockVerifier = await MockVerifier.deploy();
 
     // Deploy the Groth16ZkAdapter
     const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
     const adapter = await Adapter.deploy(
-      await verifier.getAddress(),
+      await mockVerifier.getAddress(),
       PROGRAM_VKEY,
-      POLICY_HASH,
-      true
+      POLICY_HASH
     );
 
     // Deploy the Finalizer with 1-hour max acceptance delay
@@ -31,7 +30,7 @@ describe("WorldlineFinalizer", function () {
     // Grant submitter role
     await finalizer.connect(owner).setSubmitter(submitter.address, true);
 
-    return { finalizer, adapter, verifier, owner, submitter, stranger };
+    return { finalizer, adapter, mockVerifier, owner, submitter, stranger };
   }
 
   // MED-001: stfCommitment = keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domainSep, windowCloseTimestamp))
@@ -74,15 +73,29 @@ describe("WorldlineFinalizer", function () {
     return { inputs, stf };
   }
 
+  /**
+   * Encode a production-format Groth16 proof (320 bytes).
+   * pA, pB, pC are dummy G1/G2 points (the mock verifier accepts anything).
+   * stfCommitment and proverSetDigest are the two public signals.
+   */
   function encodeProof(
     stfCommitment: string,
-    programVKey: string,
-    policyHash: string,
+    _programVKey: string,
+    _policyHash: string,
     proverSetDigest: string
   ): string {
+    // programVKey and policyHash are pinned immutables — not encoded in the proof.
+    void _programVKey;
+    void _policyHash;
+    const pA = [1n, 2n];
+    const pB = [
+      [1n, 2n],
+      [3n, 4n]
+    ];
+    const pC = [1n, 2n];
     return ethers.AbiCoder.defaultAbiCoder().encode(
-      ["bytes32", "bytes32", "bytes32", "bytes32"],
-      [stfCommitment, programVKey, policyHash, proverSetDigest]
+      ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
+      [pA, pB, pC, stfCommitment, proverSetDigest]
     );
   }
 
@@ -338,13 +351,12 @@ describe("WorldlineFinalizer", function () {
     });
 
     it("scheduleAdapterChange + activateAdapterChange emits AdapterSet", async function () {
-      const { finalizer, owner, verifier } = await loadFixture(deployFixture);
+      const { finalizer, owner, mockVerifier } = await loadFixture(deployFixture);
       const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
       const adapter2 = await Adapter.deploy(
-        await verifier.getAddress(),
+        await mockVerifier.getAddress(),
         PROGRAM_VKEY,
-        POLICY_HASH,
-        true
+        POLICY_HASH
       );
       await expect(
         finalizer.connect(owner).scheduleAdapterChange(await adapter2.getAddress())

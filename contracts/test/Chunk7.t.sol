@@ -3,8 +3,19 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../src/WorldlineFinalizer.sol";
-import "../src/zk/Verifier.sol";
 import "../src/zk/Groth16ZkAdapter.sol";
+
+/// @notice View-compatible mock that always returns true for Groth16 verification.
+contract ViewMockGroth16Verifier {
+    function verifyProof(
+        uint256[2] calldata,
+        uint256[2][2] calldata,
+        uint256[2] calldata,
+        uint256[2] calldata
+    ) external pure returns (bool) {
+        return true;
+    }
+}
 
 /// @title Chunk 7 Tests — LOW-003, LOW-004, LOW-005
 /// @notice Unit tests for genesis block validation, ManifestAnnounced event,
@@ -13,7 +24,6 @@ contract Chunk7Test is Test {
     event ManifestAnnounced(bytes32 indexed proverSetDigest, bytes metaLocator);
 
     WorldlineFinalizer finalizer;
-    Verifier verifier;
     Groth16ZkAdapter adapter;
 
     bytes32 constant DOMAIN = keccak256("chunk7-domain");
@@ -24,8 +34,8 @@ contract Chunk7Test is Test {
 
     function setUp() public {
         vm.warp(100_000);
-        verifier = new Verifier();
-        adapter = new Groth16ZkAdapter(address(verifier), PROGRAM_VKEY, POLICY_HASH, true);
+        ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier();
+        adapter = new Groth16ZkAdapter(address(mock), PROGRAM_VKEY, POLICY_HASH);
         finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, 3600, GENESIS_BLOCK);
         finalizer.setPermissionless(true);
     }
@@ -50,7 +60,11 @@ contract Chunk7Test is Test {
     }
 
     function encodeProof(bytes32 stf) internal pure returns (bytes memory) {
-        return abi.encode(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+        // Production format: pA[2], pB[2][2], pC[2], stfCommitment, proverSetDigest
+        uint256[2] memory pA = [uint256(1), uint256(2)];
+        uint256[2][2] memory pB = [[uint256(3), uint256(4)], [uint256(5), uint256(6)]];
+        uint256[2] memory pC = [uint256(7), uint256(8)];
+        return abi.encode(pA, pB, pC, uint256(stf), uint256(PROVER_DIGEST));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

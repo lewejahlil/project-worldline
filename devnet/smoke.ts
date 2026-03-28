@@ -54,7 +54,8 @@ function loadArtifact(name: string): { abi: ethers.InterfaceAbi; bytecode: strin
   const basePaths = [
     path.resolve(__dirname, `../artifacts/contracts/src/${name}.sol/${name}.json`),
     path.resolve(__dirname, `../artifacts/contracts/src/zk/${name}.sol/${name}.json`),
-    path.resolve(__dirname, `../artifacts/contracts/src/utils/${name}.sol/${name}.json`)
+    path.resolve(__dirname, `../artifacts/contracts/src/utils/${name}.sol/${name}.json`),
+    path.resolve(__dirname, `../artifacts/contracts/src/test/${name}.sol/${name}.json`)
   ];
   for (const p of basePaths) {
     if (fs.existsSync(p)) {
@@ -110,9 +111,16 @@ function encodePublicInputs(
 }
 
 function encodeProof(stfCommitment: string): string {
+  // Production format: pA[2], pB[2][2], pC[2], stfCommitment, proverSetDigest (320 bytes)
+  const pA = [1n, 2n];
+  const pB = [
+    [1n, 2n],
+    [3n, 4n]
+  ];
+  const pC = [1n, 2n];
   return ethers.AbiCoder.defaultAbiCoder().encode(
-    ["bytes32", "bytes32", "bytes32", "bytes32"],
-    [stfCommitment, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST]
+    ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
+    [pA, pB, pC, stfCommitment, PROVER_DIGEST]
   );
 }
 
@@ -246,15 +254,14 @@ async function main(): Promise<void> {
     // ── Step 2: Deploy all contracts ─────────────────────────────────────────
     console.log("\n[2] Deploying contracts…");
 
-    const verifier = await deployContract(wallet, "Verifier");
+    const verifier = await deployContract(wallet, "MockGroth16Verifier");
     const registry = await deployContract(wallet, "WorldlineRegistry", await verifier.getAddress());
     const adapter = await deployContract(
       wallet,
       "Groth16ZkAdapter",
       await verifier.getAddress(),
       PROGRAM_VKEY,
-      POLICY_HASH,
-      true // isDev
+      POLICY_HASH
     );
     const finalizer = await deployContract(
       wallet,

@@ -19,7 +19,6 @@
  *   MIN_TIMELOCK            seconds (default: 86400 = 24 hours)
  *   PROGRAM_VKEY            bytes32 program verifying key (default: placeholder)
  *   POLICY_HASH             bytes32 policy hash (default: placeholder)
- *   IS_DEV_ADAPTER          "true" to deploy adapter in dev mode (default: "false")
  *   MULTISIG_ADDRESS        (required on non-dev networks) multisig to transfer ownership to
  */
 
@@ -49,8 +48,6 @@ async function main() {
   const POLICY_HASH =
     process.env["POLICY_HASH"] ?? ethers.keccak256(ethers.toUtf8Bytes("policy-hash-testnet"));
 
-  const IS_DEV_ADAPTER = process.env["IS_DEV_ADAPTER"] === "true";
-
   const GENESIS_L2_BLOCK = parseInt(process.env["GENESIS_L2_BLOCK"] ?? "0", 10);
 
   // INF-002: Mandatory multisig address for ownership transfer on non-dev networks.
@@ -70,23 +67,22 @@ async function main() {
   console.log(`  MIN_TIMELOCK:          ${MIN_TIMELOCK}s`);
   console.log(`  PROGRAM_VKEY:          ${PROGRAM_VKEY}`);
   console.log(`  POLICY_HASH:           ${POLICY_HASH}`);
-  console.log(`  IS_DEV_ADAPTER:        ${IS_DEV_ADAPTER}`);
   console.log(`  GENESIS_L2_BLOCK:      ${GENESIS_L2_BLOCK}`);
   console.log(`  MULTISIG_ADDRESS:      ${MULTISIG_ADDRESS || "(dev — no transfer)"}`);
   console.log();
 
-  // ── 1. Deploy Verifier ──────────────────────────────────────────────────────
-  console.log("1. Deploying Verifier…");
-  const Verifier = await ethers.getContractFactory("Verifier");
-  const verifier = await Verifier.deploy();
-  await verifier.waitForDeployment();
-  const verifierAddr = await verifier.getAddress();
-  console.log(`   Verifier: ${verifierAddr}`);
+  // ── 1. Deploy Groth16Verifier (real BN254 pairing verifier from snarkjs export) ──
+  console.log("1. Deploying Groth16Verifier…");
+  const Groth16Verifier = await ethers.getContractFactory("Groth16Verifier");
+  const groth16Verifier = await Groth16Verifier.deploy();
+  await groth16Verifier.waitForDeployment();
+  const groth16VerifierAddr = await groth16Verifier.getAddress();
+  console.log(`   Groth16Verifier: ${groth16VerifierAddr}`);
 
   // ── 2. Deploy WorldlineRegistry ─────────────────────────────────────────────
   console.log("2. Deploying WorldlineRegistry…");
   const Registry = await ethers.getContractFactory("WorldlineRegistry");
-  const registry = await Registry.deploy(verifierAddr);
+  const registry = await Registry.deploy(groth16VerifierAddr);
   await registry.waitForDeployment();
   const registryAddr = await registry.getAddress();
   console.log(`   WorldlineRegistry: ${registryAddr}`);
@@ -94,10 +90,10 @@ async function main() {
   // ── 3. Deploy Groth16ZkAdapter ──────────────────────────────────────────────
   console.log("3. Deploying Groth16ZkAdapter…");
   const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
-  const adapter = await Adapter.deploy(verifierAddr, PROGRAM_VKEY, POLICY_HASH, IS_DEV_ADAPTER);
+  const adapter = await Adapter.deploy(groth16VerifierAddr, PROGRAM_VKEY, POLICY_HASH);
   await adapter.waitForDeployment();
   const adapterAddr = await adapter.getAddress();
-  console.log(`   Groth16ZkAdapter: ${adapterAddr} (isDev=${IS_DEV_ADAPTER})`);
+  console.log(`   Groth16ZkAdapter: ${adapterAddr}`);
 
   // ── 4. Deploy WorldlineFinalizer ────────────────────────────────────────────
   console.log("4. Deploying WorldlineFinalizer…");
@@ -260,7 +256,7 @@ async function main() {
     timestamp: new Date().toISOString(),
     deployer: deployer.address,
     contracts: {
-      Verifier: verifierAddr,
+      Groth16Verifier: groth16VerifierAddr,
       WorldlineRegistry: registryAddr,
       Groth16ZkAdapter: adapterAddr,
       WorldlineFinalizer: finalizerAddr,
@@ -274,7 +270,6 @@ async function main() {
       minTimelock: MIN_TIMELOCK,
       programVKey: PROGRAM_VKEY,
       policyHash: POLICY_HASH,
-      isDevAdapter: IS_DEV_ADAPTER,
       genesisL2Block: GENESIS_L2_BLOCK,
       multisigAddress: MULTISIG_ADDRESS || null
     }
@@ -304,12 +299,12 @@ async function main() {
     const { run } = await import("hardhat");
 
     const toVerify: Array<{ name: string; address: string; args: unknown[] }> = [
-      { name: "Verifier", address: verifierAddr, args: [] },
-      { name: "WorldlineRegistry", address: registryAddr, args: [verifierAddr] },
+      { name: "Groth16Verifier", address: groth16VerifierAddr, args: [] },
+      { name: "WorldlineRegistry", address: registryAddr, args: [groth16VerifierAddr] },
       {
         name: "Groth16ZkAdapter",
         address: adapterAddr,
-        args: [verifierAddr, PROGRAM_VKEY, POLICY_HASH, IS_DEV_ADAPTER]
+        args: [groth16VerifierAddr, PROGRAM_VKEY, POLICY_HASH]
       },
       {
         name: "WorldlineFinalizer",

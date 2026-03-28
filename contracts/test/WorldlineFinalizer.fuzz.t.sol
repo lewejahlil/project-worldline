@@ -3,15 +3,25 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../src/WorldlineFinalizer.sol";
-import "../src/zk/Verifier.sol";
 import "../src/zk/Groth16ZkAdapter.sol";
+
+/// @notice View-compatible mock that always returns true for Groth16 verification.
+contract ViewMockGroth16Verifier {
+    function verifyProof(
+        uint256[2] calldata,
+        uint256[2][2] calldata,
+        uint256[2] calldata,
+        uint256[2] calldata
+    ) external pure returns (bool) {
+        return true;
+    }
+}
 
 /// @title WorldlineFinalizer Fuzz Tests
 /// @notice Property-based / fuzz tests for the WorldlineFinalizer contract.
 ///         Run with: forge test --match-contract WorldlineFinalizerFuzz -v
 contract WorldlineFinalizerFuzzTest is Test {
     WorldlineFinalizer finalizer;
-    Verifier verifier;
     Groth16ZkAdapter adapter;
 
     bytes32 constant DOMAIN = keccak256("worldline-fuzz-domain");
@@ -27,9 +37,8 @@ contract WorldlineFinalizerFuzzTest is Test {
         // Needs: block.timestamp >= MAX_DELAY + type(uint32).max + 1
         vm.warp(uint256(type(uint32).max) + MAX_DELAY + 2);
 
-        verifier = new Verifier();
-        // isDev=true for all fuzz tests — exercises dev behaviour.
-        adapter = new Groth16ZkAdapter(address(verifier), PROGRAM_VKEY, POLICY_HASH, true);
+        ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier();
+        adapter = new Groth16ZkAdapter(address(mock), PROGRAM_VKEY, POLICY_HASH);
         finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, MAX_DELAY, 0);
         // Enable permissionless mode so the fuzzer address can submit.
         finalizer.setPermissionless(true);
@@ -67,7 +76,11 @@ contract WorldlineFinalizerFuzzTest is Test {
     }
 
     function encodeValidProof(bytes32 stf) internal pure returns (bytes memory) {
-        return abi.encode(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+        // Production format: pA[2], pB[2][2], pC[2], stfCommitment, proverSetDigest (320 bytes)
+        uint256[2] memory pA = [uint256(1), uint256(2)];
+        uint256[2][2] memory pB = [[uint256(3), uint256(4)], [uint256(5), uint256(6)]];
+        uint256[2] memory pC = [uint256(7), uint256(8)];
+        return abi.encode(pA, pB, pC, uint256(stf), uint256(PROVER_DIGEST));
     }
 
     // ── Fuzz tests ────────────────────────────────────────────────────────────

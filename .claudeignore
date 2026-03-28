@@ -1,0 +1,29 @@
+# Build artifacts
+node_modules/
+target/
+cache/
+artifacts/
+typechain-types/
+out/
+
+# Trusted setup binaries (large, not useful as text)
+circuits/zkeys/*.zkey
+circuits/zkeys/*.ptau
+*.wasm
+*.r1cs
+*.sym
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs and coverage
+coverage/
+*.log
+lcov.info
+
+# Package locks (CC doesn't need these)
+package-lock.json
+yarn.lock
+Cargo.lock

@@ -5,14 +5,12 @@ import "forge-std/Test.sol";
 import "../src/WorldlineRegistry.sol";
 import "../src/WorldlineCompat.sol";
 import "../src/WorldlineOutputsRegistry.sol";
-import "../src/zk/Verifier.sol";
 
 /// @title Chunk 5 Tests — HI-004, MED-003, MED-004, MED-005
 contract Chunk5Test is Test {
     WorldlineRegistry registry;
     WorldlineCompat compat;
     WorldlineOutputsRegistry outputsRegistry;
-    Verifier verifier;
 
     address owner;
     address stranger;
@@ -21,47 +19,9 @@ contract Chunk5Test is Test {
         owner = address(this);
         stranger = address(0xBEEF);
 
-        verifier = new Verifier();
-        registry = new WorldlineRegistry(address(verifier));
+        registry = new WorldlineRegistry(address(1));
         compat = new WorldlineCompat(address(registry));
         outputsRegistry = new WorldlineOutputsRegistry(1 days);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // HI-004: verify() dev-only guard (chainid == 31337)
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /// @notice verify() works on chainid 31337 (Foundry/Hardhat default).
-    function test_verify_worksOnDevnet() public {
-        // Foundry default chainid is 31337
-        bytes32 cid = bytes32(uint256(1));
-        registry.registerCircuit(cid, "test", address(0), "");
-        bool result = registry.verify(cid, 5, 25);
-        assertTrue(result);
-    }
-
-    /// @notice verify() reverts with DevOnly on non-devnet chain.
-    function test_verify_revert_nonDevnet() public {
-        bytes32 cid = bytes32(uint256(1));
-        registry.registerCircuit(cid, "test", address(0), "");
-
-        // Switch to mainnet chainid
-        vm.chainId(1);
-        vm.expectRevert(WorldlineRegistry.DevOnly.selector);
-        registry.verify(cid, 5, 25);
-    }
-
-    /// @notice WorldlineCompat.verify() also reverts on non-devnet chain.
-    function test_compatVerify_revert_nonDevnet() public {
-        // Wire facade first
-        registry.setCompatFacade(address(compat));
-
-        bytes32 cid = bytes32(uint256(1));
-        registry.registerCircuit(cid, "test", address(0), "");
-
-        vm.chainId(1);
-        vm.expectRevert(WorldlineCompat.DevOnly.selector);
-        compat.verify(cid, 5, 25);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -94,31 +54,6 @@ contract Chunk5Test is Test {
         bytes32 dk = outputsRegistry.domainKey(bytes32(uint256(1)), bytes32(uint256(2)));
         outputsRegistry.schedule(dk, bytes32(uint256(1)), bytes32(uint256(1)), address(0x1));
         // Just verify it doesn't revert
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // MED-004: Verifier secret range check
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /// @notice verifyProof reverts with SecretTooLarge for secret >= 2^128.
-    function test_verifyProof_revert_secretTooLarge() public {
-        uint256 bigSecret = uint256(1) << 128;
-        vm.expectRevert(Verifier.SecretTooLarge.selector);
-        verifier.verifyProof(bigSecret, 0);
-    }
-
-    /// @notice verifyProof works for secret just below 2^128.
-    function test_verifyProof_maxValidSecret() public view {
-        uint256 maxSecret = (uint256(1) << 128) - 1;
-        uint256 hash = maxSecret * maxSecret;
-        verifier.verifyProof(maxSecret, hash);
-        // Should not revert
-    }
-
-    /// @notice verifyProof reverts with InvalidProof for wrong hash (not overflow).
-    function test_verifyProof_revert_invalidProof() public {
-        vm.expectRevert(Verifier.InvalidProof.selector);
-        verifier.verifyProof(5, 26); // 5*5 = 25, not 26
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

@@ -15,6 +15,10 @@ circuits/artifacts/*.zkey
 circuits/artifacts/*_js/
 circuits/ptau/
 
+# Circom zkey intermediates (keep final + vkey)
+circuits/zkeys/*_0000.zkey
+circuits/zkeys/*_0001.zkey
+
 # Hardhat
 artifacts/
 cache/

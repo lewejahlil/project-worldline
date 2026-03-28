@@ -5,8 +5,19 @@ import "forge-std/Test.sol";
 import "../src/utils/Ownable.sol";
 import "../src/WorldlineOutputsRegistry.sol";
 import "../src/WorldlineFinalizer.sol";
-import "../src/zk/Verifier.sol";
 import "../src/zk/Groth16ZkAdapter.sol";
+
+/// @notice View-compatible mock that always returns true for Groth16 verification.
+contract ViewMockGroth16Verifier {
+    function verifyProof(
+        uint256[2] calldata,
+        uint256[2][2] calldata,
+        uint256[2] calldata,
+        uint256[2] calldata
+    ) external pure returns (bool) {
+        return true;
+    }
+}
 
 /// @title Concrete Ownable for testing the abstract contract.
 contract OwnableHarness is Ownable {
@@ -19,7 +30,6 @@ contract AccessControlTest is Test {
     OwnableHarness ownable;
     WorldlineOutputsRegistry outputsRegistry;
     WorldlineFinalizer finalizer;
-    Verifier verifier;
     Groth16ZkAdapter adapter;
 
     address owner;
@@ -36,8 +46,8 @@ contract AccessControlTest is Test {
         ownable = new OwnableHarness();
         outputsRegistry = new WorldlineOutputsRegistry(1 days);
 
-        verifier = new Verifier();
-        adapter = new Groth16ZkAdapter(address(verifier), PROGRAM_VKEY, POLICY_HASH, true);
+        ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier();
+        adapter = new Groth16ZkAdapter(address(mock), PROGRAM_VKEY, POLICY_HASH);
         finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, 3600, 0);
     }
 
@@ -145,8 +155,9 @@ contract AccessControlTest is Test {
 
     /// @notice scheduleAdapterChange + immediate activateAdapterChange reverts.
     function test_activateAdapter_revert_timelockActive() public {
+        ViewMockGroth16Verifier newMock = new ViewMockGroth16Verifier();
         Groth16ZkAdapter newAdapter = new Groth16ZkAdapter(
-            address(verifier), PROGRAM_VKEY, POLICY_HASH, true
+            address(newMock), PROGRAM_VKEY, POLICY_HASH
         );
         finalizer.scheduleAdapterChange(address(newAdapter));
 
@@ -161,8 +172,9 @@ contract AccessControlTest is Test {
 
     /// @notice scheduleAdapterChange + warp past delay + activateAdapterChange succeeds.
     function test_activateAdapter_afterTimelock() public {
+        ViewMockGroth16Verifier newMock = new ViewMockGroth16Verifier();
         Groth16ZkAdapter newAdapter = new Groth16ZkAdapter(
-            address(verifier), PROGRAM_VKEY, POLICY_HASH, true
+            address(newMock), PROGRAM_VKEY, POLICY_HASH
         );
         finalizer.scheduleAdapterChange(address(newAdapter));
 

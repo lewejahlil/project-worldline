@@ -24,21 +24,20 @@ describe("GovernanceRotation", function () {
   async function deployFullStack() {
     const [owner, submitter] = await ethers.getSigners();
 
-    // 1. Deploy the demo Verifier
-    const Verifier = await ethers.getContractFactory("Verifier");
-    const verifier = await Verifier.deploy();
+    // 1. Deploy a mock Groth16 verifier (always returns true)
+    const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier");
+    const mockVerifier = await MockVerifier.deploy();
 
     // 2. Deploy WorldlineRegistry
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await Registry.deploy(await verifier.getAddress());
+    const registry = await Registry.deploy(await mockVerifier.getAddress());
 
-    // 3. Deploy initial Groth16ZkAdapter (v1 pinned values, isDev=true)
+    // 3. Deploy initial Groth16ZkAdapter (v1 pinned values)
     const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
     const adapterV1 = await Adapter.deploy(
-      await verifier.getAddress(),
+      await mockVerifier.getAddress(),
       PROGRAM_VKEY_V1,
-      POLICY_HASH_V1,
-      true // isDev
+      POLICY_HASH_V1
     );
 
     // 4. Deploy WorldlineFinalizer (1-hour max acceptance delay)
@@ -58,7 +57,7 @@ describe("GovernanceRotation", function () {
     await finalizer.setPermissionless(true);
 
     return {
-      verifier,
+      mockVerifier,
       registry,
       adapterV1,
       finalizer,
@@ -98,20 +97,36 @@ describe("GovernanceRotation", function () {
     return { inputs, stf };
   }
 
+  /**
+   * Encode a production-format Groth16 proof (320 bytes).
+   * pA, pB, pC are dummy G1/G2 points (the mock verifier accepts anything).
+   * stfCommitment and proverSetDigest are the two public signals.
+   */
   function encodeProof(
     stfCommitment: string,
     programVKey: string,
     policyHash: string,
     proverSetDigest: string
   ): string {
+    // programVKey and policyHash are pinned immutables — not encoded in the proof.
+    // We suppress the lint warning by referencing them.
+    void programVKey;
+    void policyHash;
+    // Dummy G1/G2 points (mock verifier ignores them)
+    const pA = [1n, 2n];
+    const pB = [
+      [1n, 2n],
+      [3n, 4n]
+    ];
+    const pC = [1n, 2n];
     return ethers.AbiCoder.defaultAbiCoder().encode(
-      ["bytes32", "bytes32", "bytes32", "bytes32"],
-      [stfCommitment, programVKey, policyHash, proverSetDigest]
+      ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
+      [pA, pB, pC, stfCommitment, proverSetDigest]
     );
   }
 
   it("full governance rotation pipeline", async function () {
-    const { verifier, adapterV1, finalizer, outputsRegistry, owner } =
+    const { mockVerifier, adapterV1, finalizer, outputsRegistry, owner } =
       await loadFixture(deployFullStack);
 
     // ── Step 2: Submit valid proof through the Finalizer (window 0) ────────────
@@ -164,10 +179,9 @@ describe("GovernanceRotation", function () {
     // ── Step 7: Deploy a new adapter with the NEW pinned values ───────────────
     const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
     const adapterV2 = await Adapter.deploy(
-      await verifier.getAddress(),
+      await mockVerifier.getAddress(),
       PROGRAM_VKEY_V2,
-      POLICY_HASH_V2,
-      true // isDev
+      POLICY_HASH_V2
     );
 
     // ── Step 8: Schedule + activate the new adapter on the Finalizer ─────────
@@ -185,16 +199,12 @@ describe("GovernanceRotation", function () {
 
     expect(await finalizer.adapter()).to.equal(await adapterV2.getAddress());
 
-    // ── Step 9: Submit proof with OLD v1 pinned values — must revert ──────────
-    const ts2 = BigInt(await time.latest()) + 200n;
-    const { inputs: inputsBad, stf: stfBad } = encodePublicInputs(100n, 200n, DOMAIN, ts2);
-    const proofBad = encodeProof(stfBad, PROGRAM_VKEY_V1, POLICY_HASH_V1, PROVER_DIGEST);
-
-    await expect(
-      finalizer.submitZkValidityProof(proofBad, inputsBad)
-    ).to.be.revertedWithCustomError(adapterV2, "ProgramVKeyMismatch");
+    // ── Step 9: Verify the new adapter has v2 pinned values ───────────────────
+    expect(await adapterV2.programVKeyPinned()).to.equal(PROGRAM_VKEY_V2);
+    expect(await adapterV2.policyHashPinned()).to.equal(POLICY_HASH_V2);
 
     // ── Step 10: Submit proof with NEW v2 pinned values — must succeed ─────────
+    const ts2 = BigInt(await time.latest()) + 200n;
     const { inputs: inputsGood, stf: stfGood } = encodePublicInputs(100n, 200n, DOMAIN, ts2);
     const proofGood = encodeProof(stfGood, PROGRAM_VKEY_V2, POLICY_HASH_V2, PROVER_DIGEST);
 

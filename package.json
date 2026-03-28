@@ -16,11 +16,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
     "c:ptau": "ts-node circuits/scripts/download-ptau.ts",
-    "c:compile": "mkdir -p circuits/artifacts && circom circuits/worldline.circom --wasm --r1cs --output circuits/artifacts",
-    "c:setup:phase2begin": "snarkjs groth16 setup circuits/artifacts/worldline.r1cs circuits/ptau/powersOfTau28_hez_final_10.ptau circuits/artifacts/worldline_0000.zkey",
-    "c:setup:contribute": "snarkjs zkey contribute circuits/artifacts/worldline_0000.zkey circuits/artifacts/worldline_0001.zkey --name=\"Contributor\" -v -e=\"$(node -e 'process.stdout.write(require(\"crypto\").randomBytes(32).toString(\"hex\"))')\"",
-    "c:setup:beacon": "snarkjs zkey beacon circuits/artifacts/worldline_0001.zkey circuits/artifacts/worldline_final.zkey 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20 10 -n=\"Final Beacon\"",
-    "c:setup:verify": "snarkjs zkey verify circuits/artifacts/worldline.r1cs circuits/ptau/powersOfTau28_hez_final_10.ptau circuits/artifacts/worldline_final.zkey",
+    "c:compile": "mkdir -p circuits/artifacts && circom circuits/stf/worldline_stf.circom --wasm --r1cs --output circuits/artifacts",
+    "c:setup:phase2begin": "snarkjs groth16 setup circuits/artifacts/worldline_stf.r1cs circuits/ptau/powersOfTau28_hez_final_11.ptau circuits/artifacts/worldline_stf_0000.zkey",
+    "c:setup:contribute": "snarkjs zkey contribute circuits/artifacts/worldline_stf_0000.zkey circuits/artifacts/worldline_stf_0001.zkey --name=\"Contributor\" -v -e=\"$(node -e 'process.stdout.write(require(\"crypto\").randomBytes(32).toString(\"hex\"))')\"",
+    "c:setup:beacon": "snarkjs zkey beacon circuits/artifacts/worldline_stf_0001.zkey circuits/artifacts/worldline_stf_final.zkey 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20 10 -n=\"Final Beacon\"",
+    "c:setup:verify": "snarkjs zkey verify circuits/artifacts/worldline_stf.r1cs circuits/ptau/powersOfTau28_hez_final_11.ptau circuits/artifacts/worldline_stf_final.zkey",
     "c:setup": "npm run c:setup:phase2begin && npm run c:setup:contribute && npm run c:setup:beacon && npm run c:setup:verify",
     "c:export": "ts-node circuits/scripts/export-verifier.ts",
     "watcher": "ts-node scripts/watcher.ts",
@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "c-kzg": "^4.1.0",
+    "circomlib": "^2.0.5",
     "ethers": "^6.8.1"
   }
 }

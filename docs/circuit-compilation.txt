@@ -1,0 +1,34 @@
+WorldlineSTF Circuit Compilation Report
+========================================
+
+Compiler: circom2 v2.2.2
+Date: 2026-03-28
+Circuit: circuits/stf/worldline_stf.circom
+Parameters: N=3 (prover slots), MAX_BATCH_SIZE=1024
+
+Template Instances: 159
+
+Constraints:
+  Non-linear constraints: 789
+  Linear constraints:     1078
+  Total constraints:      1867
+
+Signals:
+  Wires:          1859
+  Private inputs: 11
+  Public inputs:  0
+  Public outputs: 2 (stfCommitment, proverSetDigest)
+  Labels:         2979
+
+Curve: BN254 (bn-128)
+
+Powers of Tau Required: powersOfTau28_hez_final_11.ptau (2^11 = 2048 >= 1867)
+
+Warnings (expected, not soundness issues):
+  - CA02: LessThan(8) — n2b.out[0..7] not used in parent (bits constrained internally by Num2Bits)
+  - CA02: LessThan(32) — n2b.out[0..31] not used in parent (bits constrained internally by Num2Bits)
+
+  These warnings are inherent to circomlib's LessThan implementation which
+  decomposes values into bits for comparison. The bit decomposition signals
+  are fully constrained within the Num2Bits component but are not read by
+  the parent template. This does NOT indicate unconstrained signals.
