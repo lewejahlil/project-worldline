@@ -13,6 +13,7 @@ jobs:
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,6 +29,7 @@ jobs:
   npm-audit:
     name: NPM Audit (INF-003)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,6 +45,7 @@ jobs:
   rust:
     name: Rust
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -66,6 +69,7 @@ jobs:
   bench:
     name: Rust Benchmarks (compile-only)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [rust]
     steps:
       - uses: actions/checkout@v4
@@ -86,6 +90,7 @@ jobs:
   solidity:
     name: Solidity
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -101,6 +106,7 @@ jobs:
   canonical-conformance:
     name: Canonical JSON Conformance
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -152,6 +158,7 @@ jobs:
   foundry-fuzz:
     name: Foundry Fuzz Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -171,6 +178,7 @@ jobs:
   zk-setup-verify:
     name: ZK Setup Verification
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -211,7 +219,7 @@ jobs:
     name: Devnet Smoke Test
     runs-on: ubuntu-latest
     needs: [solidity]
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - name: Install Foundry (Anvil)
@@ -248,6 +256,7 @@ jobs:
   contracts:
     name: Contracts (compile + test + gas)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -265,6 +274,7 @@ jobs:
   circuits:
     name: Circuits (mocha)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -275,12 +285,57 @@ jobs:
       - name: Circuit tests
         run: cd circuits && npx mocha test/ --timeout 10000 2>&1 | tail -20
 
-  rust-workspace:
-    name: Rust workspace (test + clippy)
+  circuits-plonk:
+    name: Circuits — Plonk (mocha)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Plonk circuit tests
+        run: cd circuits && npx mocha test/worldline_stf_plonk.test.js --timeout 15000 2>&1 | tail -20
+
+  halo2-circuit:
+    name: Halo2 circuit (tests + clippy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-halo2-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-halo2-
+            ${{ runner.os }}-cargo-
+      - name: Halo2 circuit tests
+        run: cargo test -p worldline-halo2-circuit 2>&1 | tail -30
+      - name: Clippy
+        run: cargo clippy -p worldline-halo2-circuit -- -D warnings 2>&1 | tail -10
+
+  rust-workspace:
+    name: Rust workspace (test + clippy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - name: Cargo test
         run: cargo test --workspace 2>&1 | tail -30
       - name: Clippy
@@ -289,6 +344,7 @@ jobs:
   fork-sim:
     name: Fork simulation tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [contracts]
     steps:
       - uses: actions/checkout@v4
@@ -299,3 +355,18 @@ jobs:
       - run: npm ci
       - name: Fork tests
         run: npx hardhat test test/fork/*.test.ts 2>&1 | tail -20
+
+  integration-multiprover:
+    name: Integration — Multi-prover quorum
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [contracts]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Multi-prover integration tests
+        run: npx hardhat test test/integration/routing.test.ts test/integration/plonk.test.ts test/integration/halo2.test.ts test/integration/multiprover-quorum.test.ts 2>&1 | tail -30
