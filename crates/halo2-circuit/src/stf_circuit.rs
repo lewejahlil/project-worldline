@@ -26,7 +26,9 @@ use halo2_proofs::{
 use halo2curves::bn256::Fr;
 use halo2curves::group::ff::Field;
 
-use crate::poseidon_chip::{poseidon_hash_3, poseidon_hash_7, PoseidonChip, PoseidonChipConfig};
+use crate::poseidon_compat::{
+    poseidon_compress_3, poseidon_compress_7, PoseidonCompatChip, PoseidonCompatConfig,
+};
 
 /// Number of prover slots (matches Circom N=3).
 pub const N: usize = 3;
@@ -57,8 +59,8 @@ pub struct WorldlineStfConfig {
     pub selector: Selector,
     /// Fixed column for constants.
     pub fixed: Column<Fixed>,
-    /// Poseidon chip configuration.
-    pub poseidon_config: PoseidonChipConfig,
+    /// Poseidon chip configuration (circomlib-compatible).
+    pub poseidon_config: PoseidonCompatConfig,
 }
 
 /// The Worldline STF circuit for Halo2.
@@ -100,8 +102,8 @@ impl WorldlineStfCircuit {
         proof_system_ids: [Fr; N],
         quorum_count: Fr,
     ) -> (Fr, Fr) {
-        let stf_commitment = poseidon_hash_3(pre_state_root, post_state_root, batch_commitment);
-        let prover_set_digest = poseidon_hash_7(
+        let stf_commitment = poseidon_compress_3(pre_state_root, post_state_root, batch_commitment);
+        let prover_set_digest = poseidon_compress_7(
             prover_ids[0],
             prover_ids[1],
             prover_ids[2],
@@ -141,8 +143,8 @@ impl Circuit<Fr> for WorldlineStfCircuit {
         meta.enable_equality(instance);
         meta.enable_equality(fixed);
 
-        // Configure Poseidon chip using advice[0] and advice[1].
-        let poseidon_config = PoseidonChip::configure(meta, [advice[0], advice[1]]);
+        // Configure circomlib-compatible Poseidon chip using advice[0] and advice[1].
+        let poseidon_config = PoseidonCompatChip::configure(meta, [advice[0], advice[1]]);
 
         // Range check gate: when selector is active, enforce range constraints.
         // We use advice[2] for the value being checked, advice[3] for bounds info,
@@ -178,7 +180,7 @@ impl Circuit<Fr> for WorldlineStfCircuit {
         config: Self::Config,
         mut layouter: impl Layouter<Fr>,
     ) -> Result<(), Error> {
-        let poseidon_chip = PoseidonChip {
+        let poseidon_chip = PoseidonCompatChip {
             config: config.poseidon_config.clone(),
         };
 
