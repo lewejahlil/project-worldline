@@ -31,6 +31,7 @@ export interface WorldlineFinalizerInterface extends Interface {
       | "activateAdapterChange"
       | "adapter"
       | "adapterChangeDelay"
+      | "blobKzgVerifier"
       | "domainSeparator"
       | "genesisL2Block"
       | "lastL2EndBlock"
@@ -44,11 +45,13 @@ export interface WorldlineFinalizerInterface extends Interface {
       | "permissionless"
       | "scheduleAdapterChange"
       | "setAdapterChangeDelay"
+      | "setBlobKzgVerifier"
       | "setMaxAcceptanceDelay"
       | "setPaused"
       | "setPermissionless"
       | "setSubmitter"
       | "submitZkValidityProof"
+      | "submitZkValidityProofWithBlob"
       | "submitZkValidityProofWithMeta"
       | "submitters"
       | "transferOwnership"
@@ -59,6 +62,8 @@ export interface WorldlineFinalizerInterface extends Interface {
       | "AdapterChangeDelaySet"
       | "AdapterChangeScheduled"
       | "AdapterSet"
+      | "BlobKzgVerifierSet"
+      | "BlobProofSubmitted"
       | "ManifestAnnounced"
       | "MaxAcceptanceDelaySet"
       | "OutputProposed"
@@ -86,6 +91,10 @@ export interface WorldlineFinalizerInterface extends Interface {
   encodeFunctionData(functionFragment: "adapter", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "adapterChangeDelay",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "blobKzgVerifier",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -135,6 +144,10 @@ export interface WorldlineFinalizerInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "setBlobKzgVerifier",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setMaxAcceptanceDelay",
     values: [BigNumberish]
   ): string;
@@ -150,6 +163,22 @@ export interface WorldlineFinalizerInterface extends Interface {
   encodeFunctionData(
     functionFragment: "submitZkValidityProof",
     values: [BytesLike, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "submitZkValidityProofWithBlob",
+    values: [
+      BytesLike,
+      BytesLike,
+      BytesLike,
+      BytesLike,
+      BigNumberish,
+      BytesLike,
+      BytesLike,
+      BytesLike,
+      BytesLike,
+      BytesLike,
+      BigNumberish
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "submitZkValidityProofWithMeta",
@@ -179,6 +208,10 @@ export interface WorldlineFinalizerInterface extends Interface {
   decodeFunctionResult(functionFragment: "adapter", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "adapterChangeDelay",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "blobKzgVerifier",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -228,6 +261,10 @@ export interface WorldlineFinalizerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setBlobKzgVerifier",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "setMaxAcceptanceDelay",
     data: BytesLike
   ): Result;
@@ -242,6 +279,10 @@ export interface WorldlineFinalizerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "submitZkValidityProof",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "submitZkValidityProofWithBlob",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -285,6 +326,40 @@ export namespace AdapterSetEvent {
   export type OutputTuple = [adapter: string];
   export interface OutputObject {
     adapter: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace BlobKzgVerifierSetEvent {
+  export type InputTuple = [verifier: AddressLike];
+  export type OutputTuple = [verifier: string];
+  export interface OutputObject {
+    verifier: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace BlobProofSubmittedEvent {
+  export type InputTuple = [
+    windowIndex: BigNumberish,
+    versionedHash: BytesLike,
+    blobDataHash: BytesLike
+  ];
+  export type OutputTuple = [
+    windowIndex: bigint,
+    versionedHash: string,
+    blobDataHash: string
+  ];
+  export interface OutputObject {
+    windowIndex: bigint;
+    versionedHash: string;
+    blobDataHash: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -499,6 +574,8 @@ export interface WorldlineFinalizer extends BaseContract {
 
   adapterChangeDelay: TypedContractMethod<[], [bigint], "view">;
 
+  blobKzgVerifier: TypedContractMethod<[], [string], "view">;
+
   domainSeparator: TypedContractMethod<[], [string], "view">;
 
   genesisL2Block: TypedContractMethod<[], [bigint], "view">;
@@ -533,6 +610,12 @@ export interface WorldlineFinalizer extends BaseContract {
     "nonpayable"
   >;
 
+  setBlobKzgVerifier: TypedContractMethod<
+    [_blobKzgVerifier: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   setMaxAcceptanceDelay: TypedContractMethod<
     [_delay: BigNumberish],
     [void],
@@ -555,6 +638,24 @@ export interface WorldlineFinalizer extends BaseContract {
 
   submitZkValidityProof: TypedContractMethod<
     [proof: BytesLike, publicInputs: BytesLike],
+    [void],
+    "nonpayable"
+  >;
+
+  submitZkValidityProofWithBlob: TypedContractMethod<
+    [
+      proof: BytesLike,
+      publicInputs: BytesLike,
+      expectedBlobHash: BytesLike,
+      blobDataHash: BytesLike,
+      blobIndex: BigNumberish,
+      openingPoint: BytesLike,
+      claimedValue: BytesLike,
+      commitment: BytesLike,
+      kzgProof: BytesLike,
+      batchId: BytesLike,
+      maxBlobBaseFee: BigNumberish
+    ],
     [void],
     "nonpayable"
   >;
@@ -592,6 +693,9 @@ export interface WorldlineFinalizer extends BaseContract {
   getFunction(
     nameOrSignature: "adapterChangeDelay"
   ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "blobKzgVerifier"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "domainSeparator"
   ): TypedContractMethod<[], [string], "view">;
@@ -632,6 +736,9 @@ export interface WorldlineFinalizer extends BaseContract {
     nameOrSignature: "setAdapterChangeDelay"
   ): TypedContractMethod<[_delay: BigNumberish], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "setBlobKzgVerifier"
+  ): TypedContractMethod<[_blobKzgVerifier: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "setMaxAcceptanceDelay"
   ): TypedContractMethod<[_delay: BigNumberish], [void], "nonpayable">;
   getFunction(
@@ -651,6 +758,25 @@ export interface WorldlineFinalizer extends BaseContract {
     nameOrSignature: "submitZkValidityProof"
   ): TypedContractMethod<
     [proof: BytesLike, publicInputs: BytesLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "submitZkValidityProofWithBlob"
+  ): TypedContractMethod<
+    [
+      proof: BytesLike,
+      publicInputs: BytesLike,
+      expectedBlobHash: BytesLike,
+      blobDataHash: BytesLike,
+      blobIndex: BigNumberish,
+      openingPoint: BytesLike,
+      claimedValue: BytesLike,
+      commitment: BytesLike,
+      kzgProof: BytesLike,
+      batchId: BytesLike,
+      maxBlobBaseFee: BigNumberish
+    ],
     [void],
     "nonpayable"
   >;
@@ -688,6 +814,20 @@ export interface WorldlineFinalizer extends BaseContract {
     AdapterSetEvent.InputTuple,
     AdapterSetEvent.OutputTuple,
     AdapterSetEvent.OutputObject
+  >;
+  getEvent(
+    key: "BlobKzgVerifierSet"
+  ): TypedContractEvent<
+    BlobKzgVerifierSetEvent.InputTuple,
+    BlobKzgVerifierSetEvent.OutputTuple,
+    BlobKzgVerifierSetEvent.OutputObject
+  >;
+  getEvent(
+    key: "BlobProofSubmitted"
+  ): TypedContractEvent<
+    BlobProofSubmittedEvent.InputTuple,
+    BlobProofSubmittedEvent.OutputTuple,
+    BlobProofSubmittedEvent.OutputObject
   >;
   getEvent(
     key: "ManifestAnnounced"
@@ -792,6 +932,28 @@ export interface WorldlineFinalizer extends BaseContract {
       AdapterSetEvent.InputTuple,
       AdapterSetEvent.OutputTuple,
       AdapterSetEvent.OutputObject
+    >;
+
+    "BlobKzgVerifierSet(address)": TypedContractEvent<
+      BlobKzgVerifierSetEvent.InputTuple,
+      BlobKzgVerifierSetEvent.OutputTuple,
+      BlobKzgVerifierSetEvent.OutputObject
+    >;
+    BlobKzgVerifierSet: TypedContractEvent<
+      BlobKzgVerifierSetEvent.InputTuple,
+      BlobKzgVerifierSetEvent.OutputTuple,
+      BlobKzgVerifierSetEvent.OutputObject
+    >;
+
+    "BlobProofSubmitted(uint256,bytes32,bytes32)": TypedContractEvent<
+      BlobProofSubmittedEvent.InputTuple,
+      BlobProofSubmittedEvent.OutputTuple,
+      BlobProofSubmittedEvent.OutputObject
+    >;
+    BlobProofSubmitted: TypedContractEvent<
+      BlobProofSubmittedEvent.InputTuple,
+      BlobProofSubmittedEvent.OutputTuple,
+      BlobProofSubmittedEvent.OutputObject
     >;
 
     "ManifestAnnounced(bytes32,bytes)": TypedContractEvent<

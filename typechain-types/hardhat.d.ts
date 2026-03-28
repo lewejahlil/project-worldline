@@ -14,6 +14,14 @@ import * as Contracts from ".";
 declare module "hardhat/types/runtime" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
     getContractFactory(
+      name: "BlobKzgVerifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.BlobKzgVerifier__factory>;
+    getContractFactory(
+      name: "BlobSubmission",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.BlobSubmission__factory>;
+    getContractFactory(
       name: "BlobVerifier",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.BlobVerifier__factory>;
@@ -63,6 +71,16 @@ declare module "hardhat/types/runtime" {
     ): Promise<Contracts.Verifier__factory>;
 
     getContractAt(
+      name: "BlobKzgVerifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.BlobKzgVerifier>;
+    getContractAt(
+      name: "BlobSubmission",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.BlobSubmission>;
+    getContractAt(
       name: "BlobVerifier",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -124,6 +142,14 @@ declare module "hardhat/types/runtime" {
     ): Promise<Contracts.Verifier>;
 
     deployContract(
+      name: "BlobKzgVerifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BlobKzgVerifier>;
+    deployContract(
+      name: "BlobSubmission",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BlobSubmission>;
+    deployContract(
       name: "BlobVerifier",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.BlobVerifier>;
@@ -172,6 +198,16 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Verifier>;
 
+    deployContract(
+      name: "BlobKzgVerifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BlobKzgVerifier>;
+    deployContract(
+      name: "BlobSubmission",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BlobSubmission>;
     deployContract(
       name: "BlobVerifier",
       args: any[],

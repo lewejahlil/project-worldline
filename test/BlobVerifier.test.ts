@@ -64,3 +64,108 @@ describe("BlobVerifier", function () {
     });
   });
 });
+
+describe("BlobKzgVerifier", function () {
+  async function deployFixture() {
+    const Factory = await ethers.getContractFactory("BlobKzgVerifier");
+    const kzgVerifier = await Factory.deploy();
+    return { kzgVerifier };
+  }
+
+  describe("view functions", function () {
+    it("currentBlobBaseFee() returns a uint256", async function () {
+      const { kzgVerifier } = await loadFixture(deployFixture);
+      const fee = await kzgVerifier.currentBlobBaseFee();
+      expect(typeof fee).to.equal("bigint");
+    });
+
+    it("getBlobHash() returns bytes32(0) outside a blob transaction", async function () {
+      const { kzgVerifier } = await loadFixture(deployFixture);
+      const hash = await kzgVerifier.getBlobHash(0);
+      expect(hash).to.equal(ethers.ZeroHash);
+    });
+  });
+
+  describe("input validation", function () {
+    it("reverts with BlobBaseFeeExceedsMax when maxBlobBaseFee is 0 and fee > 0", async function () {
+      const { kzgVerifier } = await loadFixture(deployFixture);
+      const currentFee = await kzgVerifier.currentBlobBaseFee();
+      if (currentFee > 0n) {
+        await expect(
+          kzgVerifier.verifyBlob(
+            0,
+            ethers.ZeroHash,
+            ethers.ZeroHash,
+            ethers.randomBytes(48),
+            ethers.randomBytes(48),
+            ethers.randomBytes(32),
+            0n
+          )
+        ).to.be.revertedWithCustomError(kzgVerifier, "BlobBaseFeeExceedsMax");
+      }
+    });
+
+    it("reverts with InvalidCommitmentLength for 32-byte commitment", async function () {
+      const { kzgVerifier } = await loadFixture(deployFixture);
+      await expect(
+        kzgVerifier.verifyBlob(
+          0,
+          ethers.ZeroHash,
+          ethers.ZeroHash,
+          ethers.randomBytes(32), // wrong: should be 48
+          ethers.randomBytes(48),
+          ethers.randomBytes(32),
+          ethers.parseUnits("1", "gwei")
+        )
+      ).to.be.revertedWithCustomError(kzgVerifier, "InvalidCommitmentLength");
+    });
+
+    it("reverts with InvalidProofLength for 32-byte proof", async function () {
+      const { kzgVerifier } = await loadFixture(deployFixture);
+      await expect(
+        kzgVerifier.verifyBlob(
+          0,
+          ethers.ZeroHash,
+          ethers.ZeroHash,
+          ethers.randomBytes(48),
+          ethers.randomBytes(32), // wrong: should be 48
+          ethers.randomBytes(32),
+          ethers.parseUnits("1", "gwei")
+        )
+      ).to.be.revertedWithCustomError(kzgVerifier, "InvalidProofLength");
+    });
+
+    it("reverts with PointOutOfField when openingPoint >= BLS_MODULUS", async function () {
+      const { kzgVerifier } = await loadFixture(deployFixture);
+      // Use max uint256 which is above the BLS modulus
+      const maxPoint = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+      await expect(
+        kzgVerifier.verifyBlob(
+          0,
+          maxPoint,
+          ethers.ZeroHash,
+          ethers.randomBytes(48),
+          ethers.randomBytes(48),
+          ethers.randomBytes(32),
+          ethers.parseUnits("1", "gwei")
+        )
+      ).to.be.revertedWithCustomError(kzgVerifier, "PointOutOfField");
+    });
+
+    it("reverts with BlobHashZero when called outside a blob tx", async function () {
+      const { kzgVerifier } = await loadFixture(deployFixture);
+      // Use valid field elements (zero is below BLS_MODULUS)
+      await expect(
+        kzgVerifier.verifyBlob(
+          0,
+          ethers.ZeroHash,
+          ethers.ZeroHash,
+          ethers.randomBytes(48),
+          ethers.randomBytes(48),
+          ethers.randomBytes(32),
+          ethers.parseUnits("1", "gwei")
+        )
+      ).to.be.revertedWithCustomError(kzgVerifier, "BlobHashZero");
+    });
+  });
+});

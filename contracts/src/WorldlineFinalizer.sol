@@ -3,6 +3,8 @@ pragma solidity ^0.8.24;
 
 import {Ownable} from "./utils/Ownable.sol";
 import {IZkAggregatorVerifier} from "./interfaces/IZkAggregatorVerifier.sol";
+import {BlobVerifier} from "./blob/BlobVerifier.sol";
+import {BlobKzgVerifier} from "./blob/BlobKzgVerifier.sol";
 
 /// @title WorldlineFinalizer
 /// @notice Accepts one ZK proof per contiguous window, verifies it via an adapter,
@@ -28,6 +30,7 @@ contract WorldlineFinalizer is Ownable {
     error TimelockActive(uint256 activationTime);
     error AdapterDelayTooShort(uint256 required, uint256 given);
     error GenesisStartMismatch(uint256 expected, uint256 actual);
+    error BlobKzgVerifierZero();
 
     // ── Events ──────────────────────────────────────────────────────────────────
 
@@ -66,6 +69,8 @@ contract WorldlineFinalizer is Ownable {
     /// @param proverSetDigest The keccak256 digest of the canonical prover manifest.
     /// @param metaLocator     Off-chain locator for the manifest data.
     event ManifestAnnounced(bytes32 indexed proverSetDigest, bytes metaLocator);
+    event BlobKzgVerifierSet(address indexed verifier);
+    event BlobProofSubmitted(uint256 indexed windowIndex, bytes32 versionedHash, bytes32 blobDataHash);
 
     // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -103,6 +108,9 @@ contract WorldlineFinalizer is Ownable {
 
     /// @notice Timestamp at which the pending adapter change can be activated.
     uint256 public pendingAdapterActivation;
+
+    /// @notice Optional BlobKzgVerifier for EIP-4844 blob-carrying submissions.
+    BlobKzgVerifier public blobKzgVerifier;
 
     // ── Constructor ─────────────────────────────────────────────────────────────
 
@@ -187,6 +195,13 @@ contract WorldlineFinalizer is Ownable {
         emit AdapterChangeDelaySet(_delay);
     }
 
+    /// @notice Set the BlobKzgVerifier address for EIP-4844 blob submissions.
+    /// @param _blobKzgVerifier Address of the BlobKzgVerifier contract (zero to disable).
+    function setBlobKzgVerifier(address _blobKzgVerifier) external onlyOwner {
+        blobKzgVerifier = BlobKzgVerifier(_blobKzgVerifier);
+        emit BlobKzgVerifierSet(_blobKzgVerifier);
+    }
+
     // ── Submission ──────────────────────────────────────────────────────────────
 
     /// @notice Submit a ZK validity proof for the next contiguous window.
@@ -213,6 +228,55 @@ contract WorldlineFinalizer is Ownable {
         if (metaLocator.length > 96) revert LocatorTooLong();
         bytes32 proverSetDigest = _submit(proof, publicInputs);
         emit ManifestAnnounced(proverSetDigest, metaLocator);
+    }
+
+    /// @notice Submit a ZK validity proof carried in an EIP-4844 blob transaction.
+    ///         Verifies the blob via BlobKzgVerifier before accepting the proof batch.
+    ///         If blobKzgVerifier is not set, falls back to hash-only verification
+    ///         via the BlobVerifier library.
+    /// @param proof              Encoded proof bytes.
+    /// @param publicInputs       224-byte ABI-encoded public inputs.
+    /// @param expectedBlobHash   Expected versioned hash of blob at blobIndex.
+    /// @param blobDataHash       Hash of the actual blob data payload (for indexer reference).
+    /// @param blobIndex          Index of the blob in the transaction sidecar.
+    /// @param openingPoint       z value for KZG point evaluation (ignored in hash-only mode).
+    /// @param claimedValue       y value: claimed evaluation p(z) = y (ignored in hash-only mode).
+    /// @param commitment         KZG commitment, 48 bytes (ignored in hash-only mode).
+    /// @param kzgProof           KZG proof, 48 bytes (ignored in hash-only mode).
+    /// @param batchId            Proof batch identifier for the BlobVerified event.
+    /// @param maxBlobBaseFee     Maximum blob base fee caller accepts (wei).
+    function submitZkValidityProofWithBlob(
+        bytes calldata proof,
+        bytes calldata publicInputs,
+        bytes32 expectedBlobHash,
+        bytes32 blobDataHash,
+        uint256 blobIndex,
+        bytes32 openingPoint,
+        bytes32 claimedValue,
+        bytes calldata commitment,
+        bytes calldata kzgProof,
+        bytes32 batchId,
+        uint256 maxBlobBaseFee
+    ) external whenNotPaused {
+        // Route to KZG verification if verifier is configured, otherwise hash-only
+        if (address(blobKzgVerifier) != address(0) && commitment.length == 48) {
+            blobKzgVerifier.verifyBlob(
+                blobIndex,
+                openingPoint,
+                claimedValue,
+                commitment,
+                kzgProof,
+                batchId,
+                maxBlobBaseFee
+            );
+        } else {
+            BlobVerifier.verifyBlobHash(blobIndex, expectedBlobHash);
+        }
+
+        _submit(proof, publicInputs);
+
+        bytes32 versionedHash = blobhash(blobIndex);
+        emit BlobProofSubmitted(nextWindowIndex - 1, versionedHash, blobDataHash);
     }
 
     // ── Internal ────────────────────────────────────────────────────────────────
