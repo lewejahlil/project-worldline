@@ -20,7 +20,7 @@ import type {
   TypedContractMethod,
 } from "../common";
 
-export interface Groth16VerifierInterface extends Interface {
+export interface MockGroth16VerifierInterface extends Interface {
   getFunction(nameOrSignature: "verifyProof"): FunctionFragment;
 
   encodeFunctionData(
@@ -39,11 +39,11 @@ export interface Groth16VerifierInterface extends Interface {
   ): Result;
 }
 
-export interface Groth16Verifier extends BaseContract {
-  connect(runner?: ContractRunner | null): Groth16Verifier;
+export interface MockGroth16Verifier extends BaseContract {
+  connect(runner?: ContractRunner | null): MockGroth16Verifier;
   waitForDeployment(): Promise<this>;
 
-  interface: Groth16VerifierInterface;
+  interface: MockGroth16VerifierInterface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -84,10 +84,10 @@ export interface Groth16Verifier extends BaseContract {
 
   verifyProof: TypedContractMethod<
     [
-      _pA: [BigNumberish, BigNumberish],
-      _pB: [[BigNumberish, BigNumberish], [BigNumberish, BigNumberish]],
-      _pC: [BigNumberish, BigNumberish],
-      _pubSignals: [BigNumberish, BigNumberish]
+      arg0: [BigNumberish, BigNumberish],
+      arg1: [[BigNumberish, BigNumberish], [BigNumberish, BigNumberish]],
+      arg2: [BigNumberish, BigNumberish],
+      arg3: [BigNumberish, BigNumberish]
     ],
     [boolean],
     "view"
@@ -101,10 +101,10 @@ export interface Groth16Verifier extends BaseContract {
     nameOrSignature: "verifyProof"
   ): TypedContractMethod<
     [
-      _pA: [BigNumberish, BigNumberish],
-      _pB: [[BigNumberish, BigNumberish], [BigNumberish, BigNumberish]],
-      _pC: [BigNumberish, BigNumberish],
-      _pubSignals: [BigNumberish, BigNumberish]
+      arg0: [BigNumberish, BigNumberish],
+      arg1: [[BigNumberish, BigNumberish], [BigNumberish, BigNumberish]],
+      arg2: [BigNumberish, BigNumberish],
+      arg3: [BigNumberish, BigNumberish]
     ],
     [boolean],
     "view"

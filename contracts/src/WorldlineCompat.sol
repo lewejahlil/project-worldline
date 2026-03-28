@@ -13,7 +13,6 @@ contract WorldlineCompat is Ownable {
     WorldlineRegistry public immutable registry;
 
     error RegistryZero();
-    error DevOnly();
 
     /// @param _registry Address of the WorldlineRegistry this facade wraps.
     constructor(address _registry) {
@@ -78,14 +77,4 @@ contract WorldlineCompat is Ownable {
         return registry.getPlugin(id);
     }
 
-    /// @notice Verify a ZK proof through the registry.
-    /// @dev DEV-ONLY — restricted to local devnets (chainid 31337). HI-004 remediation.
-    function verify(
-        bytes32 circuitId,
-        uint256 secret,
-        uint256 publicHash
-    ) external view returns (bool) {
-        if (block.chainid != 31337) revert DevOnly();
-        return registry.verify(circuitId, secret, publicHash);
-    }
 }

@@ -38,6 +38,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IZkAggregatorVerifier__factory>;
     getContractFactory(
+      name: "MockGroth16Verifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockGroth16Verifier__factory>;
+    getContractFactory(
       name: "Ownable",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Ownable__factory>;
@@ -65,10 +69,6 @@ declare module "hardhat/types/runtime" {
       name: "Groth16ZkAdapter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Groth16ZkAdapter__factory>;
-    getContractFactory(
-      name: "Verifier",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Verifier__factory>;
 
     getContractAt(
       name: "BlobKzgVerifier",
@@ -100,6 +100,11 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.IZkAggregatorVerifier>;
+    getContractAt(
+      name: "MockGroth16Verifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockGroth16Verifier>;
     getContractAt(
       name: "Ownable",
       address: string | ethers.Addressable,
@@ -135,11 +140,6 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.Groth16ZkAdapter>;
-    getContractAt(
-      name: "Verifier",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Verifier>;
 
     deployContract(
       name: "BlobKzgVerifier",
@@ -165,6 +165,10 @@ declare module "hardhat/types/runtime" {
       name: "IZkAggregatorVerifier",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IZkAggregatorVerifier>;
+    deployContract(
+      name: "MockGroth16Verifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockGroth16Verifier>;
     deployContract(
       name: "Ownable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -193,10 +197,6 @@ declare module "hardhat/types/runtime" {
       name: "Groth16ZkAdapter",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Groth16ZkAdapter>;
-    deployContract(
-      name: "Verifier",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.Verifier>;
 
     deployContract(
       name: "BlobKzgVerifier",
@@ -229,6 +229,11 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IZkAggregatorVerifier>;
     deployContract(
+      name: "MockGroth16Verifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockGroth16Verifier>;
+    deployContract(
       name: "Ownable",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -263,11 +268,6 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Groth16ZkAdapter>;
-    deployContract(
-      name: "Verifier",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.Verifier>;
 
     // default types
     getContractFactory(

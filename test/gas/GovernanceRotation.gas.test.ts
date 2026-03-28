@@ -38,10 +38,17 @@ function computeStf(l2Start: bigint, l2End: bigint, ts: bigint): string {
   );
 }
 
-function encodeProof(stf: string, vkey: string, policy: string): string {
+function encodeProof(stf: string): string {
+  // Production format: pA[2], pB[2][2], pC[2], stfCommitment, proverSetDigest (320 bytes)
+  const pA = [1, 2];
+  const pB = [
+    [3, 4],
+    [5, 6]
+  ];
+  const pC = [7, 8];
   return ethers.AbiCoder.defaultAbiCoder().encode(
-    ["bytes32", "bytes32", "bytes32", "bytes32"],
-    [stf, vkey, policy, PROVER_DIGEST]
+    ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
+    [pA, pB, pC, stf, PROVER_DIGEST]
   );
 }
 
@@ -58,9 +65,9 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
   this.timeout(180_000);
 
   it("full governance rotation gas total", async function () {
-    // Step 1: Deploy Verifier
-    const Verifier = await ethers.getContractFactory("Verifier");
-    const verifier = await Verifier.deploy();
+    // Step 1: Deploy MockGroth16Verifier (real verifier rejects dummy proofs)
+    const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier");
+    const verifier = await MockVerifier.deploy();
 
     // Step 2: Deploy WorldlineRegistry
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
@@ -71,8 +78,7 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
     const adapterV1 = await Adapter.deploy(
       await verifier.getAddress(),
       PROGRAM_VKEY_V1,
-      POLICY_HASH_V1,
-      true
+      POLICY_HASH_V1
     );
 
     // Step 4: Deploy WorldlineFinalizer
@@ -92,10 +98,7 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
     // Step 7: Submit window 0 proof
     const ts = BigInt(await time.latest()) + 3600n;
     const { inputs: inputs0, stf: stf0 } = encodeInputs(0n, 100n, ts);
-    await finalizer.submitZkValidityProof(
-      encodeProof(stf0, PROGRAM_VKEY_V1, POLICY_HASH_V1),
-      inputs0
-    );
+    await finalizer.submitZkValidityProof(encodeProof(stf0), inputs0);
 
     // Step 8: Schedule new VKey/policy
     const domainKey = await outputsRegistry.domainKey(
@@ -117,8 +120,7 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
     const adapterV2 = await Adapter.deploy(
       await verifier.getAddress(),
       PROGRAM_VKEY_V2,
-      POLICY_HASH_V2,
-      true
+      POLICY_HASH_V2
     );
     // HI-001: Two-step timelocked adapter change
     await finalizer.scheduleAdapterChange(await adapterV2.getAddress());

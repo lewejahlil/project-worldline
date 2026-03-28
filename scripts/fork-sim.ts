@@ -100,9 +100,16 @@ function encodePublicInputs(
 }
 
 function encodeProof(stfCommitment: string): string {
+  // Production format: pA[2], pB[2][2], pC[2], stfCommitment, proverSetDigest (320 bytes)
+  const pA = [1n, 2n];
+  const pB = [
+    [1n, 2n],
+    [3n, 4n]
+  ];
+  const pC = [1n, 2n];
   return ethers.AbiCoder.defaultAbiCoder().encode(
-    ["bytes32", "bytes32", "bytes32", "bytes32"],
-    [stfCommitment, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST]
+    ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
+    [pA, pB, pC, stfCommitment, PROVER_DIGEST]
   );
 }
 
@@ -140,8 +147,8 @@ async function main(): Promise<void> {
   // ── Step 2: Deploy full contract suite ──────────────────────────────────────
   console.log("\n[2] Deploying contracts to fork…");
 
-  const { contract: verifier, gasUsed: g1 } = await deployContract(wallet, "Verifier");
-  logGas("Verifier deploy", g1);
+  const { contract: verifier, gasUsed: g1 } = await deployContract(wallet, "Groth16Verifier");
+  logGas("Groth16Verifier deploy", g1);
 
   const { contract: registry, gasUsed: g2 } = await deployContract(
     wallet,
@@ -155,8 +162,7 @@ async function main(): Promise<void> {
     "Groth16ZkAdapter",
     await verifier.getAddress(),
     PROGRAM_VKEY,
-    POLICY_HASH,
-    true // isDev
+    POLICY_HASH
   );
   logGas("Groth16ZkAdapter deploy", g3);
 

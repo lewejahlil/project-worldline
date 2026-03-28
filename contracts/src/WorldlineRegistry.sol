@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import {Ownable} from "./utils/Ownable.sol";
-import {Verifier} from "./zk/Verifier.sol";
 
 /// @title WorldlineRegistry
 /// @notice Stores metadata about available circuits, drivers, and plugins.
@@ -21,8 +20,6 @@ contract WorldlineRegistry is Ownable {
     error InvalidImplementation();
     error PluginExists();
     error PluginMissing();
-    error NoVerifierConfigured();
-    error DevOnly();
     error NoPendingFacade();
     error FacadeTimelockActive(uint256 activationTime);
     error FacadeDelayTooShort(uint256 required, uint256 given);
@@ -69,7 +66,7 @@ contract WorldlineRegistry is Ownable {
     /// @notice Minimum floor for `facadeChangeDelay`. MED-005 remediation.
     uint256 public constant MIN_FACADE_DELAY = 1 days;
 
-    Verifier public immutable defaultVerifier;
+    address public immutable defaultVerifier;
     address public compatFacade;
 
     /// @notice Delay (seconds) before a scheduled facade change can be activated.
@@ -88,7 +85,7 @@ contract WorldlineRegistry is Ownable {
     /// @param verifier Address of the default ZK verifier contract (must be non-zero).
     constructor(address verifier) {
         if (verifier == address(0)) revert InvalidVerifier();
-        defaultVerifier = Verifier(verifier);
+        defaultVerifier = verifier;
         facadeChangeDelay = 1 days;
     }
 
@@ -230,24 +227,4 @@ contract WorldlineRegistry is Ownable {
         return plugins[id];
     }
 
-    /// @notice Verify a ZK proof against a registered circuit's verifier.
-    /// @param circuitId The circuit to verify against.
-    /// @param secret The private input (dev-mode only).
-    /// @param publicHash The expected public commitment.
-    /// @return True if verification succeeds; reverts otherwise.
-    /// @dev DEV-ONLY — This function exposes the raw secret on-chain and is restricted
-    ///      to local devnets (chainid 31337) only. In production, proof verification
-    ///      goes through the adapter interface, never this method. HI-004 remediation.
-    function verify(bytes32 circuitId, uint256 secret, uint256 publicHash) external view returns (bool) {
-        if (block.chainid != 31337) revert DevOnly();
-        if (!circuitExists[circuitId]) revert CircuitMissing();
-        Circuit memory circuit = circuits[circuitId];
-        address verifier = circuit.verifier;
-        if (verifier == address(0)) {
-            verifier = address(defaultVerifier);
-        }
-        if (verifier == address(0)) revert NoVerifierConfigured();
-        Verifier(verifier).verifyProof(secret, publicHash);
-        return true;
-    }
 }
