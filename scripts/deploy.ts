@@ -128,15 +128,29 @@ async function main() {
   const compatAddr = await compat.getAddress();
   console.log(`   WorldlineCompat: ${compatAddr}`);
 
-  // ── 7. Wire compat facade to registry ───────────────────────────────────────
-  console.log("7. Wiring WorldlineCompat facade to WorldlineRegistry…");
+  // ── 7. Deploy BlobKzgVerifier ─────────────────────────────────────────────
+  console.log("7. Deploying BlobKzgVerifier…");
+  const BlobKzgVerifier = await ethers.getContractFactory("BlobKzgVerifier");
+  const blobKzgVerifier = await BlobKzgVerifier.deploy();
+  await blobKzgVerifier.waitForDeployment();
+  const blobKzgVerifierAddr = await blobKzgVerifier.getAddress();
+  console.log(`   BlobKzgVerifier: ${blobKzgVerifierAddr}`);
+
+  // ── 8. Wire BlobKzgVerifier to WorldlineFinalizer ──────────────────────────
+  console.log("8. Wiring BlobKzgVerifier to WorldlineFinalizer…");
+  const blobWireTx = await finalizer.setBlobKzgVerifier(blobKzgVerifierAddr);
+  await blobWireTx.wait();
+  console.log(`   setBlobKzgVerifier tx: ${blobWireTx.hash}`);
+
+  // ── 9. Wire compat facade to registry ───────────────────────────────────────
+  console.log("9. Wiring WorldlineCompat facade to WorldlineRegistry…");
   const wireTx = await registry.setCompatFacade(compatAddr);
   await wireTx.wait();
   console.log(`   setCompatFacade tx: ${wireTx.hash}`);
 
-  // ── 8. Transfer ownership to multisig (INF-002 remediation) ─────────────────
+  // ── 10. Transfer ownership to multisig (INF-002 remediation) ────────────────
   if (MULTISIG_ADDRESS) {
-    console.log(`8. Transferring ownership to multisig ${MULTISIG_ADDRESS}…`);
+    console.log(`10. Transferring ownership to multisig ${MULTISIG_ADDRESS}…`);
 
     // WorldlineFinalizer — two-step transfer (HI-003).
     const finalizerTx = await finalizer.transferOwnership(MULTISIG_ADDRESS);
@@ -163,11 +177,11 @@ async function main() {
       "   ⚠  Multisig must call acceptOwnership() on each contract to complete the transfer."
     );
   } else {
-    console.log("8. Skipping ownership transfer (dev network).");
+    console.log("10. Skipping ownership transfer (dev network).");
   }
 
-  // ── 9. Post-deploy verification ──────────────────────────────────────────────
-  console.log("9. Running post-deploy verification checks…");
+  // ── 11. Post-deploy verification ─────────────────────────────────────────────
+  console.log("11. Running post-deploy verification checks…");
 
   // Verify WorldlineRegistry owner
   const registryOwner = await registry.owner();
@@ -222,6 +236,20 @@ async function main() {
     );
   }
   console.log("   WorldlineRegistry.compatFacade() matches deployed WorldlineCompat");
+
+  // Verify BlobKzgVerifier is wired to finalizer
+  const currentBlobVerifier = await finalizer.blobKzgVerifier();
+  if (currentBlobVerifier !== blobKzgVerifierAddr) {
+    throw new Error(
+      `WorldlineFinalizer.blobKzgVerifier mismatch: expected ${blobKzgVerifierAddr}, got ${currentBlobVerifier}`
+    );
+  }
+  console.log("   WorldlineFinalizer.blobKzgVerifier() matches deployed BlobKzgVerifier");
+
+  // Verify BlobKzgVerifier blob base fee read
+  const blobFee = await blobKzgVerifier.currentBlobBaseFee();
+  console.log(`   BlobKzgVerifier.currentBlobBaseFee() = ${blobFee.toString()}`);
+
   console.log("   All post-deploy checks passed.");
   console.log();
 
@@ -237,7 +265,8 @@ async function main() {
       Groth16ZkAdapter: adapterAddr,
       WorldlineFinalizer: finalizerAddr,
       WorldlineOutputsRegistry: outputsRegistryAddr,
-      WorldlineCompat: compatAddr
+      WorldlineCompat: compatAddr,
+      BlobKzgVerifier: blobKzgVerifierAddr
     },
     config: {
       domainSeparator: DOMAIN_SEPARATOR,
@@ -292,7 +321,8 @@ async function main() {
         address: outputsRegistryAddr,
         args: [MIN_TIMELOCK]
       },
-      { name: "WorldlineCompat", address: compatAddr, args: [registryAddr] }
+      { name: "WorldlineCompat", address: compatAddr, args: [registryAddr] },
+      { name: "BlobKzgVerifier", address: blobKzgVerifierAddr, args: [] }
     ];
 
     for (const { name, address, args } of toVerify) {

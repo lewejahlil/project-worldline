@@ -17,10 +17,8 @@ library BlobVerifier {
     /// @notice Read the versioned hash of the blob at `index` in the current transaction.
     /// @param index Blob index (0-based).
     /// @return hash The versioned hash, or bytes32(0) if no blob exists at that index.
-    function getBlobHash(uint256 index) internal view returns (bytes32 hash) {
-        assembly ("memory-safe") {
-            hash := blobhash(index)
-        }
+    function getBlobHash(uint256 index) internal view returns (bytes32) {
+        return blobhash(index);
     }
 
     /// @notice Verify that the blob at `index` has the expected versioned hash.

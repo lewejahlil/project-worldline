@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import {Ownable} from "./utils/Ownable.sol";
 import {IZkAggregatorVerifier} from "./interfaces/IZkAggregatorVerifier.sol";
+import {BlobVerifier} from "./blob/BlobVerifier.sol";
+import {BlobKzgVerifier} from "./blob/BlobKzgVerifier.sol";
 
 /// @title WorldlineFinalizer
 /// @notice Accepts one ZK proof per contiguous window, verifies it via an adapter,
@@ -28,6 +30,7 @@ contract WorldlineFinalizer is Ownable {
     error TimelockActive(uint256 activationTime);
     error AdapterDelayTooShort(uint256 required, uint256 given);
     error GenesisStartMismatch(uint256 expected, uint256 actual);
+    error BlobKzgVerifierZero();
 
     // ── Events ──────────────────────────────────────────────────────────────────
 
@@ -66,11 +69,17 @@ contract WorldlineFinalizer is Ownable {
     /// @param proverSetDigest The keccak256 digest of the canonical prover manifest.
     /// @param metaLocator     Off-chain locator for the manifest data.
     event ManifestAnnounced(bytes32 indexed proverSetDigest, bytes metaLocator);
+    event BlobKzgVerifierSet(address indexed verifier);
+    event BlobProofSubmitted(uint256 indexed windowIndex, bytes32 versionedHash, bytes32 blobDataHash);
 
     // ── Constants ───────────────────────────────────────────────────────────────
 
     /// @dev Expected length of the public inputs ABI payload (7 × 32 = 224 bytes).
     uint256 private constant PUBLIC_INPUTS_LEN = 224;
+
+    /// @dev Expected length of a KZG commitment (48 bytes). Used to distinguish
+    ///      KZG mode from hash-only mode in submitZkValidityProofWithBlob().
+    uint256 private constant KZG_COMMITMENT_LENGTH = 48;
 
     // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -103,6 +112,9 @@ contract WorldlineFinalizer is Ownable {
 
     /// @notice Timestamp at which the pending adapter change can be activated.
     uint256 public pendingAdapterActivation;
+
+    /// @notice Optional BlobKzgVerifier for EIP-4844 blob-carrying submissions.
+    BlobKzgVerifier public blobKzgVerifier;
 
     // ── Constructor ─────────────────────────────────────────────────────────────
 
@@ -187,6 +199,13 @@ contract WorldlineFinalizer is Ownable {
         emit AdapterChangeDelaySet(_delay);
     }
 
+    /// @notice Set the BlobKzgVerifier address for EIP-4844 blob submissions.
+    /// @param _blobKzgVerifier Address of the BlobKzgVerifier contract (zero to disable).
+    function setBlobKzgVerifier(address _blobKzgVerifier) external onlyOwner {
+        blobKzgVerifier = BlobKzgVerifier(_blobKzgVerifier);
+        emit BlobKzgVerifierSet(_blobKzgVerifier);
+    }
+
     // ── Submission ──────────────────────────────────────────────────────────────
 
     /// @notice Submit a ZK validity proof for the next contiguous window.
@@ -213,6 +232,62 @@ contract WorldlineFinalizer is Ownable {
         if (metaLocator.length > 96) revert LocatorTooLong();
         bytes32 proverSetDigest = _submit(proof, publicInputs);
         emit ManifestAnnounced(proverSetDigest, metaLocator);
+    }
+
+    /// @notice Submit a ZK validity proof carried in an EIP-4844 blob transaction.
+    ///         Verifies the blob via BlobKzgVerifier before accepting the proof batch.
+    ///         If blobKzgVerifier is not set, falls back to hash-only verification
+    ///         via the BlobVerifier library.
+    /// @param proof              Encoded proof bytes.
+    /// @param publicInputs       224-byte ABI-encoded public inputs.
+    /// @param expectedBlobHash   Expected versioned hash of blob at blobIndex.
+    /// @param blobDataHash       Hash of the actual blob data payload (for indexer reference).
+    /// @param blobIndex          Index of the blob in the transaction sidecar.
+    /// @param openingPoint       z value for KZG point evaluation (ignored in hash-only mode).
+    /// @param claimedValue       y value: claimed evaluation p(z) = y (ignored in hash-only mode).
+    /// @param commitment         KZG commitment, 48 bytes (ignored in hash-only mode).
+    /// @param kzgProof           KZG proof, 48 bytes (ignored in hash-only mode).
+    /// @param batchId            Proof batch identifier for the BlobVerified event.
+    /// @param maxBlobBaseFee     Maximum blob base fee caller accepts (wei).
+    /// @dev Verification mode is determined at runtime:
+    ///      - KZG mode: used when blobKzgVerifier is set AND commitment is 48 bytes.
+    ///      - Hash-only mode: used when blobKzgVerifier is address(0) OR commitment
+    ///        is not 48 bytes. In hash-only mode, expectedBlobHash must match blobhash(0).
+    ///      Callers that always want KZG verification should call BlobKzgVerifier directly
+    ///      and revert if the verifier is not set.
+    function submitZkValidityProofWithBlob(
+        bytes calldata proof,
+        bytes calldata publicInputs,
+        bytes32 expectedBlobHash,
+        bytes32 blobDataHash,
+        uint256 blobIndex,
+        bytes32 openingPoint,
+        bytes32 claimedValue,
+        bytes calldata commitment,
+        bytes calldata kzgProof,
+        bytes32 batchId,
+        uint256 maxBlobBaseFee
+    ) external whenNotPaused {
+        // KZG mode: verifier is set AND commitment is the expected 48-byte length.
+        // Falls back to hash-only if verifier is not configured or commitment is absent/malformed.
+        if (address(blobKzgVerifier) != address(0) && commitment.length == KZG_COMMITMENT_LENGTH) {
+            blobKzgVerifier.verifyBlob(
+                blobIndex,
+                openingPoint,
+                claimedValue,
+                commitment,
+                kzgProof,
+                batchId,
+                maxBlobBaseFee
+            );
+        } else {
+            BlobVerifier.verifyBlobHash(blobIndex, expectedBlobHash);
+        }
+
+        _submit(proof, publicInputs);
+
+        bytes32 versionedHash = blobhash(blobIndex);
+        emit BlobProofSubmitted(nextWindowIndex - 1, versionedHash, blobDataHash);
     }
 
     // ── Internal ────────────────────────────────────────────────────────────────
