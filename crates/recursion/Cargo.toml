@@ -1,0 +1,13 @@
+[package]
+name = "worldline-recursion"
+version = "1.0.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Proof recursion module for the Worldline multi-prover system"
+
+[dependencies]
+worldline-aggregation = { path = "../aggregation" }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+worldline-aggregation = { path = "../aggregation" }

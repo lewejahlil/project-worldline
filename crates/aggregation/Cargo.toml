@@ -1,0 +1,11 @@
+[package]
+name = "worldline-aggregation"
+version = "1.0.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Proof aggregation module for the Worldline multi-prover system"
+
+[dependencies]
+thiserror = { workspace = true }
+
+[dev-dependencies]
