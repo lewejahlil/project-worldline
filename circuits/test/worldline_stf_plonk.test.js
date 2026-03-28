@@ -35,16 +35,10 @@ const NEW_WASM = path.join(
   "build/plonk_v2/worldline_stf_plonk_js/worldline_stf_plonk.wasm"
 );
 const NEW_ZKEY = path.join(CIRCUITS_DIR, "zkeys/worldline_stf_plonk_v2.zkey");
-const NEW_VKEY = path.join(
-  CIRCUITS_DIR,
-  "zkeys/worldline_stf_plonk_v2_vkey.json"
-);
+const NEW_VKEY = path.join(CIRCUITS_DIR, "zkeys/worldline_stf_plonk_v2_vkey.json");
 
 // ── Original circuit (Chunk 2) — Groth16 artifacts for conformance ───────────
-const ORIG_WASM = path.join(
-  CIRCUITS_DIR,
-  "build/original/worldline_stf_js/worldline_stf.wasm"
-);
+const ORIG_WASM = path.join(CIRCUITS_DIR, "build/original/worldline_stf_js/worldline_stf.wasm");
 const ORIG_ZKEY = path.join(CIRCUITS_DIR, "zkeys/worldline_stf_final.zkey");
 
 // ── PlonkVerifierV2 Hardhat artifact path ────────────────────────────────────
@@ -64,12 +58,9 @@ function getVKey() {
 
 // Artifact existence guards.
 const newArtifactsExist =
-  fs.existsSync(NEW_WASM) &&
-  fs.existsSync(NEW_ZKEY) &&
-  fs.existsSync(NEW_VKEY);
+  fs.existsSync(NEW_WASM) && fs.existsSync(NEW_ZKEY) && fs.existsSync(NEW_VKEY);
 
-const origArtifactsExist =
-  fs.existsSync(ORIG_WASM) && fs.existsSync(ORIG_ZKEY);
+const origArtifactsExist = fs.existsSync(ORIG_WASM) && fs.existsSync(ORIG_ZKEY);
 
 // ---------------------------------------------------------------------------
 // Standard valid inputs — identical to Chunk 2 test inputs.
@@ -82,7 +73,7 @@ function validInputs() {
     batchSize: "100",
     proverIds: ["101", "102", "103"],
     proofSystemIds: ["1", "2", "3"],
-    quorumCount: "3",
+    quorumCount: "3"
   };
 }
 
@@ -101,11 +92,7 @@ async function proveNew(inputs) {
  *   publicSignals[1] = proverSetDigest
  */
 async function publicSignalsOrig(inputs) {
-  const { publicSignals } = await snarkjs.groth16.fullProve(
-    inputs,
-    ORIG_WASM,
-    ORIG_ZKEY
-  );
+  const { publicSignals } = await snarkjs.groth16.fullProve(inputs, ORIG_WASM, ORIG_ZKEY);
   return publicSignals;
 }
 
@@ -220,7 +207,7 @@ async function publicSignalsOrig(inputs) {
     it("9. rejects proverId=0 (zero slot)", async function () {
       const inputs = {
         ...validInputs(),
-        proverIds: ["101", "0", "103"],
+        proverIds: ["101", "0", "103"]
       };
       try {
         await snarkjs.plonk.fullProve(inputs, NEW_WASM, NEW_ZKEY);
@@ -233,7 +220,7 @@ async function publicSignalsOrig(inputs) {
     it("10. rejects proofSystemId=4 (out of {1,2,3})", async function () {
       const inputs = {
         ...validInputs(),
-        proofSystemIds: ["1", "4", "3"],
+        proofSystemIds: ["1", "4", "3"]
       };
       try {
         await snarkjs.plonk.fullProve(inputs, NEW_WASM, NEW_ZKEY);
@@ -246,7 +233,7 @@ async function publicSignalsOrig(inputs) {
     it("11. rejects proofSystemId=0 (out of {1,2,3})", async function () {
       const inputs = {
         ...validInputs(),
-        proofSystemIds: ["1", "2", "0"],
+        proofSystemIds: ["1", "2", "0"]
       };
       try {
         await snarkjs.plonk.fullProve(inputs, NEW_WASM, NEW_ZKEY);
@@ -258,97 +245,71 @@ async function publicSignalsOrig(inputs) {
 
     // ── End-to-End Proof Test ─────────────────────────────────────────────
 
-    it(
-      "12. E2E: generate Plonk proof → verify with snarkjs → verify calldata against PlonkVerifierV2",
-      async function () {
-        this.timeout(180_000);
+    it("12. E2E: generate Plonk proof → verify with snarkjs → verify calldata against PlonkVerifierV2", async function () {
+      this.timeout(180_000);
 
-        const inputs = validInputs();
+      const inputs = validInputs();
 
-        // Step 1: Generate proof.
-        const { proof, publicSignals } = await proveNew(inputs);
-        expect(publicSignals).to.have.lengthOf(2);
+      // Step 1: Generate proof.
+      const { proof, publicSignals } = await proveNew(inputs);
+      expect(publicSignals).to.have.lengthOf(2);
 
-        // Step 2: Verify proof with snarkjs in-memory.
-        const valid = await snarkjs.plonk.verify(getVKey(), publicSignals, proof);
-        expect(valid).to.equal(true, "snarkjs Plonk verification must pass");
+      // Step 2: Verify proof with snarkjs in-memory.
+      const valid = await snarkjs.plonk.verify(getVKey(), publicSignals, proof);
+      expect(valid).to.equal(true, "snarkjs Plonk verification must pass");
 
-        // Step 3: Encode proof as Solidity calldata.
-        // snarkjs.plonk.exportSolidityCallData returns a string with two
-        // adjacent JSON arrays (no comma between them):
-        //   "[proof_element_0, ..., proof_element_23][pubSig_0, pubSig_1]"
-        const callDataStr = await snarkjs.plonk.exportSolidityCallData(
-          proof,
-          publicSignals
-        );
+      // Step 3: Encode proof as Solidity calldata.
+      // snarkjs.plonk.exportSolidityCallData returns a string with two
+      // adjacent JSON arrays (no comma between them):
+      //   "[proof_element_0, ..., proof_element_23][pubSig_0, pubSig_1]"
+      const callDataStr = await snarkjs.plonk.exportSolidityCallData(proof, publicSignals);
 
-        // Split on the "][" boundary to get the two arrays.
-        const splitIdx = callDataStr.indexOf("][");
-        if (splitIdx === -1) {
-          throw new Error(
-            "Unexpected calldata format from exportSolidityCallData"
-          );
-        }
-        const proofJson = callDataStr.substring(0, splitIdx + 1);
-        const pubJson = callDataStr.substring(splitIdx + 1);
-
-        const proofFlat = JSON.parse(proofJson); // uint256[24]
-        const pubSigs = JSON.parse(pubJson); // uint256[2]
-
-        expect(proofFlat).to.have.lengthOf(
-          24,
-          "Plonk proof must have 24 field elements"
-        );
-        expect(pubSigs).to.have.lengthOf(2, "Must have 2 public signals");
-
-        // Step 4: Verify on-chain via PlonkVerifierV2 if Hardhat artifact exists.
-        if (!fs.existsSync(VERIFIER_ARTIFACT)) {
-          // Artifact not compiled — confirm calldata encodes cleanly and skip
-          // the RPC call. The snarkjs verify above already confirms validity.
-          const iface = new ethers.Interface([
-            "function verifyProof(uint256[24] calldata _proof, uint256[2] calldata _pubSignals) view returns (bool)",
-          ]);
-          const encoded = iface.encodeFunctionData("verifyProof", [
-            proofFlat,
-            pubSigs,
-          ]);
-          expect(encoded).to.be.a("string").and.to.match(/^0x/);
-          return;
-        }
-
-        // Artifact exists — deploy to local Hardhat node and call verifyProof.
-        const artifact = JSON.parse(
-          fs.readFileSync(VERIFIER_ARTIFACT, "utf8")
-        );
-        const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
-        let signer;
-        try {
-          signer = await provider.getSigner();
-        } catch (_) {
-          // No live node — confirm calldata encodes and return.
-          const iface = new ethers.Interface(artifact.abi);
-          const encoded = iface.encodeFunctionData("verifyProof", [
-            proofFlat,
-            pubSigs,
-          ]);
-          expect(encoded).to.be.a("string").and.to.match(/^0x/);
-          return;
-        }
-
-        const factory = new ethers.ContractFactory(
-          artifact.abi,
-          artifact.bytecode,
-          signer
-        );
-        const verifier = await factory.deploy();
-        await verifier.waitForDeployment();
-
-        const onChainValid = await verifier.verifyProof(proofFlat, pubSigs);
-        expect(onChainValid).to.equal(
-          true,
-          "PlonkVerifierV2 on-chain verification must pass"
-        );
+      // Split on the "][" boundary to get the two arrays.
+      const splitIdx = callDataStr.indexOf("][");
+      if (splitIdx === -1) {
+        throw new Error("Unexpected calldata format from exportSolidityCallData");
       }
-    );
+      const proofJson = callDataStr.substring(0, splitIdx + 1);
+      const pubJson = callDataStr.substring(splitIdx + 1);
+
+      const proofFlat = JSON.parse(proofJson); // uint256[24]
+      const pubSigs = JSON.parse(pubJson); // uint256[2]
+
+      expect(proofFlat).to.have.lengthOf(24, "Plonk proof must have 24 field elements");
+      expect(pubSigs).to.have.lengthOf(2, "Must have 2 public signals");
+
+      // Step 4: Verify on-chain via PlonkVerifierV2 if Hardhat artifact exists.
+      if (!fs.existsSync(VERIFIER_ARTIFACT)) {
+        // Artifact not compiled — confirm calldata encodes cleanly and skip
+        // the RPC call. The snarkjs verify above already confirms validity.
+        const iface = new ethers.Interface([
+          "function verifyProof(uint256[24] calldata _proof, uint256[2] calldata _pubSignals) view returns (bool)"
+        ]);
+        const encoded = iface.encodeFunctionData("verifyProof", [proofFlat, pubSigs]);
+        expect(encoded).to.be.a("string").and.to.match(/^0x/);
+        return;
+      }
+
+      // Artifact exists — deploy to local Hardhat node and call verifyProof.
+      const artifact = JSON.parse(fs.readFileSync(VERIFIER_ARTIFACT, "utf8"));
+      const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+      let signer;
+      try {
+        signer = await provider.getSigner();
+      } catch (_) {
+        // No live node — confirm calldata encodes and return.
+        const iface = new ethers.Interface(artifact.abi);
+        const encoded = iface.encodeFunctionData("verifyProof", [proofFlat, pubSigs]);
+        expect(encoded).to.be.a("string").and.to.match(/^0x/);
+        return;
+      }
+
+      const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, signer);
+      const verifier = await factory.deploy();
+      await verifier.waitForDeployment();
+
+      const onChainValid = await verifier.verifyProof(proofFlat, pubSigs);
+      expect(onChainValid).to.equal(true, "PlonkVerifierV2 on-chain verification must pass");
+    });
   }
 );
