@@ -18,9 +18,7 @@ use halo2_proofs::{
 use halo2curves::bn256::{Bn256, Fr, G1Affine};
 use halo2curves::group::ff::Field;
 use rand::rngs::OsRng;
-use worldline_halo2_circuit::{
-    poseidon_hash_3, poseidon_hash_7, WorldlineStfCircuit, N,
-};
+use worldline_halo2_circuit::{poseidon_hash_3, poseidon_hash_7, WorldlineStfCircuit, N};
 
 fn valid_inputs() -> (Fr, Fr, Fr, Fr, [Fr; N], [Fr; N], Fr) {
     (
@@ -146,7 +144,7 @@ fn real_proof_generation_and_verification() {
     let pk = keygen_pk(&params, vk.clone(), &empty_circuit).expect("keygen_pk should succeed");
 
     // Create proof
-    let instances = vec![vec![stf, digest]];
+    let instances = [vec![stf, digest]];
     let instances_ref: Vec<&[Fr]> = instances.iter().map(|v| v.as_slice()).collect();
 
     let mut transcript = Blake2bWrite::<_, G1Affine, Challenge255<_>>::init(vec![]);

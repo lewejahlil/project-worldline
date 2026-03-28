@@ -4,8 +4,8 @@
 
 use halo2_proofs::{
     plonk::{create_proof, keygen_pk, keygen_vk},
-    poly::kzg::{commitment::KZGCommitmentScheme, multiopen::ProverSHPLONK},
     poly::kzg::commitment::ParamsKZG,
+    poly::kzg::{commitment::KZGCommitmentScheme, multiopen::ProverSHPLONK},
     transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer},
 };
 use halo2curves::bn256::{Bn256, Fr, G1Affine};
@@ -23,12 +23,21 @@ fn main() {
     let quorum_count = Fr::from(3u64);
 
     let circuit = WorldlineStfCircuit::new(
-        pre_state_root, post_state_root, batch_commitment, batch_size,
-        prover_ids, proof_system_ids, quorum_count,
+        pre_state_root,
+        post_state_root,
+        batch_commitment,
+        batch_size,
+        prover_ids,
+        proof_system_ids,
+        quorum_count,
     );
     let (stf, digest) = WorldlineStfCircuit::compute_public_outputs(
-        pre_state_root, post_state_root, batch_commitment,
-        prover_ids, proof_system_ids, quorum_count,
+        pre_state_root,
+        post_state_root,
+        batch_commitment,
+        prover_ids,
+        proof_system_ids,
+        quorum_count,
     );
 
     let k = 8u32;
@@ -37,12 +46,17 @@ fn main() {
     let vk = keygen_vk(&params, &empty_circuit).expect("keygen_vk");
     let pk = keygen_pk(&params, vk, &empty_circuit).expect("keygen_pk");
 
-    let instances = vec![vec![stf, digest]];
+    let instances = [vec![stf, digest]];
     let instances_ref: Vec<&[Fr]> = instances.iter().map(|v| v.as_slice()).collect();
 
     let mut transcript = Blake2bWrite::<_, G1Affine, Challenge255<_>>::init(vec![]);
     create_proof::<KZGCommitmentScheme<Bn256>, ProverSHPLONK<'_, Bn256>, _, _, _, _>(
-        &params, &pk, &[circuit], &[instances_ref.as_slice()], OsRng, &mut transcript,
+        &params,
+        &pk,
+        &[circuit],
+        &[instances_ref.as_slice()],
+        OsRng,
+        &mut transcript,
     )
     .expect("proof generation");
 

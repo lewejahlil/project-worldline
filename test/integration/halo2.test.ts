@@ -26,10 +26,7 @@ import {
  * The stfCommitment embedded in the proof must match the one in publicInputs
  * for the finalizer's StfMismatch check.
  */
-function encodeHalo2ProofEnvelope(
-  stfCommitment: string,
-  proverSetDigest: string
-): string {
+function encodeHalo2ProofEnvelope(stfCommitment: string, proverSetDigest: string): string {
   // Create fake proof bytes of the expected length (1472 bytes)
   const proofBytes = ethers.hexlify(ethers.randomBytes(1472));
   return ethers.AbiCoder.defaultAbiCoder().encode(
@@ -65,8 +62,8 @@ describe("Halo2 verifier integration", function () {
     await (await (router as any).registerAdapter(3, await halo2Adapter.getAddress())).wait();
 
     // Verify both are registered
-    expect(await (router as any).isSupported(1)).to.equal(true);  // Groth16
-    expect(await (router as any).isSupported(3)).to.equal(true);  // Halo2
+    expect(await (router as any).isSupported(1)).to.equal(true); // Groth16
+    expect(await (router as any).isSupported(3)).to.equal(true); // Halo2
     expect(await (router as any).isSupported(2)).to.equal(false); // Plonk not yet
   });
 
@@ -83,7 +80,9 @@ describe("Halo2 verifier integration", function () {
 
     const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", owner);
     const halo2Adapter = await Halo2Adapter.deploy(
-      await halo2Verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH
+      await halo2Verifier.getAddress(),
+      PROGRAM_VKEY,
+      POLICY_HASH
     );
     await halo2Adapter.waitForDeployment();
     await (await (router as any).registerAdapter(3, await halo2Adapter.getAddress())).wait();
@@ -107,9 +106,8 @@ describe("Halo2 verifier integration", function () {
       GENESIS_L2_BLOCK + 100n
     );
 
-    await expect(
-      (finalizer as any).submitZkValidityProofRouted(1, proof, publicInputs)
-    ).to.not.be.reverted;
+    await expect((finalizer as any).submitZkValidityProofRouted(1, proof, publicInputs)).to.not.be
+      .reverted;
 
     expect(await (finalizer as any).nextWindowIndex()).to.equal(1n);
   });
@@ -128,7 +126,9 @@ describe("Halo2 verifier integration", function () {
 
     const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", owner);
     const halo2Adapter = await Halo2Adapter.deploy(
-      await halo2Verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH
+      await halo2Verifier.getAddress(),
+      PROGRAM_VKEY,
+      POLICY_HASH
     );
     await halo2Adapter.waitForDeployment();
     await (await (router as any).registerAdapter(3, await halo2Adapter.getAddress())).wait();
@@ -136,7 +136,11 @@ describe("Halo2 verifier integration", function () {
     // Build the Halo2 proof envelope
     const block = await ethers.provider.getBlock("latest");
     const windowCloseTimestamp = BigInt(block!.timestamp) + 7200n;
-    const stfCommitment = computeStfCommitment(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n, windowCloseTimestamp);
+    const stfCommitment = computeStfCommitment(
+      GENESIS_L2_BLOCK,
+      GENESIS_L2_BLOCK + 100n,
+      windowCloseTimestamp
+    );
     const proverSetDigest = ethers.keccak256(ethers.toUtf8Bytes("halo2-prover-set"));
 
     const halo2Proof = encodeHalo2ProofEnvelope(stfCommitment, proverSetDigest);
@@ -144,10 +148,15 @@ describe("Halo2 verifier integration", function () {
     // Encode public inputs
     const publicInputs = ethers.AbiCoder.defaultAbiCoder().encode(
       ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-      [stfCommitment, GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n,
-       ethers.ZeroHash, ethers.ZeroHash,
-       ethers.keccak256(ethers.toUtf8Bytes("integration-test-domain")),
-       windowCloseTimestamp]
+      [
+        stfCommitment,
+        GENESIS_L2_BLOCK,
+        GENESIS_L2_BLOCK + 100n,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        ethers.keccak256(ethers.toUtf8Bytes("integration-test-domain")),
+        windowCloseTimestamp
+      ]
     );
 
     const tx = await (finalizer as any).submitZkValidityProofRouted(3, halo2Proof, publicInputs);
@@ -156,7 +165,11 @@ describe("Halo2 verifier integration", function () {
     const iface = (finalizer as any).interface;
     const acceptedLog = receipt.logs
       .map((log: any) => {
-        try { return iface.parseLog(log); } catch { return null; }
+        try {
+          return iface.parseLog(log);
+        } catch {
+          return null;
+        }
       })
       .find((e: any) => e?.name === "ZkProofAccepted");
 
@@ -179,7 +192,9 @@ describe("Halo2 verifier integration", function () {
 
     const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", owner);
     const halo2Adapter = await Halo2Adapter.deploy(
-      await halo2Verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH
+      await halo2Verifier.getAddress(),
+      PROGRAM_VKEY,
+      POLICY_HASH
     );
     await halo2Adapter.waitForDeployment();
 
@@ -201,14 +216,18 @@ describe("Halo2 verifier integration", function () {
 
     const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", owner);
     const halo2Adapter = await Halo2Adapter.deploy(
-      await halo2Verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH
+      await halo2Verifier.getAddress(),
+      PROGRAM_VKEY,
+      POLICY_HASH
     );
     await halo2Adapter.waitForDeployment();
     await (await (router as any).registerAdapter(3, await halo2Adapter.getAddress())).wait();
 
     // Window 0: Groth16 (ID=1)
-    const { proof: groth16Proof, publicInputs: groth16Inputs } =
-      await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
+    const { proof: groth16Proof, publicInputs: groth16Inputs } = await makeWindowFixture(
+      GENESIS_L2_BLOCK,
+      GENESIS_L2_BLOCK + 100n
+    );
     await (finalizer as any).submitZkValidityProofRouted(1, groth16Proof, groth16Inputs);
     expect(await (finalizer as any).nextWindowIndex()).to.equal(1n);
 
@@ -223,9 +242,15 @@ describe("Halo2 verifier integration", function () {
     const halo2Proof = encodeHalo2ProofEnvelope(stfCommitment, proverSetDigest);
     const halo2Inputs = ethers.AbiCoder.defaultAbiCoder().encode(
       ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-      [stfCommitment, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash,
-       ethers.keccak256(ethers.toUtf8Bytes("integration-test-domain")),
-       windowCloseTimestamp]
+      [
+        stfCommitment,
+        l2Start,
+        l2End,
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        ethers.keccak256(ethers.toUtf8Bytes("integration-test-domain")),
+        windowCloseTimestamp
+      ]
     );
 
     await (finalizer as any).submitZkValidityProofRouted(3, halo2Proof, halo2Inputs);
@@ -245,7 +270,9 @@ describe("Halo2 verifier integration", function () {
 
     const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", owner);
     const halo2Adapter = await Halo2Adapter.deploy(
-      await halo2Verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH
+      await halo2Verifier.getAddress(),
+      PROGRAM_VKEY,
+      POLICY_HASH
     );
     await halo2Adapter.waitForDeployment();
     await (await (router as any).registerAdapter(3, await halo2Adapter.getAddress())).wait();
@@ -261,7 +288,11 @@ describe("Halo2 verifier integration", function () {
     const routerIface = (router as any).interface;
     const routedLog = receipt.logs
       .map((log: any) => {
-        try { return routerIface.parseLog(log); } catch { return null; }
+        try {
+          return routerIface.parseLog(log);
+        } catch {
+          return null;
+        }
       })
       .find((e: any) => e?.name === "ProofRouted");
 

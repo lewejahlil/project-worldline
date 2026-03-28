@@ -17,10 +17,10 @@
 //!   - quorumCount     = 3
 //!
 //! circomlib outputs:
-//!   - stfCommitment   = Poseidon(preStateRoot, postStateRoot, batchCommitment)
-//!                      = 0x2e1de696850f25d0594670ee7fd253af5893e313da0d8a161d63fa9994baf9e4
-//!   - proverSetDigest = Poseidon(101, 102, 103, 1, 2, 3, 3)
-//!                      = 0x1fd78c89d17a4450342e2a585e8d944473b80295914aa47d519d7ee0e5cc453f
+//! - stfCommitment   = Poseidon(preStateRoot, postStateRoot, batchCommitment)
+//!   = 0x2e1de696850f25d0594670ee7fd253af5893e313da0d8a161d63fa9994baf9e4
+//! - proverSetDigest = Poseidon(101, 102, 103, 1, 2, 3, 3)
+//!   = 0x1fd78c89d17a4450342e2a585e8d944473b80295914aa47d519d7ee0e5cc453f
 //!
 //! ## Mismatch analysis
 //!
@@ -69,7 +69,7 @@ fn fr_from_hex(hex_str: &str) -> Fr {
     bytes.reverse();
     let mut repr = [0u8; 32];
     repr[..bytes.len()].copy_from_slice(&bytes);
-    Fr::from_repr(repr.into()).expect("valid field element")
+    Fr::from_repr(repr).expect("valid field element")
 }
 
 /// Convert Fr to hex string for display.
@@ -112,10 +112,14 @@ fn poseidon_3input_matches_circomlib() {
     let circomlib_expected = fr_from_hex(CIRCOMLIB_STF_COMMITMENT);
 
     eprintln!("Halo2 PSE stfCommitment:  {}", fr_to_hex(&halo2_output));
-    eprintln!("circomlib stfCommitment:   {}", fr_to_hex(&circomlib_expected));
+    eprintln!(
+        "circomlib stfCommitment:   {}",
+        fr_to_hex(&circomlib_expected)
+    );
 
     assert_eq!(
-        halo2_output, circomlib_expected,
+        halo2_output,
+        circomlib_expected,
         "Poseidon(3) output mismatch: PSE sponge vs circomlib compression.\n\
          Halo2:    {}\n\
          Expected: {}",
@@ -147,10 +151,14 @@ fn poseidon_7input_matches_circomlib() {
     let circomlib_expected = fr_from_hex(CIRCOMLIB_PROVER_SET_DIGEST);
 
     eprintln!("Halo2 PSE proverSetDigest: {}", fr_to_hex(&halo2_output));
-    eprintln!("circomlib proverSetDigest:  {}", fr_to_hex(&circomlib_expected));
+    eprintln!(
+        "circomlib proverSetDigest:  {}",
+        fr_to_hex(&circomlib_expected)
+    );
 
     assert_eq!(
-        halo2_output, circomlib_expected,
+        halo2_output,
+        circomlib_expected,
         "Poseidon(7) output mismatch: PSE sponge vs circomlib compression.\n\
          Halo2:    {}\n\
          Expected: {}",
@@ -180,14 +188,23 @@ fn stf_commitment_cross_system() {
 
     // Compute Halo2 outputs (these will match the circuit's public instances)
     let (halo2_stf, halo2_digest) = WorldlineStfCircuit::compute_public_outputs(
-        pre_state_root, post_state_root, batch_commitment,
-        prover_ids, proof_system_ids, quorum_count,
+        pre_state_root,
+        post_state_root,
+        batch_commitment,
+        prover_ids,
+        proof_system_ids,
+        quorum_count,
     );
 
     // Verify the circuit satisfies with Halo2's own outputs
     let circuit = WorldlineStfCircuit::new(
-        pre_state_root, post_state_root, batch_commitment, batch_size,
-        prover_ids, proof_system_ids, quorum_count,
+        pre_state_root,
+        post_state_root,
+        batch_commitment,
+        batch_size,
+        prover_ids,
+        proof_system_ids,
+        quorum_count,
     );
     let prover = MockProver::run(8, &circuit, vec![vec![halo2_stf, halo2_digest]]).unwrap();
     prover.assert_satisfied();
@@ -196,10 +213,14 @@ fn stf_commitment_cross_system() {
     let circomlib_stf = fr_from_hex(CIRCOMLIB_STF_COMMITMENT);
 
     eprintln!("Halo2 circuit stfCommitment:  {}", fr_to_hex(&halo2_stf));
-    eprintln!("circomlib stfCommitment:       {}", fr_to_hex(&circomlib_stf));
+    eprintln!(
+        "circomlib stfCommitment:       {}",
+        fr_to_hex(&circomlib_stf)
+    );
 
     assert_eq!(
-        halo2_stf, circomlib_stf,
+        halo2_stf,
+        circomlib_stf,
         "stfCommitment from Halo2 circuit does not match circomlib.\n\
          Halo2:    {}\n\
          Expected: {}",
@@ -228,14 +249,23 @@ fn prover_set_digest_cross_system() {
     let quorum_count = Fr::from(3u64);
 
     let (halo2_stf, halo2_digest) = WorldlineStfCircuit::compute_public_outputs(
-        pre_state_root, post_state_root, batch_commitment,
-        prover_ids, proof_system_ids, quorum_count,
+        pre_state_root,
+        post_state_root,
+        batch_commitment,
+        prover_ids,
+        proof_system_ids,
+        quorum_count,
     );
 
     // Verify the circuit satisfies with Halo2's own outputs
     let circuit = WorldlineStfCircuit::new(
-        pre_state_root, post_state_root, batch_commitment, batch_size,
-        prover_ids, proof_system_ids, quorum_count,
+        pre_state_root,
+        post_state_root,
+        batch_commitment,
+        batch_size,
+        prover_ids,
+        proof_system_ids,
+        quorum_count,
     );
     let prover = MockProver::run(8, &circuit, vec![vec![halo2_stf, halo2_digest]]).unwrap();
     prover.assert_satisfied();
@@ -243,11 +273,18 @@ fn prover_set_digest_cross_system() {
     // Now compare with circomlib expected values
     let circomlib_digest = fr_from_hex(CIRCOMLIB_PROVER_SET_DIGEST);
 
-    eprintln!("Halo2 circuit proverSetDigest: {}", fr_to_hex(&halo2_digest));
-    eprintln!("circomlib proverSetDigest:      {}", fr_to_hex(&circomlib_digest));
+    eprintln!(
+        "Halo2 circuit proverSetDigest: {}",
+        fr_to_hex(&halo2_digest)
+    );
+    eprintln!(
+        "circomlib proverSetDigest:      {}",
+        fr_to_hex(&circomlib_digest)
+    );
 
     assert_eq!(
-        halo2_digest, circomlib_digest,
+        halo2_digest,
+        circomlib_digest,
         "proverSetDigest from Halo2 circuit does not match circomlib.\n\
          Halo2:    {}\n\
          Expected: {}",
