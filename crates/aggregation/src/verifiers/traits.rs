@@ -51,7 +51,7 @@ impl ProofVerifier for MockVerifier {
     fn expected_proof_length(&self) -> usize {
         match self.system_id {
             ProofSystemId::Groth16 => 320,
-            ProofSystemId::Plonk => 256,
+            ProofSystemId::Plonk => 832,
             ProofSystemId::Halo2 => 192,
         }
     }
@@ -94,7 +94,7 @@ mod tests {
             system_id: ProofSystemId::Plonk,
             should_pass: false,
         };
-        let proof = vec![0u8; 256];
+        let proof = vec![0u8; 832];
         assert!(!v.verify(&proof, &[]).unwrap());
     }
 

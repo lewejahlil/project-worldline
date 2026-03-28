@@ -20,7 +20,7 @@ fn plonk_proof(prover_id: u64) -> IndividualProof {
     IndividualProof {
         prover_id,
         proof_system: ProofSystemId::Plonk,
-        proof_data: vec![0u8; 256],
+        proof_data: vec![0u8; 832],
         public_inputs: vec![[2u8; 32]],
     }
 }
@@ -152,12 +152,13 @@ fn test_aggregate_2_fails_quorum_2_returns_quorum_not_met() {
     agg.add_proof(halo2_proof(2)).unwrap();
     agg.add_proof(halo2_proof(3)).unwrap();
 
-    let err = agg
-        .aggregate(AggregationStrategy::Independent)
-        .unwrap_err();
+    let err = agg.aggregate(AggregationStrategy::Independent).unwrap_err();
     assert!(matches!(
         err,
-        AggregationError::QuorumNotMet { required: 2, valid: 1 }
+        AggregationError::QuorumNotMet {
+            required: 2,
+            valid: 1
+        }
     ));
 }
 
@@ -195,12 +196,13 @@ fn test_sequential_strategy_stops_at_first_failure() {
     agg.add_proof(groth16_proof(3)).unwrap();
 
     // quorum=1 but first proof fails → QuorumNotMet
-    let err = agg
-        .aggregate(AggregationStrategy::Sequential)
-        .unwrap_err();
+    let err = agg.aggregate(AggregationStrategy::Sequential).unwrap_err();
     assert!(matches!(
         err,
-        AggregationError::QuorumNotMet { required: 1, valid: 0 }
+        AggregationError::QuorumNotMet {
+            required: 1,
+            valid: 0
+        }
     ));
 }
 

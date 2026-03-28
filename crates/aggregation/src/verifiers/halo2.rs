@@ -113,7 +113,9 @@ mod tests {
     fn make_verifier() -> Halo2Verifier {
         Halo2Verifier::new(
             PathBuf::from("/home/user/project-worldline/circuits/zkeys/kzg_params.bin"),
-            PathBuf::from("/home/user/project-worldline/circuits/zkeys/worldline_stf_halo2_vkey.bin"),
+            PathBuf::from(
+                "/home/user/project-worldline/circuits/zkeys/worldline_stf_halo2_vkey.bin",
+            ),
         )
     }
 

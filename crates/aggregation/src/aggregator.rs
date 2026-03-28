@@ -31,7 +31,7 @@ pub struct VerificationReport {
 fn expected_proof_size(system: ProofSystemId) -> usize {
     match system {
         ProofSystemId::Groth16 => 320,
-        ProofSystemId::Plonk => 256,
+        ProofSystemId::Plonk => 832,
         ProofSystemId::Halo2 => 192,
     }
 }
