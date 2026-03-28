@@ -36,7 +36,10 @@ function encodeProof(l2Start: bigint, l2End: bigint, windowCloseTimestamp: bigin
     ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
     [
       [1n, 2n],
-      [[1n, 2n], [3n, 4n]],
+      [
+        [1n, 2n],
+        [3n, 4n]
+      ],
       [1n, 2n],
       BigInt(stfCommitment),
       BigInt(PROVER_DIGEST)
@@ -44,11 +47,7 @@ function encodeProof(l2Start: bigint, l2End: bigint, windowCloseTimestamp: bigin
   );
 }
 
-function encodePublicInputs(
-  l2Start: bigint,
-  l2End: bigint,
-  windowCloseTimestamp: bigint
-): string {
+function encodePublicInputs(l2Start: bigint, l2End: bigint, windowCloseTimestamp: bigint): string {
   const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp);
   return ethers.AbiCoder.defaultAbiCoder().encode(
     ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
@@ -60,6 +59,12 @@ async function main(): Promise<void> {
   console.log("=== Worldline Mainnet Fork Simulation ===");
   console.log(`Fork RPC:  ${FORK_CONFIG.rpcUrl}`);
   console.log(`Network:   ${network.name}`);
+
+  // Establish mainnet fork at runtime so unit tests are unaffected by the config.
+  await network.provider.request({
+    method: "hardhat_reset",
+    params: [{ forking: { jsonRpcUrl: FORK_CONFIG.rpcUrl } }]
+  });
 
   const [deployer] = await ethers.getSigners();
   const forkBlock = await ethers.provider.getBlockNumber();
@@ -86,19 +91,25 @@ async function main(): Promise<void> {
   const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier");
   const verifier = await MockVerifier.deploy();
   await verifier.waitForDeployment();
-  const deployReceipt1 = await ethers.provider.getTransactionReceipt(verifier.deploymentTransaction()!.hash);
+  const deployReceipt1 = await ethers.provider.getTransactionReceipt(
+    verifier.deploymentTransaction()!.hash
+  );
   logGas("MockGroth16Verifier deploy", deployReceipt1!.gasUsed);
 
   const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
   const adapter = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
   await adapter.waitForDeployment();
-  const deployReceipt2 = await ethers.provider.getTransactionReceipt(adapter.deploymentTransaction()!.hash);
+  const deployReceipt2 = await ethers.provider.getTransactionReceipt(
+    adapter.deploymentTransaction()!.hash
+  );
   logGas("Groth16ZkAdapter deploy", deployReceipt2!.gasUsed);
 
   const Registry = await ethers.getContractFactory("WorldlineRegistry");
   const registry = await Registry.deploy(await verifier.getAddress());
   await registry.waitForDeployment();
-  const deployReceipt3 = await ethers.provider.getTransactionReceipt(registry.deploymentTransaction()!.hash);
+  const deployReceipt3 = await ethers.provider.getTransactionReceipt(
+    registry.deploymentTransaction()!.hash
+  );
   logGas("WorldlineRegistry deploy", deployReceipt3!.gasUsed);
 
   const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
@@ -109,7 +120,9 @@ async function main(): Promise<void> {
     GENESIS_L2_BLOCK
   );
   await finalizer.waitForDeployment();
-  const deployReceipt4 = await ethers.provider.getTransactionReceipt(finalizer.deploymentTransaction()!.hash);
+  const deployReceipt4 = await ethers.provider.getTransactionReceipt(
+    finalizer.deploymentTransaction()!.hash
+  );
   logGas("WorldlineFinalizer deploy", deployReceipt4!.gasUsed);
 
   console.log(`\n  Verifier:   ${await verifier.getAddress()}`);
@@ -124,7 +137,11 @@ async function main(): Promise<void> {
 
   // Register a driver
   const driverId = ethers.keccak256(ethers.toUtf8Bytes("driver-groth16-fork"));
-  const regTx = await (registry as any).registerDriver(driverId, "v1.0.0-fork", "https://fork.local/prover");
+  const regTx = await (registry as any).registerDriver(
+    driverId,
+    "v1.0.0-fork",
+    "https://fork.local/prover"
+  );
   const regReceipt = await regTx.wait();
   logGas("registerDriver", regReceipt!.gasUsed);
 
@@ -159,7 +176,9 @@ async function main(): Promise<void> {
   let totalGas = 0n;
   for (const entry of gasLog) {
     const ethCost = gasPrice > 0n ? `  (~${ethers.formatEther(entry.gasUsed * gasPrice)} ETH)` : "";
-    console.log(`  ${entry.step.padEnd(42)} ${entry.gasUsed.toLocaleString().padStart(12)} gas${ethCost}`);
+    console.log(
+      `  ${entry.step.padEnd(42)} ${entry.gasUsed.toLocaleString().padStart(12)} gas${ethCost}`
+    );
     totalGas += entry.gasUsed;
   }
   console.log(`  ${"TOTAL".padEnd(42)} ${totalGas.toLocaleString().padStart(12)} gas`);

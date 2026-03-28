@@ -6,7 +6,9 @@
  */
 
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
+
+const FORK_RPC = process.env["MAINNET_RPC_URL"] || "https://ethereum-rpc.publicnode.com";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -32,17 +34,16 @@ function computeStfCommitment(
   );
 }
 
-function encodeProof(
-  l2Start: bigint,
-  l2End: bigint,
-  windowCloseTimestamp: bigint
-): string {
+function encodeProof(l2Start: bigint, l2End: bigint, windowCloseTimestamp: bigint): string {
   const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp);
   return ethers.AbiCoder.defaultAbiCoder().encode(
     ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
     [
       [1n, 2n],
-      [[1n, 2n], [3n, 4n]],
+      [
+        [1n, 2n],
+        [3n, 4n]
+      ],
       [1n, 2n],
       BigInt(stfCommitment),
       BigInt(PROVER_SET_DIGEST)
@@ -50,11 +51,7 @@ function encodeProof(
   );
 }
 
-function encodePublicInputs(
-  l2Start: bigint,
-  l2End: bigint,
-  windowCloseTimestamp: bigint
-): string {
+function encodePublicInputs(l2Start: bigint, l2End: bigint, windowCloseTimestamp: bigint): string {
   const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp);
   return ethers.AbiCoder.defaultAbiCoder().encode(
     ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
@@ -71,6 +68,13 @@ async function getWindowTimestamp(): Promise<bigint> {
 
 describe("Fork — Gas Comparison", function () {
   this.timeout(120_000);
+
+  before(async function () {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [{ forking: { jsonRpcUrl: FORK_RPC } }]
+    });
+  });
 
   let gasTable: Array<{ operation: string; gasUsed: bigint }> = [];
 
@@ -91,7 +95,9 @@ describe("Fork — Gas Comparison", function () {
     const Factory = await ethers.getContractFactory("MockGroth16Verifier", deployer);
     const contract = await Factory.deploy();
     await contract.waitForDeployment();
-    const receipt = await ethers.provider.getTransactionReceipt(contract.deploymentTransaction()!.hash);
+    const receipt = await ethers.provider.getTransactionReceipt(
+      contract.deploymentTransaction()!.hash
+    );
     const gas = receipt!.gasUsed;
     gasTable.push({ operation: "MockGroth16Verifier.deploy", gasUsed: gas });
     expect(gas).to.be.greaterThan(0n);
@@ -107,7 +113,9 @@ describe("Fork — Gas Comparison", function () {
     const Factory = await ethers.getContractFactory("Groth16ZkAdapter", deployer);
     const contract = await Factory.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
     await contract.waitForDeployment();
-    const receipt = await ethers.provider.getTransactionReceipt(contract.deploymentTransaction()!.hash);
+    const receipt = await ethers.provider.getTransactionReceipt(
+      contract.deploymentTransaction()!.hash
+    );
     const gas = receipt!.gasUsed;
     gasTable.push({ operation: "Groth16ZkAdapter.deploy", gasUsed: gas });
     expect(gas).to.be.greaterThan(0n);
@@ -123,7 +131,9 @@ describe("Fork — Gas Comparison", function () {
     const Factory = await ethers.getContractFactory("WorldlineRegistry", deployer);
     const contract = await Factory.deploy(await verifier.getAddress());
     await contract.waitForDeployment();
-    const receipt = await ethers.provider.getTransactionReceipt(contract.deploymentTransaction()!.hash);
+    const receipt = await ethers.provider.getTransactionReceipt(
+      contract.deploymentTransaction()!.hash
+    );
     const gas = receipt!.gasUsed;
     gasTable.push({ operation: "WorldlineRegistry.deploy", gasUsed: gas });
     expect(gas).to.be.greaterThan(0n);
@@ -148,7 +158,9 @@ describe("Fork — Gas Comparison", function () {
       GENESIS_L2_BLOCK
     );
     await contract.waitForDeployment();
-    const receipt = await ethers.provider.getTransactionReceipt(contract.deploymentTransaction()!.hash);
+    const receipt = await ethers.provider.getTransactionReceipt(
+      contract.deploymentTransaction()!.hash
+    );
     const gas = receipt!.gasUsed;
     gasTable.push({ operation: "WorldlineFinalizer.deploy", gasUsed: gas });
     expect(gas).to.be.greaterThan(0n);
@@ -242,7 +254,10 @@ describe("Fork — Gas Comparison", function () {
     // Estimate gas for verifyProof call
     const gas = await (verifier as any).verifyProof.estimateGas(
       [1n, 2n],
-      [[1n, 2n], [3n, 4n]],
+      [
+        [1n, 2n],
+        [3n, 4n]
+      ],
       [1n, 2n],
       [1n, 2n]
     );

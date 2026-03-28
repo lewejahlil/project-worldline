@@ -21,8 +21,8 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: process.env["MAINNET_RPC_URL"] || "https://ethereum-rpc.publicnode.com",
-        enabled: true,
-      },
+        enabled: false
+      }
     },
     sepolia: {
       url: process.env["SEPOLIA_RPC_URL"] ?? "",

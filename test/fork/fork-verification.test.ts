@@ -6,7 +6,9 @@
  */
 
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
+
+const FORK_RPC = process.env["MAINNET_RPC_URL"] || "https://ethereum-rpc.publicnode.com";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -32,17 +34,16 @@ function computeStfCommitment(
   );
 }
 
-function encodeProof(
-  l2Start: bigint,
-  l2End: bigint,
-  windowCloseTimestamp: bigint
-): string {
+function encodeProof(l2Start: bigint, l2End: bigint, windowCloseTimestamp: bigint): string {
   const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp);
   return ethers.AbiCoder.defaultAbiCoder().encode(
     ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
     [
       [1n, 2n],
-      [[1n, 2n], [3n, 4n]],
+      [
+        [1n, 2n],
+        [3n, 4n]
+      ],
       [1n, 2n],
       BigInt(stfCommitment),
       BigInt(PROVER_SET_DIGEST)
@@ -50,11 +51,7 @@ function encodeProof(
   );
 }
 
-function encodePublicInputs(
-  l2Start: bigint,
-  l2End: bigint,
-  windowCloseTimestamp: bigint
-): string {
+function encodePublicInputs(l2Start: bigint, l2End: bigint, windowCloseTimestamp: bigint): string {
   const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp);
   return ethers.AbiCoder.defaultAbiCoder().encode(
     ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
@@ -71,6 +68,13 @@ async function getWindowTimestamp(): Promise<bigint> {
 
 describe("Fork — Verification", function () {
   this.timeout(120_000);
+
+  before(async function () {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [{ forking: { jsonRpcUrl: FORK_RPC } }]
+    });
+  });
 
   it("fork is active — block number is a realistic mainnet height", async function () {
     const blockNumber = await ethers.provider.getBlockNumber();
@@ -258,7 +262,9 @@ describe("Fork — Verification", function () {
       const l2End = cursor + 100n;
       const proof = encodeProof(cursor, l2End, ts);
       const publicInputs = encodePublicInputs(cursor, l2End, ts);
-      const tx = await (finalizer as any).connect(prover).submitZkValidityProof(proof, publicInputs);
+      const tx = await (finalizer as any)
+        .connect(prover)
+        .submitZkValidityProof(proof, publicInputs);
       await tx.wait();
       cursor = l2End;
     }
