@@ -50,10 +50,11 @@ remappings.txt         → Forge import remappings (@openzeppelin → node_modul
 - Public outputs: stfCommitment, proverSetDigest
 - stfCommitment = Poseidon(preStateRoot, postStateRoot, batchCommitment)
 - proverSetDigest = Poseidon(proverIds[], proofSystemIds[], quorumCount)
-- Proof sizes: Groth16=320 bytes, Plonk=832 bytes, Halo2=1472 bytes raw / 1600 bytes adapter envelope (BN254 KZG)
-- Groth16 circuit: 2^11 ptau, 1867 constraints, 1859 wires
-- Plonk circuit: 2^12 ptau, 1804 constraints, 1805 wires
+- Proof sizes: Groth16=320 bytes, Plonk=832 bytes, Halo2=1536 bytes (BN254 KZG)
+- Groth16 circuit: 2^11 ptau, 773 constraints, 775 wires (circomlib 2.0.5)
+- Plonk circuit: 2^14 ptau, 731 R1CS constraints / 12,217 Plonk gates, 736 wires (circomlib 2.0.5)
 - Halo2 circuit: k=8, 256 rows (BN254 KZG)
+- Quorum digest asymmetry: the circuit's proverSetDigest is always computed over all 3 prover slots (zero-padded), while the aggregation layer's prover_set_digest is computed only from submitted proofs — these may differ when fewer than 3 provers are active
 
 ## RPC Endpoints
 
@@ -65,7 +66,7 @@ remappings.txt         → Forge import remappings (@openzeppelin → node_modul
 
 - Hardhat: 203 tests
 - Forge: 97 tests (10 suites, includes fuzz tests at 256 runs each)
-- Rust: 209 tests (5 ignored — require snarkjs/halo2-verify binaries)
+- Rust: 238 tests (12 ignored — require snarkjs/halo2-verify binaries)
 
 ## Commands
 
@@ -74,7 +75,7 @@ cd circuits && npx mocha test/ --timeout 10000   # circuit tests
 npx hardhat test                                   # solidity tests (203 tests)
 REPORT_GAS=true npx hardhat test                   # gas report
 forge test                                         # forge unit + fuzz tests (97 tests)
-cargo test --workspace                             # rust tests (209 tests)
+cargo test --workspace                             # rust tests (238 tests)
 cargo bench                                        # criterion benchmarks
 ```
 
