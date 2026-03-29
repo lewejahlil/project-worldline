@@ -14,11 +14,9 @@ describe("WorldlineCompat", function () {
     const mockVerifier = await MockVerifier.deploy();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await upgrades.deployProxy(
-      Registry,
-      [await mockVerifier.getAddress()],
-      { kind: "uups" }
-    ) as any;
+    const registry = (await upgrades.deployProxy(Registry, [await mockVerifier.getAddress()], {
+      kind: "uups"
+    })) as any;
     await registry.waitForDeployment();
 
     const Compat = await ethers.getContractFactory("WorldlineCompat");

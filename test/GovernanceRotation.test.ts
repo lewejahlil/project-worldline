@@ -30,11 +30,9 @@ describe("GovernanceRotation", function () {
 
     // 2. Deploy WorldlineRegistry
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await upgrades.deployProxy(
-      Registry,
-      [await mockVerifier.getAddress()],
-      { kind: "uups" }
-    ) as any;
+    const registry = (await upgrades.deployProxy(Registry, [await mockVerifier.getAddress()], {
+      kind: "uups"
+    })) as any;
     await registry.waitForDeployment();
 
     // 3. Deploy initial Groth16ZkAdapter (v1 pinned values)
@@ -47,20 +45,18 @@ describe("GovernanceRotation", function () {
 
     // 4. Deploy WorldlineFinalizer (1-hour max acceptance delay)
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-    const finalizer = await upgrades.deployProxy(
+    const finalizer = (await upgrades.deployProxy(
       Finalizer,
       [await adapterV1.getAddress(), DOMAIN, 3600, 0, ethers.ZeroAddress],
       { kind: "uups" }
-    ) as any;
+    )) as any;
     await finalizer.waitForDeployment();
 
     // 5. Deploy WorldlineOutputsRegistry (24-hour minimum timelock)
     const OutputsRegistry = await ethers.getContractFactory("WorldlineOutputsRegistry");
-    const outputsRegistry = await upgrades.deployProxy(
-      OutputsRegistry,
-      [MIN_TIMELOCK],
-      { kind: "uups" }
-    ) as any;
+    const outputsRegistry = (await upgrades.deployProxy(OutputsRegistry, [MIN_TIMELOCK], {
+      kind: "uups"
+    })) as any;
     await outputsRegistry.waitForDeployment();
 
     // 6. Deploy WorldlineCompat facade

@@ -15,11 +15,9 @@ describe("WorldlineOutputsRegistry", function () {
     const [owner, oracle, stranger] = await ethers.getSigners();
 
     const Registry = await ethers.getContractFactory("WorldlineOutputsRegistry");
-    const registry = await upgrades.deployProxy(
-      Registry,
-      [MIN_TIMELOCK],
-      { kind: "uups" }
-    ) as any;
+    const registry = (await upgrades.deployProxy(Registry, [MIN_TIMELOCK], {
+      kind: "uups"
+    })) as any;
     await registry.waitForDeployment();
 
     const dKey = await registry.domainKey(CHAIN_HASH, DOMAIN_TAG);

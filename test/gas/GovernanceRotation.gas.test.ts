@@ -71,11 +71,9 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
 
     // Step 2: Deploy WorldlineRegistry
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await upgrades.deployProxy(
-      Registry,
-      [await verifier.getAddress()],
-      { kind: "uups" }
-    ) as any;
+    const registry = (await upgrades.deployProxy(Registry, [await verifier.getAddress()], {
+      kind: "uups"
+    })) as any;
     await registry.waitForDeployment();
 
     // Step 3: Deploy Groth16ZkAdapter v1
@@ -88,21 +86,19 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
 
     // Step 4: Deploy WorldlineFinalizer
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-    const finalizer = await upgrades.deployProxy(
+    const finalizer = (await upgrades.deployProxy(
       Finalizer,
       [await adapterV1.getAddress(), DOMAIN, 3600, 0, ethers.ZeroAddress],
       { kind: "uups" }
-    ) as any;
+    )) as any;
     await finalizer.waitForDeployment();
     await finalizer.setPermissionless(true);
 
     // Step 5: Deploy WorldlineOutputsRegistry
     const OutputsRegistry = await ethers.getContractFactory("WorldlineOutputsRegistry");
-    const outputsRegistry = await upgrades.deployProxy(
-      OutputsRegistry,
-      [MIN_TIMELOCK],
-      { kind: "uups" }
-    ) as any;
+    const outputsRegistry = (await upgrades.deployProxy(OutputsRegistry, [MIN_TIMELOCK], {
+      kind: "uups"
+    })) as any;
     await outputsRegistry.waitForDeployment();
 
     // Step 6: Deploy WorldlineCompat + wire

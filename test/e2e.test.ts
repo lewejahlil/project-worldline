@@ -16,11 +16,9 @@ describe("E2E Integration", function () {
 
     // Deploy Registry
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await upgrades.deployProxy(
-      Registry,
-      [await mockVerifier.getAddress()],
-      { kind: "uups" }
-    ) as any;
+    const registry = (await upgrades.deployProxy(Registry, [await mockVerifier.getAddress()], {
+      kind: "uups"
+    })) as any;
     await registry.waitForDeployment();
 
     // Deploy Compat facade

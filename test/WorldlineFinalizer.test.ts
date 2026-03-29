@@ -25,11 +25,11 @@ describe("WorldlineFinalizer", function () {
 
     // Deploy the Finalizer with 1-hour max acceptance delay
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-    const finalizer = await upgrades.deployProxy(
+    const finalizer = (await upgrades.deployProxy(
       Finalizer,
       [await adapter.getAddress(), DOMAIN, 3600, 0, ethers.ZeroAddress],
       { kind: "uups" }
-    ) as any;
+    )) as any;
     await finalizer.waitForDeployment();
 
     // Grant submitter role
@@ -118,7 +118,9 @@ describe("WorldlineFinalizer", function () {
     it("reverts if deployed with zero adapter", async function () {
       const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
       await expect(
-        upgrades.deployProxy(Finalizer, [ethers.ZeroAddress, DOMAIN, 3600, 0, ethers.ZeroAddress], { kind: "uups" })
+        upgrades.deployProxy(Finalizer, [ethers.ZeroAddress, DOMAIN, 3600, 0, ethers.ZeroAddress], {
+          kind: "uups"
+        })
       ).to.be.revertedWithCustomError(Finalizer, "AdapterZero");
     });
 
@@ -126,7 +128,11 @@ describe("WorldlineFinalizer", function () {
       const { adapter } = await loadFixture(deployFixture);
       const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
       await expect(
-        upgrades.deployProxy(Finalizer, [await adapter.getAddress(), DOMAIN, 0, 0, ethers.ZeroAddress], { kind: "uups" })
+        upgrades.deployProxy(
+          Finalizer,
+          [await adapter.getAddress(), DOMAIN, 0, 0, ethers.ZeroAddress],
+          { kind: "uups" }
+        )
       ).to.be.revertedWithCustomError(Finalizer, "MaxAcceptanceDelayZero");
     });
   });

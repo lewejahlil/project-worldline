@@ -134,11 +134,9 @@ describe("Fork — Gas Comparison", function () {
     await verifier.waitForDeployment();
 
     const Factory = await ethers.getContractFactory("WorldlineRegistry", deployer);
-    const contract = await upgrades.deployProxy(
-      Factory,
-      [await verifier.getAddress()],
-      { kind: "uups" }
-    ) as any;
+    const contract = (await upgrades.deployProxy(Factory, [await verifier.getAddress()], {
+      kind: "uups"
+    })) as any;
     await contract.waitForDeployment();
     const receipt = await ethers.provider.getTransactionReceipt(
       contract.deploymentTransaction()!.hash
@@ -160,11 +158,17 @@ describe("Fork — Gas Comparison", function () {
     await adapter.waitForDeployment();
 
     const Factory = await ethers.getContractFactory("WorldlineFinalizer", deployer);
-    const contract = await upgrades.deployProxy(
+    const contract = (await upgrades.deployProxy(
       Factory,
-      [await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress],
+      [
+        await adapter.getAddress(),
+        DOMAIN,
+        MAX_ACCEPTANCE_DELAY,
+        GENESIS_L2_BLOCK,
+        ethers.ZeroAddress
+      ],
       { kind: "uups" }
-    ) as any;
+    )) as any;
     await contract.waitForDeployment();
     const receipt = await ethers.provider.getTransactionReceipt(
       contract.deploymentTransaction()!.hash
@@ -182,11 +186,9 @@ describe("Fork — Gas Comparison", function () {
     await verifier.waitForDeployment();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry", deployer);
-    const registry = await upgrades.deployProxy(
-      Registry,
-      [await verifier.getAddress()],
-      { kind: "uups" }
-    ) as any;
+    const registry = (await upgrades.deployProxy(Registry, [await verifier.getAddress()], {
+      kind: "uups"
+    })) as any;
     await registry.waitForDeployment();
 
     const driverId = ethers.keccak256(ethers.toUtf8Bytes("driver-gas-test"));
@@ -209,11 +211,17 @@ describe("Fork — Gas Comparison", function () {
     await adapter.waitForDeployment();
 
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", owner);
-    const finalizer = await upgrades.deployProxy(
+    const finalizer = (await upgrades.deployProxy(
       Finalizer,
-      [await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress],
+      [
+        await adapter.getAddress(),
+        DOMAIN,
+        MAX_ACCEPTANCE_DELAY,
+        GENESIS_L2_BLOCK,
+        ethers.ZeroAddress
+      ],
       { kind: "uups" }
-    ) as any;
+    )) as any;
     await finalizer.waitForDeployment();
 
     const tx = await (finalizer as any).setSubmitter(prover.address, true);
@@ -235,11 +243,17 @@ describe("Fork — Gas Comparison", function () {
     await adapter.waitForDeployment();
 
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", owner);
-    const finalizer = await upgrades.deployProxy(
+    const finalizer = (await upgrades.deployProxy(
       Finalizer,
-      [await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress],
+      [
+        await adapter.getAddress(),
+        DOMAIN,
+        MAX_ACCEPTANCE_DELAY,
+        GENESIS_L2_BLOCK,
+        ethers.ZeroAddress
+      ],
       { kind: "uups" }
-    ) as any;
+    )) as any;
     await finalizer.waitForDeployment();
     await (await (finalizer as any).setPermissionless(true)).wait();
 

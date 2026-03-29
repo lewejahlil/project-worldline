@@ -15,7 +15,7 @@ import {
   MAX_ACCEPTANCE_DELAY,
   PROGRAM_VKEY,
   POLICY_HASH,
-  makeWindowFixture,
+  makeWindowFixture
 } from "./helpers";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -59,7 +59,13 @@ describe("UUPS Upgrade Tests", () => {
       const FinalizerFactory = await ethers.getContractFactory("WorldlineFinalizer", owner);
       const proxy = await upgrades.deployProxy(
         FinalizerFactory,
-        [await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress],
+        [
+          await adapter.getAddress(),
+          DOMAIN,
+          MAX_ACCEPTANCE_DELAY,
+          GENESIS_L2_BLOCK,
+          ethers.ZeroAddress
+        ],
         { kind: "uups", initializer: "initialize" }
       );
       await proxy.waitForDeployment();
@@ -75,7 +81,10 @@ describe("UUPS Upgrade Tests", () => {
       // Enable permissionless submission so any signer can submit
       await finalizerV1.setPermissionless(true);
 
-      const { proof, publicInputs } = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
+      const { proof, publicInputs } = await makeWindowFixture(
+        GENESIS_L2_BLOCK,
+        GENESIS_L2_BLOCK + 100n
+      );
       const tx = await finalizerV1.submitZkValidityProof(proof, publicInputs);
       const receipt = await tx.wait();
       expect(receipt.status).to.equal(1);
@@ -121,9 +130,8 @@ describe("UUPS Upgrade Tests", () => {
       await newImpl.waitForDeployment();
 
       const proxy = await ethers.getContractAt("WorldlineFinalizerV2", proxyAddr, nonOwner);
-      await expect(
-        (proxy as any).upgradeToAndCall(await newImpl.getAddress(), "0x")
-      ).to.be.reverted;
+      await expect((proxy as any).upgradeToAndCall(await newImpl.getAddress(), "0x")).to.be
+        .reverted;
     });
   });
 
@@ -180,9 +188,8 @@ describe("UUPS Upgrade Tests", () => {
       await newImpl.waitForDeployment();
 
       const proxy = await ethers.getContractAt("ProofRouterV2", proxyAddr, nonOwner);
-      await expect(
-        (proxy as any).upgradeToAndCall(await newImpl.getAddress(), "0x")
-      ).to.be.reverted;
+      await expect((proxy as any).upgradeToAndCall(await newImpl.getAddress(), "0x")).to.be
+        .reverted;
     });
   });
 
@@ -197,11 +204,9 @@ describe("UUPS Upgrade Tests", () => {
       await verifier.waitForDeployment();
 
       const RegistryFactory = await ethers.getContractFactory("WorldlineRegistry", owner);
-      const proxy = await upgrades.deployProxy(
-        RegistryFactory,
-        [await verifier.getAddress()],
-        { kind: "uups" }
-      );
+      const proxy = await upgrades.deployProxy(RegistryFactory, [await verifier.getAddress()], {
+        kind: "uups"
+      });
       await proxy.waitForDeployment();
 
       registry = await ethers.getContractAt("WorldlineRegistry", await proxy.getAddress(), owner);
@@ -228,11 +233,7 @@ describe("UUPS Upgrade Tests", () => {
 
     it("deploys behind proxy", async () => {
       const OutputsFactory = await ethers.getContractFactory("WorldlineOutputsRegistry", owner);
-      const proxy = await upgrades.deployProxy(
-        OutputsFactory,
-        [MIN_TIMELOCK],
-        { kind: "uups" }
-      );
+      const proxy = await upgrades.deployProxy(OutputsFactory, [MIN_TIMELOCK], { kind: "uups" });
       await proxy.waitForDeployment();
 
       outputsRegistry = await ethers.getContractAt(

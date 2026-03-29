@@ -17,11 +17,11 @@ describe("WorldlineRegistry", function () {
     const mockVerifier = await MockVerifier.deploy();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry: WorldlineRegistry = await upgrades.deployProxy(
+    const registry: WorldlineRegistry = (await upgrades.deployProxy(
       Registry,
       [await mockVerifier.getAddress()],
       { kind: "uups" }
-    ) as any;
+    )) as any;
     await registry.waitForDeployment();
 
     return { registry, mockVerifier, owner, admin, stranger };
@@ -94,9 +94,8 @@ describe("WorldlineRegistry", function () {
       const { registry, owner } = await loadFixture(deployFixture);
       // In OZ v5 Ownable2StepUpgradeable, transferOwnership(0) does NOT revert —
       // it sets pendingOwner = 0 which can be used to cancel a pending transfer.
-      await expect(
-        registry.connect(owner).transferOwnership(ethers.ZeroAddress)
-      ).to.not.be.reverted;
+      await expect(registry.connect(owner).transferOwnership(ethers.ZeroAddress)).to.not.be
+        .reverted;
     });
   });
 

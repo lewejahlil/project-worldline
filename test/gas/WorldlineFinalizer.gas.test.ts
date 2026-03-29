@@ -28,11 +28,11 @@ async function deployStack() {
   const adapter = await Adapter.deploy(await verifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
 
   const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-  const finalizer = await upgrades.deployProxy(
+  const finalizer = (await upgrades.deployProxy(
     Finalizer,
     [await adapter.getAddress(), DOMAIN, 3600, 0, ethers.ZeroAddress],
     { kind: "uups" }
-  ) as any;
+  )) as any;
   await finalizer.waitForDeployment();
   await finalizer.setPermissionless(true);
 

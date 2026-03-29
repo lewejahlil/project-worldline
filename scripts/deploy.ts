@@ -82,11 +82,10 @@ async function main() {
   // ── 2. Deploy WorldlineRegistry proxy (UUPS) ────────────────────────────────
   console.log("2. Deploying WorldlineRegistry (UUPS proxy)…");
   const RegistryFactory = await ethers.getContractFactory("WorldlineRegistry");
-  const registryProxy = await upgrades.deployProxy(
-    RegistryFactory,
-    [groth16VerifierAddr],
-    { kind: "uups", initializer: "initialize" }
-  );
+  const registryProxy = await upgrades.deployProxy(RegistryFactory, [groth16VerifierAddr], {
+    kind: "uups",
+    initializer: "initialize"
+  });
   await registryProxy.waitForDeployment();
   const registryProxyAddr = await registryProxy.getAddress();
   const registryImplAddr = await upgrades.erc1967.getImplementationAddress(registryProxyAddr);
@@ -126,16 +125,14 @@ async function main() {
   // ── 6. Deploy WorldlineOutputsRegistry proxy (UUPS) ─────────────────────────
   console.log("6. Deploying WorldlineOutputsRegistry (UUPS proxy)…");
   const OutputsRegistryFactory = await ethers.getContractFactory("WorldlineOutputsRegistry");
-  const outputsRegistryProxy = await upgrades.deployProxy(
-    OutputsRegistryFactory,
-    [MIN_TIMELOCK],
-    { kind: "uups", initializer: "initialize" }
-  );
+  const outputsRegistryProxy = await upgrades.deployProxy(OutputsRegistryFactory, [MIN_TIMELOCK], {
+    kind: "uups",
+    initializer: "initialize"
+  });
   await outputsRegistryProxy.waitForDeployment();
   const outputsRegistryProxyAddr = await outputsRegistryProxy.getAddress();
-  const outputsRegistryImplAddr = await upgrades.erc1967.getImplementationAddress(
-    outputsRegistryProxyAddr
-  );
+  const outputsRegistryImplAddr =
+    await upgrades.erc1967.getImplementationAddress(outputsRegistryProxyAddr);
   console.log(`   WorldlineOutputsRegistry proxy: ${outputsRegistryProxyAddr}`);
   console.log(`   WorldlineOutputsRegistry impl:  ${outputsRegistryImplAddr}`);
 
@@ -269,16 +266,14 @@ async function main() {
   }
   console.log(`   WorldlineRegistry implementation: ${verifiedRegistryImpl}`);
 
-  const verifiedFinalizerImpl =
-    await upgrades.erc1967.getImplementationAddress(finalizerProxyAddr);
+  const verifiedFinalizerImpl = await upgrades.erc1967.getImplementationAddress(finalizerProxyAddr);
   if (verifiedFinalizerImpl === ethers.ZeroAddress) {
     throw new Error("WorldlineFinalizer implementation address is zero");
   }
   console.log(`   WorldlineFinalizer implementation: ${verifiedFinalizerImpl}`);
 
-  const verifiedOutputsImpl = await upgrades.erc1967.getImplementationAddress(
-    outputsRegistryProxyAddr
-  );
+  const verifiedOutputsImpl =
+    await upgrades.erc1967.getImplementationAddress(outputsRegistryProxyAddr);
   if (verifiedOutputsImpl === ethers.ZeroAddress) {
     throw new Error("WorldlineOutputsRegistry implementation address is zero");
   }

@@ -369,7 +369,7 @@ describe("Multi-prover quorum — end-to-end", function () {
     await plonkAdapter.waitForDeployment();
 
     const Router = await ethers.getContractFactory("ProofRouter", owner);
-    const router = await upgrades.deployProxy(Router, [], { kind: "uups" }) as any;
+    const router = (await upgrades.deployProxy(Router, [], { kind: "uups" })) as any;
     await router.waitForDeployment();
     await (
       await (router as any).registerAdapter(1, await (groth16Adapter as any).getAddress())
@@ -380,11 +380,17 @@ describe("Multi-prover quorum — end-to-end", function () {
     // ID=3 intentionally NOT registered — simulates quorum=3 requirement unachievable
 
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", owner);
-    const finalizer = await upgrades.deployProxy(
+    const finalizer = (await upgrades.deployProxy(
       Finalizer,
-      [await groth16Adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress],
+      [
+        await groth16Adapter.getAddress(),
+        DOMAIN,
+        MAX_ACCEPTANCE_DELAY,
+        GENESIS_L2_BLOCK,
+        ethers.ZeroAddress
+      ],
       { kind: "uups" }
-    ) as any;
+    )) as any;
     await finalizer.waitForDeployment();
     await (await (finalizer as any).setProofRouter(await (router as any).getAddress())).wait();
     await (await (finalizer as any).setPermissionless(true)).wait();
