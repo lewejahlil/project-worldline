@@ -58,7 +58,7 @@ pub struct Policy {
     pub allow_degraded: bool,
 }
 
-/// A compact manifest entry (subset of DirectoryEntry fields).
+/// A compact manifest entry (subset of `DirectoryEntry` fields).
 /// Serialised to canonical JSON to produce `proverSetDigest`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ManifestEntry {
@@ -117,6 +117,7 @@ pub enum ExclusionReason {
 pub const DEFAULT_FALLBACK_CHAIN: &[&str] = &["halo2", "plonk", "groth16"];
 
 /// Build default fallback tiers from the canonical family priority chain.
+#[must_use]
 pub fn default_fallback_tiers() -> Vec<FallbackTier> {
     // Each tier allows the families at that priority level and below.
     // Tier 0: plonk + groth16 (halo2 failed)
@@ -184,7 +185,7 @@ pub fn select(
     }
 
     if let Some(allowlist) = &policy.allowlist_provers {
-        let set: HashSet<&str> = allowlist.iter().map(|s| s.as_str()).collect();
+        let set: HashSet<&str> = allowlist.iter().map(std::string::String::as_str).collect();
         let (kept, excluded): (Vec<_>, Vec<_>) = eligible
             .into_iter()
             .partition(|e| set.contains(e.prover_id.as_str()));

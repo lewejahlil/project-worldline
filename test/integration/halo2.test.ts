@@ -13,10 +13,12 @@ import { ethers } from "hardhat";
 import {
   deployAllWithRouter,
   makeWindowFixture,
+  findEventLog,
   GENESIS_L2_BLOCK,
   PROGRAM_VKEY,
   POLICY_HASH,
-  computeStfCommitment
+  computeStfCommitment,
+  enablePermissionless
 } from "./deployment-fixtures";
 
 /**
@@ -99,7 +101,7 @@ describe("Halo2 verifier integration", function () {
   it("submits Groth16 proof via ID=1 through router (regression)", async function () {
     const [owner] = await ethers.getSigners();
     const { finalizer } = await deployAllWithRouter(owner);
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makeWindowFixture(
       GENESIS_L2_BLOCK,
@@ -117,7 +119,7 @@ describe("Halo2 verifier integration", function () {
   it("submits Halo2 proof via ID=3 through router", async function () {
     const [owner] = await ethers.getSigners();
     const { finalizer, router } = await deployAllWithRouter(owner);
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     // Deploy Halo2 stack
     const Halo2Verifier = await ethers.getContractFactory("Halo2Verifier", owner);
@@ -162,16 +164,7 @@ describe("Halo2 verifier integration", function () {
     const tx = await (finalizer as any).submitZkValidityProofRouted(3, halo2Proof, publicInputs);
     const receipt = await tx.wait();
 
-    const iface = (finalizer as any).interface;
-    const acceptedLog = receipt.logs
-      .map((log: any) => {
-        try {
-          return iface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((e: any) => e?.name === "ZkProofAccepted");
+    const acceptedLog = findEventLog(receipt, (finalizer as any).interface, "ZkProofAccepted");
 
     expect(acceptedLog).to.not.be.null;
     expect(acceptedLog.args.windowIndex).to.equal(0n);
@@ -207,7 +200,7 @@ describe("Halo2 verifier integration", function () {
   it("submits Groth16 then Halo2 proofs for sequential windows", async function () {
     const [owner] = await ethers.getSigners();
     const { finalizer, router } = await deployAllWithRouter(owner);
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     // Deploy Halo2 stack
     const Halo2Verifier = await ethers.getContractFactory("Halo2Verifier", owner);
@@ -285,16 +278,7 @@ describe("Halo2 verifier integration", function () {
     const tx = await (router as any).routeProof(3, proof, []);
     const receipt = await tx.wait();
 
-    const routerIface = (router as any).interface;
-    const routedLog = receipt.logs
-      .map((log: any) => {
-        try {
-          return routerIface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((e: any) => e?.name === "ProofRouted");
+    const routedLog = findEventLog(receipt, (router as any).interface, "ProofRouted");
 
     expect(routedLog).to.not.be.null;
     expect(routedLog.args.proofSystemId).to.equal(3);

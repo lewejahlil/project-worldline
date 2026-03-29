@@ -6,9 +6,9 @@ use std::path::PathBuf;
 
 /// Off-chain Halo2 verifier.
 ///
-/// Approach: native halo2_proofs (if dependency available) or subprocess fallback.
+/// Approach: native `halo2_proofs` (if dependency available) or subprocess fallback.
 ///
-/// Since halo2_proofs requires a git dependency (PSE fork), this implementation
+/// Since `halo2_proofs` requires a git dependency (PSE fork), this implementation
 /// provides a subprocess fallback. Real verification tests are marked #[ignore].
 ///
 /// Proof format: 192 bytes (compact KZG proof)
@@ -18,6 +18,7 @@ pub struct Halo2Verifier {
 }
 
 impl Halo2Verifier {
+    #[must_use]
     pub fn new(params_path: PathBuf, vkey_path: PathBuf) -> Self {
         Self {
             params_path,
@@ -27,7 +28,7 @@ impl Halo2Verifier {
 
     /// Encode a byte slice as a lowercase hex string.
     fn to_hex(bytes: &[u8]) -> String {
-        bytes.iter().map(|b| format!("{:02x}", b)).collect()
+        bytes.iter().map(|b| format!("{b:02x}")).collect()
     }
 
     /// Encode public inputs as a JSON array of hex strings.
@@ -55,9 +56,10 @@ impl ProofVerifier for Halo2Verifier {
         }
 
         // Write proof + public inputs to temp files, call a halo2 verify helper
+        let pid = std::process::id();
         let tmp = std::env::temp_dir();
-        let proof_path = tmp.join("worldline_halo2_proof.bin");
-        let pub_path = tmp.join("worldline_halo2_public.json");
+        let proof_path = tmp.join(format!("worldline_halo2_proof_{pid}.bin"));
+        let pub_path = tmp.join(format!("worldline_halo2_public_{pid}.json"));
 
         std::fs::write(&proof_path, proof_data)
             .map_err(|e| VerificationError::BackendError(e.to_string()))?;
@@ -66,6 +68,19 @@ impl ProofVerifier for Halo2Verifier {
         std::fs::write(&pub_path, pub_json)
             .map_err(|e| VerificationError::BackendError(e.to_string()))?;
 
+        let params_str = self.params_path.to_str().ok_or_else(|| {
+            VerificationError::BackendError("params path is not valid UTF-8".to_string())
+        })?;
+        let vkey_str = self.vkey_path.to_str().ok_or_else(|| {
+            VerificationError::BackendError("vkey path is not valid UTF-8".to_string())
+        })?;
+        let proof_str = proof_path.to_str().ok_or_else(|| {
+            VerificationError::BackendError("temp path is not valid UTF-8".to_string())
+        })?;
+        let pub_str = pub_path.to_str().ok_or_else(|| {
+            VerificationError::BackendError("temp path is not valid UTF-8".to_string())
+        })?;
+
         // Attempt to call halo2-verify helper binary or script
         let output = std::process::Command::new("cargo")
             .args([
@@ -73,10 +88,10 @@ impl ProofVerifier for Halo2Verifier {
                 "--bin",
                 "halo2-verify",
                 "--",
-                self.params_path.to_str().unwrap(),
-                self.vkey_path.to_str().unwrap(),
-                proof_path.to_str().unwrap(),
-                pub_path.to_str().unwrap(),
+                params_str,
+                vkey_str,
+                proof_str,
+                pub_str,
             ])
             .output();
 

@@ -1,6 +1,6 @@
-//! WorldlineSTF circuit for Halo2 (KZG on BN254).
+//! `WorldlineSTF` circuit for Halo2 (KZG on BN254).
 //!
-//! Reimplements the Circom WorldlineSTF circuit with identical semantics:
+//! Reimplements the Circom `WorldlineSTF` circuit with identical semantics:
 //!
 //! **Private inputs (11 total):**
 //! - preStateRoot, postStateRoot, batchCommitment (3 field elements)
@@ -33,7 +33,7 @@ use crate::poseidon_compat::{
 /// Number of prover slots (matches Circom N=3).
 pub const N: usize = 3;
 
-/// Maximum batch size (matches Circom MAX_BATCH_SIZE=1024).
+/// Maximum batch size (matches Circom `MAX_BATCH_SIZE=1024`).
 pub const MAX_BATCH_SIZE: u64 = 1024;
 
 /// Worldline STF circuit inputs.
@@ -94,6 +94,7 @@ impl WorldlineStfCircuit {
     }
 
     /// Compute the expected public outputs for given inputs.
+    #[must_use]
     pub fn compute_public_outputs(
         pre_state_root: Fr,
         post_state_root: Fr,

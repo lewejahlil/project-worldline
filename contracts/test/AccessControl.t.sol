@@ -1,24 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "forge-std/Test.sol";
-import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import "./WorldlineTestBase.t.sol";
 import "../src/utils/Ownable.sol";
 import "../src/WorldlineOutputsRegistry.sol";
-import "../src/WorldlineFinalizer.sol";
-import "../src/zk/Groth16ZkAdapter.sol";
-
-/// @notice View-compatible mock that always returns true for Groth16 verification.
-contract ViewMockGroth16Verifier {
-    function verifyProof(
-        uint256[2] calldata,
-        uint256[2][2] calldata,
-        uint256[2] calldata,
-        uint256[2] calldata
-    ) external pure returns (bool) {
-        return true;
-    }
-}
 
 /// @title Concrete Ownable for testing the abstract contract.
 contract OwnableHarness is Ownable {
@@ -27,18 +12,16 @@ contract OwnableHarness is Ownable {
 
 /// @title AccessControl Tests — HI-001, HI-002, HI-003
 /// @notice Tests for two-step ownership, minTimelock floor, and timelocked adapter changes.
-contract AccessControlTest is Test {
+contract AccessControlTest is WorldlineTestBase {
     OwnableHarness ownable;
     WorldlineOutputsRegistry outputsRegistry;
-    WorldlineFinalizer finalizer;
-    Groth16ZkAdapter adapter;
 
     address owner;
     address stranger;
 
-    bytes32 constant DOMAIN = keccak256("access-control-test");
-    bytes32 constant PROGRAM_VKEY = keccak256("vkey");
-    bytes32 constant POLICY_HASH = keccak256("policy");
+    bytes32 constant AC_DOMAIN = keccak256("access-control-test");
+    bytes32 constant AC_PROGRAM_VKEY = keccak256("vkey");
+    bytes32 constant AC_POLICY_HASH = keccak256("policy");
 
     function setUp() public {
         owner = address(this);
@@ -54,12 +37,12 @@ contract AccessControlTest is Test {
         outputsRegistry = WorldlineOutputsRegistry(address(outProxy));
 
         ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier();
-        adapter = new Groth16ZkAdapter(address(mock), PROGRAM_VKEY, POLICY_HASH);
+        adapter = new Groth16ZkAdapter(address(mock), AC_PROGRAM_VKEY, AC_POLICY_HASH);
 
         WorldlineFinalizer finImpl = new WorldlineFinalizer();
         ERC1967Proxy finProxy = new ERC1967Proxy(
             address(finImpl),
-            abi.encodeCall(WorldlineFinalizer.initialize, (address(adapter), DOMAIN, 3600, 0, address(0)))
+            abi.encodeCall(WorldlineFinalizer.initialize, (address(adapter), AC_DOMAIN, 3600, 0, address(0)))
         );
         finalizer = WorldlineFinalizer(address(finProxy));
     }
@@ -174,7 +157,7 @@ contract AccessControlTest is Test {
     function test_activateAdapter_revert_timelockActive() public {
         ViewMockGroth16Verifier newMock = new ViewMockGroth16Verifier();
         Groth16ZkAdapter newAdapter = new Groth16ZkAdapter(
-            address(newMock), PROGRAM_VKEY, POLICY_HASH
+            address(newMock), AC_PROGRAM_VKEY, AC_POLICY_HASH
         );
         finalizer.scheduleAdapterChange(address(newAdapter));
 
@@ -191,7 +174,7 @@ contract AccessControlTest is Test {
     function test_activateAdapter_afterTimelock() public {
         ViewMockGroth16Verifier newMock = new ViewMockGroth16Verifier();
         Groth16ZkAdapter newAdapter = new Groth16ZkAdapter(
-            address(newMock), PROGRAM_VKEY, POLICY_HASH
+            address(newMock), AC_PROGRAM_VKEY, AC_POLICY_HASH
         );
         finalizer.scheduleAdapterChange(address(newAdapter));
 

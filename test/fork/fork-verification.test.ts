@@ -7,6 +7,12 @@
 
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
+import {
+  computeStfCommitment,
+  encodeProof,
+  encodePublicInputs,
+  enablePermissionless
+} from "../integration/deployment-fixtures";
 
 const FORK_RPC = process.env["MAINNET_RPC_URL"] || "https://ethereum-rpc.publicnode.com";
 
@@ -20,44 +26,6 @@ const MAX_ACCEPTANCE_DELAY = 7200;
 const GENESIS_L2_BLOCK = 0n;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function computeStfCommitment(
-  l2Start: bigint,
-  l2End: bigint,
-  windowCloseTimestamp: bigint
-): string {
-  return ethers.keccak256(
-    ethers.AbiCoder.defaultAbiCoder().encode(
-      ["uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-      [l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, windowCloseTimestamp]
-    )
-  );
-}
-
-function encodeProof(l2Start: bigint, l2End: bigint, windowCloseTimestamp: bigint): string {
-  const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp);
-  return ethers.AbiCoder.defaultAbiCoder().encode(
-    ["uint256[2]", "uint256[2][2]", "uint256[2]", "uint256", "uint256"],
-    [
-      [1n, 2n],
-      [
-        [1n, 2n],
-        [3n, 4n]
-      ],
-      [1n, 2n],
-      BigInt(stfCommitment),
-      BigInt(PROVER_SET_DIGEST)
-    ]
-  );
-}
-
-function encodePublicInputs(l2Start: bigint, l2End: bigint, windowCloseTimestamp: bigint): string {
-  const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp);
-  return ethers.AbiCoder.defaultAbiCoder().encode(
-    ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-    [stfCommitment, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, windowCloseTimestamp]
-  );
-}
 
 async function getWindowTimestamp(): Promise<bigint> {
   const block = await ethers.provider.getBlock("latest");
@@ -237,11 +205,17 @@ describe("Fork — Verification", function () {
     )) as any;
     await finalizer.waitForDeployment();
 
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const ts = await getWindowTimestamp();
-    const proof = encodeProof(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n, ts);
-    const publicInputs = encodePublicInputs(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n, ts);
+    const proof = encodeProof(
+      GENESIS_L2_BLOCK,
+      GENESIS_L2_BLOCK + 100n,
+      ts,
+      DOMAIN,
+      PROVER_SET_DIGEST
+    );
+    const publicInputs = encodePublicInputs(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n, ts, DOMAIN);
 
     const tx = await (finalizer as any).submitZkValidityProof(proof, publicInputs);
     const receipt = await tx.wait();
@@ -291,8 +265,8 @@ describe("Fork — Verification", function () {
     let cursor = GENESIS_L2_BLOCK;
     for (let i = 0; i < 3; i++) {
       const l2End = cursor + 100n;
-      const proof = encodeProof(cursor, l2End, ts);
-      const publicInputs = encodePublicInputs(cursor, l2End, ts);
+      const proof = encodeProof(cursor, l2End, ts, DOMAIN, PROVER_SET_DIGEST);
+      const publicInputs = encodePublicInputs(cursor, l2End, ts, DOMAIN);
       const tx = await (finalizer as any)
         .connect(prover)
         .submitZkValidityProof(proof, publicInputs);

@@ -15,8 +15,8 @@
 //! | Padding          | None                         | Appends `F::ONE`      |
 //! | Output           | `state[0]`                   | `state[1]`            |
 //!
-//! Round constants, MDS matrix, and permutation structure (R_F/2 full + R_P
-//! partial + R_F/2 full) are identical between both constructions.
+//! Round constants, MDS matrix, and permutation structure (`R_F/2` full + `R_P`
+//! partial + `R_F/2` full) are identical between both constructions.
 
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, Value},
@@ -37,7 +37,7 @@ pub const R_P_T8: usize = 64; // t=8 (7-input hash), circomlib N_ROUNDS_P[t-2]
 /// Apply the full Poseidon permutation to a `[F; T]` state array.
 ///
 /// Uses unoptimized round constants from `SpecRef` and the standard
-/// Hades design: R_F/2 full rounds, R_P partial rounds, R_F/2 full rounds.
+/// Hades design: `R_F/2` full rounds, `R_P` partial rounds, `R_F/2` full rounds.
 fn permute<const T: usize, const RATE: usize>(state: &mut [Fr; T], r_f: usize, r_p: usize) {
     let spec = SpecRef::<Fr, T, RATE>::new(r_f, r_p);
     let constants = spec.constants();
@@ -112,6 +112,7 @@ fn mds_multiply<const T: usize>(state: &mut [Fr; T], mds: &[[Fr; T]; T]) {
 /// Compute `Poseidon(a, b, c)` using circomlib's compression-function mode.
 ///
 /// `state = [0, a, b, c]`, permute with `(R_F=8, R_P=56)`, return `state[0]`.
+#[must_use]
 pub fn poseidon_compress_3(a: Fr, b: Fr, c: Fr) -> Fr {
     let mut state = [Fr::ZERO, a, b, c];
     permute::<4, 3>(&mut state, R_F, R_P_T4);
@@ -122,6 +123,7 @@ pub fn poseidon_compress_3(a: Fr, b: Fr, c: Fr) -> Fr {
 ///
 /// `state = [0, v0, v1, v2, v3, v4, v5, v6]`, permute with `(R_F=8, R_P=57)`,
 /// return `state[0]`.
+#[must_use]
 pub fn poseidon_compress_7(v0: Fr, v1: Fr, v2: Fr, v3: Fr, v4: Fr, v5: Fr, v6: Fr) -> Fr {
     let mut state = [Fr::ZERO, v0, v1, v2, v3, v4, v5, v6];
     permute::<8, 7>(&mut state, R_F, R_P_T8);

@@ -9,7 +9,7 @@
     "resolveJsonModule": true,
     "types": ["node", "hardhat"]
   },
-  "include": ["scripts", "tests", "devnet", "hardhat.config.ts"],
+  "include": ["scripts", "test", "devnet", "hardhat.config.ts"],
   "ts-node": { "files": true },
   "exclude": ["node_modules"]
 }

@@ -1,6 +1,6 @@
 # Worldline v1.0
 
-Worldline is a multi-ZK-prover architecture for rollups on EVM L1s. An
+Worldline is a multi-ZK-prover verification architecture for EVM L1s. An
 off-chain aggregator selects provers via a signed directory, optionally
 performs recursion over inner proofs, and produces a single Groth16/BN254
 proof per window that the on-chain finalizer verifies. This repository

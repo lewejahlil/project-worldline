@@ -423,13 +423,21 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
 
     // ── Internal ────────────────────────────────────────────────────────────────
 
-    /// @dev Core submission logic. Returns the proverSetDigest for optional event emission.
-    ///      LOW-005 remediation: state updates occur before the external adapter.verify() call
-    ///      to follow the Checks-Effects-Interactions pattern and prevent reentrancy.
-    function _submit(
-        bytes calldata proof,
+    /// @dev Shared validation and state update for all submission paths.
+    ///      Performs auth, ABI decoding, domain binding, contiguity, staleness,
+    ///      and STF binding checks, then updates state (CEI pattern — LOW-005).
+    ///      Returns decoded values needed by the caller's verification step.
+    struct ValidatedSubmission {
+        bytes32 stfCommitment;
+        uint256 windowIndex;
+        uint256 l2Start;
+        uint256 l2End;
+        bytes32 outputRoot;
+    }
+
+    function _validateAndPrepare(
         bytes calldata publicInputs
-    ) internal returns (bytes32) {
+    ) internal returns (ValidatedSubmission memory v) {
         // Auth check
         if (!permissionless && !submitters[msg.sender] && msg.sender != owner()) {
             revert NotAuthorized();
@@ -439,14 +447,20 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
         if (publicInputs.length != PUBLIC_INPUTS_LEN) revert BadInputsLen();
 
         // Decode the seven public input words
+        uint256 l2Start;
+        uint256 l2End;
+        bytes32 outputRoot;
+        bytes32 l1BlockHash;
+        bytes32 inputDomainSeparator;
+        uint256 windowCloseTimestamp;
         (
-            bytes32 stfCommitment,
-            uint256 l2Start,
-            uint256 l2End,
-            bytes32 outputRoot,
-            bytes32 l1BlockHash,
-            bytes32 inputDomainSeparator,
-            uint256 windowCloseTimestamp
+            v.stfCommitment,
+            l2Start,
+            l2End,
+            outputRoot,
+            l1BlockHash,
+            inputDomainSeparator,
+            windowCloseTimestamp
         ) = abi.decode(
             publicInputs,
             (bytes32, uint256, uint256, bytes32, bytes32, bytes32, uint256)
@@ -474,22 +488,44 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
 
         // ── Expensive validation (keccak256) after all cheap checks pass ────
         // MED-001: Defense-in-depth — verify stfCommitment binds to the decoded ABI content.
-        // stfCommitment must equal keccak256(abi.encode(l2Start, l2End, outputRoot,
-        // l1BlockHash, domainSeparator, windowCloseTimestamp)). This prevents a circuit
-        // soundness bug from allowing fabricated commitments that don't match the payload.
         {
             bytes32 expectedStf = keccak256(
                 abi.encode(l2Start, l2End, outputRoot, l1BlockHash, inputDomainSeparator, windowCloseTimestamp)
             );
-            if (stfCommitment != expectedStf) revert StfBindingMismatch();
+            if (v.stfCommitment != expectedStf) revert StfBindingMismatch();
         }
 
         // ── Effects (LOW-005 CEI remediation) ─────────────────────────────────
-        // Update state BEFORE the external adapter.verify() call to prevent
+        // Update state BEFORE the external verify() call to prevent
         // reentrancy from replaying the same window index.
-        uint256 windowIndex = nextWindowIndex;
-        nextWindowIndex = windowIndex + 1;
+        v.windowIndex = nextWindowIndex;
+        nextWindowIndex = v.windowIndex + 1;
         lastL2EndBlock = l2End;
+
+        v.l2Start = l2Start;
+        v.l2End = l2End;
+        v.outputRoot = outputRoot;
+    }
+
+    /// @dev Emits the standard triple of events after successful verification.
+    function _emitProofEvents(
+        ValidatedSubmission memory v,
+        bytes32 programVKey,
+        bytes32 policyHash,
+        bytes32 proverSetDigest,
+        bytes calldata proof
+    ) internal {
+        emit OutputProposed(v.windowIndex, v.outputRoot, v.l2Start, v.l2End, v.stfCommitment);
+        emit ZkProofAccepted(v.windowIndex, programVKey, policyHash, proverSetDigest);
+        emit ProofConsumed(v.windowIndex, keccak256(proof));
+    }
+
+    /// @dev Core submission logic. Returns the proverSetDigest for optional event emission.
+    function _submit(
+        bytes calldata proof,
+        bytes calldata publicInputs
+    ) internal returns (bytes32) {
+        ValidatedSubmission memory v = _validateAndPrepare(publicInputs);
 
         // ── Interactions ──────────────────────────────────────────────────────
         (
@@ -500,78 +536,22 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
             bytes32 proverSetDigest
         ) = adapter.verify(proof, publicInputs);
         if (!valid) revert ProofInvalid();
-        if (verifiedStfCommitment != stfCommitment) revert StfMismatch();
+        if (verifiedStfCommitment != v.stfCommitment) revert StfMismatch();
 
-        // Emit events
-        emit OutputProposed(windowIndex, outputRoot, l2Start, l2End, stfCommitment);
-        emit ZkProofAccepted(windowIndex, programVKey, policyHash, proverSetDigest);
-        emit ProofConsumed(windowIndex, keccak256(proof));
-
+        _emitProofEvents(v, programVKey, policyHash, proverSetDigest, proof);
         return proverSetDigest;
     }
 
-    /// @dev Routed submission logic. Mirrors _submit() validation exactly, but
-    ///      dispatches verification through the ProofRouter instead of calling
-    ///      the default adapter directly.
+    /// @dev Routed submission logic. Dispatches verification through the ProofRouter
+    ///      instead of calling the default adapter directly.
     function _submitRouted(
         uint8 proofSystemId,
         bytes calldata proof,
         bytes calldata publicInputs
     ) internal returns (bytes32) {
-        // Auth check
-        if (!permissionless && !submitters[msg.sender] && msg.sender != owner()) {
-            revert NotAuthorized();
-        }
+        ValidatedSubmission memory v = _validateAndPrepare(publicInputs);
 
-        // ABI length check
-        if (publicInputs.length != PUBLIC_INPUTS_LEN) revert BadInputsLen();
-
-        // Decode the seven public input words
-        (
-            bytes32 stfCommitment,
-            uint256 l2Start,
-            uint256 l2End,
-            bytes32 outputRoot,
-            bytes32 l1BlockHash,
-            bytes32 inputDomainSeparator,
-            uint256 windowCloseTimestamp
-        ) = abi.decode(
-            publicInputs,
-            (bytes32, uint256, uint256, bytes32, bytes32, bytes32, uint256)
-        );
-
-        // Domain binding
-        if (inputDomainSeparator != domainSeparator) revert DomainMismatch();
-
-        // Window range
-        if (l2End <= l2Start) revert InvalidWindowRange();
-
-        // Contiguity
-        if (nextWindowIndex == 0) {
-            if (l2Start != genesisL2Block) revert GenesisStartMismatch(genesisL2Block, l2Start);
-        } else {
-            if (l2Start != lastL2EndBlock) revert NotContiguous();
-        }
-
-        // Staleness
-        if (maxAcceptanceDelay > 0 && block.timestamp > windowCloseTimestamp + maxAcceptanceDelay) {
-            revert TooOld();
-        }
-
-        // StfCommitment binding (MED-001)
-        {
-            bytes32 expectedStf = keccak256(
-                abi.encode(l2Start, l2End, outputRoot, l1BlockHash, inputDomainSeparator, windowCloseTimestamp)
-            );
-            if (stfCommitment != expectedStf) revert StfBindingMismatch();
-        }
-
-        // Effects (CEI: state update before external call)
-        uint256 windowIndex = nextWindowIndex;
-        nextWindowIndex = windowIndex + 1;
-        lastL2EndBlock = l2End;
-
-        // Interactions: route through ProofRouter
+        // ── Interactions: route through ProofRouter ───────────────────────────
         (
             bool valid,
             bytes32 verifiedStfCommitment,
@@ -580,13 +560,9 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
             bytes32 proverSetDigest
         ) = proofRouter.routeProofAggregated(proofSystemId, proof, publicInputs);
         if (!valid) revert ProofInvalid();
-        if (verifiedStfCommitment != stfCommitment) revert StfMismatch();
+        if (verifiedStfCommitment != v.stfCommitment) revert StfMismatch();
 
-        // Emit events
-        emit OutputProposed(windowIndex, outputRoot, l2Start, l2End, stfCommitment);
-        emit ZkProofAccepted(windowIndex, programVKey, policyHash, proverSetDigest);
-        emit ProofConsumed(windowIndex, keccak256(proof));
-
+        _emitProofEvents(v, programVKey, policyHash, proverSetDigest, proof);
         return proverSetDigest;
     }
 }

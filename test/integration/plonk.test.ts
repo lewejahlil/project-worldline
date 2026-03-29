@@ -11,9 +11,11 @@ import {
   deployAllWithPlonkRouter,
   makeWindowFixture,
   makePlonkWindowFixture,
+  findEventLog,
   GENESIS_L2_BLOCK,
   PROGRAM_VKEY,
-  POLICY_HASH
+  POLICY_HASH,
+  enablePermissionless
 } from "./deployment-fixtures";
 
 describe("Plonk adapter", function () {
@@ -67,7 +69,7 @@ describe("Plonk adapter", function () {
     const [owner] = await ethers.getSigners();
     const { finalizer } = await deployAllWithPlonkRouter(owner);
 
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makeWindowFixture(
       GENESIS_L2_BLOCK,
@@ -77,16 +79,7 @@ describe("Plonk adapter", function () {
     const tx = await (finalizer as any).submitZkValidityProofRouted(1, proof, publicInputs);
     const receipt = await tx.wait();
 
-    const iface = (finalizer as any).interface;
-    const acceptedLog = receipt.logs
-      .map((log: any) => {
-        try {
-          return iface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((e: any) => e?.name === "ZkProofAccepted");
+    const acceptedLog = findEventLog(receipt, (finalizer as any).interface, "ZkProofAccepted");
 
     expect(acceptedLog).to.not.be.null;
     expect(acceptedLog.args.windowIndex).to.equal(0n);
@@ -107,16 +100,7 @@ describe("Plonk adapter", function () {
     const tx = await (router as any).routeProof(2, proof, []);
     const receipt = await tx.wait();
 
-    const routerIface = (router as any).interface;
-    const routedLog = receipt.logs
-      .map((log: any) => {
-        try {
-          return routerIface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((e: any) => e?.name === "ProofRouted");
+    const routedLog = findEventLog(receipt, (router as any).interface, "ProofRouted");
 
     expect(routedLog).to.not.be.null;
     expect(routedLog.args.proofSystemId).to.equal(2);
@@ -129,7 +113,7 @@ describe("Plonk adapter", function () {
     const [owner] = await ethers.getSigners();
     const { finalizer } = await deployAllWithPlonkRouter(owner);
 
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makePlonkWindowFixture(
       GENESIS_L2_BLOCK,
@@ -139,16 +123,7 @@ describe("Plonk adapter", function () {
     const tx = await (finalizer as any).submitZkValidityProofRouted(2, proof, publicInputs);
     const receipt = await tx.wait();
 
-    const iface = (finalizer as any).interface;
-    const acceptedLog = receipt.logs
-      .map((log: any) => {
-        try {
-          return iface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((e: any) => e?.name === "ZkProofAccepted");
+    const acceptedLog = findEventLog(receipt, (finalizer as any).interface, "ZkProofAccepted");
 
     expect(acceptedLog).to.not.be.null;
     expect(acceptedLog.args.windowIndex).to.equal(0n);
@@ -163,7 +138,7 @@ describe("Plonk adapter", function () {
     const [owner] = await ethers.getSigners();
     const { finalizer } = await deployAllWithPlonkRouter(owner);
 
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makePlonkWindowFixture(
       GENESIS_L2_BLOCK,

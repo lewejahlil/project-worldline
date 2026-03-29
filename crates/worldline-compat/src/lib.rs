@@ -23,6 +23,7 @@ pub struct CompatRegistry {
 ///
 /// Extracts circuit and backend IDs into flat lists, and maps plugins
 /// into the simplified [`CompatPlugin`] representation.
+#[must_use]
 pub fn build_compat_snapshot(registry: &RegistrySnapshot) -> CompatRegistry {
     let circuits = registry.circuits.iter().map(|c| c.id.clone()).collect();
     let backends = registry.backends.iter().map(|b| b.id.clone()).collect();
@@ -50,7 +51,7 @@ pub fn ensure_plugin_exists(registry: &RegistrySnapshot, plugin_id: &str) -> Res
     if registry.plugins.iter().any(|p| p.id == plugin_id) {
         Ok(())
     } else {
-        bail!("plugin '{}' not found in registry", plugin_id)
+        bail!("plugin '{plugin_id}' not found in registry")
     }
 }
 

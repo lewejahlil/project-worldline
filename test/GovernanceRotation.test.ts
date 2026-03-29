@@ -11,6 +11,7 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
+import { enablePermissionless } from "./integration/deployment-fixtures";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-governance-test"));
 const PROGRAM_VKEY_V1 = ethers.keccak256(ethers.toUtf8Bytes("program-vkey-v1"));
@@ -65,7 +66,7 @@ describe("GovernanceRotation", function () {
     await registry.setCompatFacade(await compat.getAddress());
 
     // Enable permissionless submission for simplicity in tests
-    await finalizer.setPermissionless(true);
+    await enablePermissionless(finalizer);
 
     return {
       mockVerifier,
