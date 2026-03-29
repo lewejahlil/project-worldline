@@ -1,3 +1,10 @@
+//! Worldline driver — CLI orchestrator for aggregation, recursion, and blob encoding.
+//!
+//! This is a **binary crate** (see `[[bin]]` in Cargo.toml). It uses `anyhow::Result`
+//! throughout for ergonomic error context chaining, which is idiomatic for Rust CLIs.
+//! Library crates in this workspace (`aggregation`, `registry`, `recursion`) use
+//! `thiserror`-derived typed errors instead.
+
 pub mod aggregator;
 pub mod blob;
 pub mod recursion;
