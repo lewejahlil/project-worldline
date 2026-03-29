@@ -8,14 +8,16 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import {
+  deployAll,
   deployAllWithRouter,
   makeWindowFixture,
+  findEventLog,
   GENESIS_L2_BLOCK,
   DOMAIN,
   PROGRAM_VKEY,
-  POLICY_HASH
+  POLICY_HASH,
+  enablePermissionless
 } from "./deployment-fixtures";
-import { deployAll } from "./deployment-fixtures";
 
 describe("Proof routing", function () {
   // ── 1. Deploy full stack with router ────────────────────────────────────────
@@ -39,7 +41,7 @@ describe("Proof routing", function () {
     const [owner] = await ethers.getSigners();
     const { finalizer } = await deployAllWithRouter(owner);
 
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makeWindowFixture(
       GENESIS_L2_BLOCK,
@@ -49,16 +51,7 @@ describe("Proof routing", function () {
     const tx = await (finalizer as any).submitZkValidityProofRouted(1, proof, publicInputs);
     const receipt = await tx.wait();
 
-    const iface = (finalizer as any).interface;
-    const acceptedLog = receipt.logs
-      .map((log: any) => {
-        try {
-          return iface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((e: any) => e?.name === "ZkProofAccepted");
+    const acceptedLog = findEventLog(receipt, (finalizer as any).interface, "ZkProofAccepted");
 
     expect(acceptedLog).to.not.be.null;
     expect(acceptedLog.args.windowIndex).to.equal(0n);
@@ -88,7 +81,7 @@ describe("Proof routing", function () {
     const [owner] = await ethers.getSigners();
     const { finalizer } = await deployAllWithRouter(owner);
 
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makeWindowFixture(
       GENESIS_L2_BLOCK,
@@ -110,7 +103,7 @@ describe("Proof routing", function () {
     const [owner] = await ethers.getSigners();
     const { finalizer, router } = await deployAllWithRouter(owner);
 
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     // Deploy a mock adapter for proofSystemId=2
     const MockAdapter = await ethers.getContractFactory("MockZkAdapter", owner);
@@ -134,16 +127,7 @@ describe("Proof routing", function () {
     const tx = await (finalizer as any).submitZkValidityProofRouted(2, proof, publicInputs);
     const receipt = await tx.wait();
 
-    const iface = (finalizer as any).interface;
-    const acceptedLog = receipt.logs
-      .map((log: any) => {
-        try {
-          return iface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((e: any) => e?.name === "ZkProofAccepted");
+    const acceptedLog = findEventLog(receipt, (finalizer as any).interface, "ZkProofAccepted");
 
     expect(acceptedLog).to.not.be.null;
     expect(acceptedLog.args.windowIndex).to.equal(0n);
@@ -158,7 +142,7 @@ describe("Proof routing", function () {
 
     // Use the original deployAll (no router) — backward compat path
     const { finalizer } = await deployAll(owner);
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makeWindowFixture(
       GENESIS_L2_BLOCK,
@@ -178,7 +162,7 @@ describe("Proof routing", function () {
 
     // deployAll without router
     const { finalizer } = await deployAll(owner);
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makeWindowFixture(
       GENESIS_L2_BLOCK,
@@ -202,16 +186,7 @@ describe("Proof routing", function () {
     const tx = await (router as any).routeProof(1, proof, []);
     const receipt = await tx.wait();
 
-    const routerIface = (router as any).interface;
-    const routedLog = receipt.logs
-      .map((log: any) => {
-        try {
-          return routerIface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((e: any) => e?.name === "ProofRouted");
+    const routedLog = findEventLog(receipt, (router as any).interface, "ProofRouted");
 
     expect(routedLog).to.not.be.null;
     expect(routedLog.args.proofSystemId).to.equal(1);

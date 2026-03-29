@@ -414,6 +414,27 @@ export async function makeHalo2WindowFixture(
   };
 }
 
+// ── Event log helpers ───────────────────────────────────────────────────────
+
+/**
+ * Find a named event in a transaction receipt by parsing each log against the
+ * given contract interface. Returns the first matching parsed log, or null.
+ *
+ * Consolidates the repeated `receipt.logs.map(parseLog).find(name)` pattern
+ * and the `findZkProofAccepted` helper that appeared across integration tests.
+ */
+export function findEventLog(receipt: any, iface: any, eventName: string): any {
+  for (const log of receipt.logs) {
+    try {
+      const parsed = iface.parseLog(log);
+      if (parsed?.name === eventName) return parsed;
+    } catch {
+      /* skip logs from other contracts / unparseable topics */
+    }
+  }
+  return null;
+}
+
 /**
  * Enable permissionless mode on a finalizer contract.
  * Replaces the inline `(finalizer as any).setPermissionless(true)` pattern.

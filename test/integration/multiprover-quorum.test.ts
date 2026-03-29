@@ -37,6 +37,8 @@ import {
   encodeHalo2Proof,
   encodePublicInputs,
   computeStfCommitment,
+  findEventLog,
+  enablePermissionless,
   DOMAIN,
   PROGRAM_VKEY,
   POLICY_HASH,
@@ -44,20 +46,6 @@ import {
   MAX_ACCEPTANCE_DELAY,
   GENESIS_L2_BLOCK
 } from "./deployment-fixtures";
-
-// ── Utility: extract ZkProofAccepted from receipt ──────────────────────────
-
-function findZkProofAccepted(receipt: any, iface: any) {
-  for (const log of receipt.logs) {
-    try {
-      const parsed = iface.parseLog(log);
-      if (parsed?.name === "ZkProofAccepted") return parsed;
-    } catch {
-      /* skip unparseable logs */
-    }
-  }
-  return null;
-}
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 
@@ -76,7 +64,7 @@ describe("Multi-prover quorum — end-to-end", function () {
     const tx = await (finalizer as any).submitZkValidityProofRouted(1, proof, publicInputs);
     const receipt = await tx.wait();
 
-    const log = findZkProofAccepted(receipt, (finalizer as any).interface);
+    const log = findEventLog(receipt, (finalizer as any).interface, "ZkProofAccepted");
     expect(log).to.not.be.null;
     expect(log.args.windowIndex).to.equal(0n);
     expect(log.args.programVKey).to.equal(PROGRAM_VKEY);
@@ -98,7 +86,7 @@ describe("Multi-prover quorum — end-to-end", function () {
     const tx = await (finalizer as any).submitZkValidityProofRouted(2, proof, publicInputs);
     const receipt = await tx.wait();
 
-    const log = findZkProofAccepted(receipt, (finalizer as any).interface);
+    const log = findEventLog(receipt, (finalizer as any).interface, "ZkProofAccepted");
     expect(log).to.not.be.null;
     expect(log.args.windowIndex).to.equal(0n);
     expect(log.args.programVKey).to.equal(PROGRAM_VKEY);
@@ -120,7 +108,7 @@ describe("Multi-prover quorum — end-to-end", function () {
     const tx = await (finalizer as any).submitZkValidityProofRouted(3, proof, publicInputs);
     const receipt = await tx.wait();
 
-    const log = findZkProofAccepted(receipt, (finalizer as any).interface);
+    const log = findEventLog(receipt, (finalizer as any).interface, "ZkProofAccepted");
     expect(log).to.not.be.null;
     expect(log.args.windowIndex).to.equal(0n);
     expect(log.args.programVKey).to.equal(PROGRAM_VKEY);
@@ -142,7 +130,7 @@ describe("Multi-prover quorum — end-to-end", function () {
       fix0.publicInputs
     );
     const r0 = await tx0.wait();
-    expect(findZkProofAccepted(r0, (finalizer as any).interface)).to.not.be.null;
+    expect(findEventLog(r0, (finalizer as any).interface, "ZkProofAccepted")).to.not.be.null;
 
     // Window 1 — Plonk (contiguous)
     const fix1 = await makePlonkWindowFixture(GENESIS_L2_BLOCK + 100n, GENESIS_L2_BLOCK + 200n);
@@ -152,7 +140,7 @@ describe("Multi-prover quorum — end-to-end", function () {
       fix1.publicInputs
     );
     const r1 = await tx1.wait();
-    expect(findZkProofAccepted(r1, (finalizer as any).interface)).to.not.be.null;
+    expect(findEventLog(r1, (finalizer as any).interface, "ZkProofAccepted")).to.not.be.null;
 
     // Both windows accepted — quorum count = 2 proof systems contributed
     expect(await (finalizer as any).nextWindowIndex()).to.equal(2n);
@@ -177,7 +165,7 @@ describe("Multi-prover quorum — end-to-end", function () {
     );
     const r1 = await tx1.wait();
 
-    expect(findZkProofAccepted(r1, (finalizer as any).interface)).to.not.be.null;
+    expect(findEventLog(r1, (finalizer as any).interface, "ZkProofAccepted")).to.not.be.null;
     expect(await (finalizer as any).nextWindowIndex()).to.equal(2n);
   });
 
@@ -200,7 +188,7 @@ describe("Multi-prover quorum — end-to-end", function () {
     );
     const r1 = await tx1.wait();
 
-    expect(findZkProofAccepted(r1, (finalizer as any).interface)).to.not.be.null;
+    expect(findEventLog(r1, (finalizer as any).interface, "ZkProofAccepted")).to.not.be.null;
     expect(await (finalizer as any).nextWindowIndex()).to.equal(2n);
   });
 
@@ -215,21 +203,27 @@ describe("Multi-prover quorum — end-to-end", function () {
     const r0 = await (
       await (finalizer as any).submitZkValidityProofRouted(1, fix0.proof, fix0.publicInputs)
     ).wait();
-    expect(findZkProofAccepted(r0, (finalizer as any).interface)?.args.windowIndex).to.equal(0n);
+    expect(
+      findEventLog(r0, (finalizer as any).interface, "ZkProofAccepted")?.args.windowIndex
+    ).to.equal(0n);
 
     // Window 1 — Plonk V2
     const fix1 = await makePlonkWindowFixture(GENESIS_L2_BLOCK + 100n, GENESIS_L2_BLOCK + 200n);
     const r1 = await (
       await (finalizer as any).submitZkValidityProofRouted(2, fix1.proof, fix1.publicInputs)
     ).wait();
-    expect(findZkProofAccepted(r1, (finalizer as any).interface)?.args.windowIndex).to.equal(1n);
+    expect(
+      findEventLog(r1, (finalizer as any).interface, "ZkProofAccepted")?.args.windowIndex
+    ).to.equal(1n);
 
     // Window 2 — Halo2
     const fix2 = await makeHalo2WindowFixture(GENESIS_L2_BLOCK + 200n, GENESIS_L2_BLOCK + 300n);
     const r2 = await (
       await (finalizer as any).submitZkValidityProofRouted(3, fix2.proof, fix2.publicInputs)
     ).wait();
-    expect(findZkProofAccepted(r2, (finalizer as any).interface)?.args.windowIndex).to.equal(2n);
+    expect(
+      findEventLog(r2, (finalizer as any).interface, "ZkProofAccepted")?.args.windowIndex
+    ).to.equal(2n);
 
     // Three distinct proof systems contributed — quorum count = 3
     expect(await (finalizer as any).nextWindowIndex()).to.equal(3n);
@@ -393,7 +387,7 @@ describe("Multi-prover quorum — end-to-end", function () {
     )) as any;
     await finalizer.waitForDeployment();
     await (await (finalizer as any).setProofRouter(await (router as any).getAddress())).wait();
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     // Window 0 — Groth16 ✓
     const fix0 = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);

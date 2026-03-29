@@ -20,6 +20,7 @@
 
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { ethers, upgrades } from "hardhat";
+import { enablePermissionless } from "../integration/deployment-fixtures";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-gov-gas-domain"));
 const PROGRAM_VKEY_V1 = ethers.keccak256(ethers.toUtf8Bytes("program-vkey-v1-gas"));
@@ -92,7 +93,7 @@ describe("GasBenchmark: GovernanceRotation full 10-step sequence", function () {
       { kind: "uups" }
     )) as any;
     await finalizer.waitForDeployment();
-    await finalizer.setPermissionless(true);
+    await enablePermissionless(finalizer);
 
     // Step 5: Deploy WorldlineOutputsRegistry
     const OutputsRegistry = await ethers.getContractFactory("WorldlineOutputsRegistry");

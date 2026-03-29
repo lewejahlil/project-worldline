@@ -1,6 +1,7 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
+import { enablePermissionless } from "./integration/deployment-fixtures";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-test-domain"));
 const PROGRAM_VKEY = ethers.keccak256(ethers.toUtf8Bytes("program-vkey"));
@@ -189,7 +190,7 @@ describe("WorldlineFinalizer", function () {
 
     it("permissionless mode allows anyone", async function () {
       const { finalizer, owner, stranger } = await loadFixture(deployFixture);
-      await finalizer.connect(owner).setPermissionless(true);
+      await enablePermissionless(finalizer);
       const ts = BigInt(await time.latest()) + 100n;
       const { inputs, stf } = encodePublicInputs(
         0n,

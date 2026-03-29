@@ -10,7 +10,8 @@ import { ethers, network, upgrades } from "hardhat";
 import {
   computeStfCommitment,
   encodeProof,
-  encodePublicInputs
+  encodePublicInputs,
+  enablePermissionless
 } from "../integration/deployment-fixtures";
 
 const FORK_RPC = process.env["MAINNET_RPC_URL"] || "https://ethereum-rpc.publicnode.com";
@@ -222,7 +223,7 @@ describe("Fork — Gas Comparison", function () {
       { kind: "uups" }
     )) as any;
     await finalizer.waitForDeployment();
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const ts = await getWindowTimestamp();
     const proof = encodeProof(

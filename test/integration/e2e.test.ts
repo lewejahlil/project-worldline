@@ -13,6 +13,8 @@ import {
   deployAll,
   makeWindowFixture,
   submitWindows,
+  enablePermissionless,
+  findEventLog,
   GENESIS_L2_BLOCK,
   PROGRAM_VKEY,
   POLICY_HASH,
@@ -62,7 +64,7 @@ describe("E2E — full pipeline", function () {
     const { finalizer } = await deployAll(owner);
 
     // Enable permissionless so owner can submit
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makeWindowFixture(
       GENESIS_L2_BLOCK,
@@ -74,16 +76,7 @@ describe("E2E — full pipeline", function () {
     const receipt = await tx.wait();
 
     // ZkProofAccepted event must be emitted
-    const iface = (finalizer as any).interface;
-    const acceptedLog = receipt.logs
-      .map((log: any) => {
-        try {
-          return iface.parseLog(log);
-        } catch {
-          return null;
-        }
-      })
-      .find((e: any) => e?.name === "ZkProofAccepted");
+    const acceptedLog = findEventLog(receipt, (finalizer as any).interface, "ZkProofAccepted");
 
     expect(acceptedLog).to.not.be.null;
     expect(acceptedLog.args.windowIndex).to.equal(0n);

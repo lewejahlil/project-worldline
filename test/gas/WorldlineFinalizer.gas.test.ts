@@ -12,6 +12,7 @@
 
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { ethers, upgrades } from "hardhat";
+import { enablePermissionless } from "../integration/deployment-fixtures";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-gas-bench-domain"));
 const PROGRAM_VKEY = ethers.keccak256(ethers.toUtf8Bytes("program-vkey-gas"));
@@ -34,7 +35,7 @@ async function deployStack() {
     { kind: "uups" }
   )) as any;
   await finalizer.waitForDeployment();
-  await finalizer.setPermissionless(true);
+  await enablePermissionless(finalizer);
 
   return { finalizer, owner };
 }

@@ -15,7 +15,8 @@ import {
   MAX_ACCEPTANCE_DELAY,
   PROGRAM_VKEY,
   POLICY_HASH,
-  makeWindowFixture
+  makeWindowFixture,
+  enablePermissionless
 } from "./deployment-fixtures";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -79,7 +80,7 @@ describe("UUPS Upgrade Tests", () => {
 
     it("V1: can register adapter and submit proof", async () => {
       // Enable permissionless submission so any signer can submit
-      await finalizerV1.setPermissionless(true);
+      await enablePermissionless(finalizerV1);
 
       const { proof, publicInputs } = await makeWindowFixture(
         GENESIS_L2_BLOCK,

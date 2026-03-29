@@ -14,7 +14,8 @@ import {
   makeWindowFixture,
   GENESIS_L2_BLOCK,
   DOMAIN,
-  PROVER_SET_DIGEST
+  PROVER_SET_DIGEST,
+  enablePermissionless
 } from "./deployment-fixtures";
 
 describe("Proof submission", function () {
@@ -23,7 +24,7 @@ describe("Proof submission", function () {
   it("valid 320-byte Groth16 proof is accepted without reverting", async function () {
     const [owner] = await ethers.getSigners();
     const { finalizer } = await deployAll(owner);
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makeWindowFixture(
       GENESIS_L2_BLOCK,
@@ -43,7 +44,7 @@ describe("Proof submission", function () {
   it("proof shorter than 320 bytes is rejected with ProofTooShort", async function () {
     const [owner] = await ethers.getSigners();
     const { adapter, finalizer } = await deployAll(owner);
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { publicInputs } = await makeWindowFixture(GENESIS_L2_BLOCK, GENESIS_L2_BLOCK + 100n);
 
@@ -115,7 +116,7 @@ describe("Proof submission", function () {
     // an off-chain audit trail (NUL-1 hardening).
     const [owner] = await ethers.getSigners();
     const { finalizer } = await deployAll(owner);
-    await (await (finalizer as any).setPermissionless(true)).wait();
+    await enablePermissionless(finalizer);
 
     const { proof, publicInputs } = await makeWindowFixture(
       GENESIS_L2_BLOCK,
