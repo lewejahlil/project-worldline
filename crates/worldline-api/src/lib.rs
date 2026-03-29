@@ -8,6 +8,7 @@
 
 pub mod encoding;
 pub mod error;
+pub mod service;
 pub mod types;
 
 pub use encoding::{
@@ -15,6 +16,7 @@ pub use encoding::{
     encode_public_inputs,
 };
 pub use error::{ApiError, EncodingError, ProvingError, ValidationError};
+pub use service::{ProvingService, ServiceConfig, SubprocessArtifacts};
 pub use types::{
     EncodedProof, HealthStatus, ProofRequest, ProofResponse, ProofStatus, ProverHealth,
     ProverResult,
