@@ -23,7 +23,7 @@ circuits/test/         → Mocha/Chai circuit tests
 contracts/src/         → Solidity verifier + registry (^0.8.24)
 contracts/src/zk/      → ZK verifiers and adapters (Groth16, Plonk, Halo2)
 contracts/src/blob/    → EIP-4844 blob verification
-contracts/test/        → Forge unit + fuzz tests
+contracts/test/        → Forge unit + fuzz tests (WorldlineTestBase.t.sol is shared base)
 crates/registry/       → Rust prover registry
 crates/aggregation/    → Proof aggregation module
 crates/recursion/      → Proof recursion module
@@ -36,7 +36,7 @@ crates/benches/        → Criterion benchmarks
 devnet/                → Docker local devnet
 scripts/               → Deploy, simulation, CI
 test/                  → Hardhat integration tests
-test/integration/      → Multi-prover integration tests
+test/integration/      → Multi-prover integration tests (deployment-fixtures.ts has shared helpers)
 .github/workflows/     → CI pipeline
 ```
 
@@ -57,13 +57,20 @@ test/integration/      → Multi-prover integration tests
 - Testnet (deploy): Sepolia (chain ID 11155111) — active, sunsetting Sept 2026
 - Sepolia RPC: `https://sepolia-rpc.publicnode.com`
 
+## Test Counts
+
+- Hardhat: 203 tests
+- Forge: 97 tests (10 suites, includes fuzz tests at 256 runs each)
+- Rust: 119 tests (5 ignored — require snarkjs/halo2-verify binaries)
+
 ## Commands
 
 ```bash
 cd circuits && npx mocha test/ --timeout 10000   # circuit tests
-npx hardhat test                                   # solidity tests
+npx hardhat test                                   # solidity tests (203 tests)
 REPORT_GAS=true npx hardhat test                   # gas report
-cargo test --workspace                             # rust tests
+forge test                                         # forge unit + fuzz tests (97 tests)
+cargo test --workspace                             # rust tests (119 tests)
 cargo bench                                        # criterion benchmarks
 ```
 
