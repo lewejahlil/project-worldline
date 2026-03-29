@@ -20,7 +20,7 @@ use crate::selection::DirectoryEntry;
 /// A signed prover directory snapshot.
 ///
 /// The `entries` array is serialised to canonical JSON, hashed with Keccak-256,
-/// and then signed (secp256k1 / EIP-191 personal_sign) by the `signer_address`.
+/// and then signed (secp256k1 / EIP-191 `personal_sign`) by the `signer_address`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignedDirectory {
     /// Semver version of the directory format (e.g. "1.0.0").

@@ -24,12 +24,12 @@ use std::path::PathBuf;
 ///   T3     (words 12-13, bytes 384-447): G1 point
 ///   Wxi    (words 14-15, bytes 448-511): G1 point
 ///   Wxiw   (words 16-17, bytes 512-575): G1 point
-///   eval_a (word  18   , bytes 576-607): Fr scalar
-///   eval_b (word  19   , bytes 608-639): Fr scalar
-///   eval_c (word  20   , bytes 640-671): Fr scalar
-///   eval_s1(word  21   , bytes 672-703): Fr scalar
-///   eval_s2(word  22   , bytes 704-735): Fr scalar
-///   eval_zw(word  23   , bytes 736-767): Fr scalar
+///   `eval_a`  (word 18, bytes 576-607): Fr scalar
+///   `eval_b`  (word 19, bytes 608-639): Fr scalar
+///   `eval_c`  (word 20, bytes 640-671): Fr scalar
+///   `eval_s1` (word 21, bytes 672-703): Fr scalar
+///   `eval_s2` (word 22, bytes 704-735): Fr scalar
+///   `eval_zw` (word 23, bytes 736-767): Fr scalar
 ///   stfCommitment   (bytes 768-799): uint256
 ///   proverSetDigest (bytes 800-831): uint256
 ///
@@ -39,13 +39,14 @@ pub struct PlonkVerifier {
 }
 
 impl PlonkVerifier {
+    #[must_use]
     pub fn new(vkey_path: PathBuf) -> Self {
         Self { vkey_path }
     }
 
     /// Encode a byte slice as a lowercase hex string.
     fn to_hex(bytes: &[u8]) -> String {
-        bytes.iter().map(|b| format!("{:02x}", b)).collect()
+        bytes.iter().map(|b| format!("{b:02x}")).collect()
     }
 
     /// Parse 832-byte Plonk proof into snarkjs JSON format.
@@ -176,7 +177,7 @@ impl ProofVerifier for PlonkVerifier {
         let output = std::process::Command::new("npx")
             .args(["snarkjs", "plonk", "verify", vkey_str, pub_str, proof_str])
             .output()
-            .map_err(|e| VerificationError::BackendError(format!("snarkjs not found: {}", e)))?;
+            .map_err(|e| VerificationError::BackendError(format!("snarkjs not found: {e}")))?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         if stdout.contains("OK!") {

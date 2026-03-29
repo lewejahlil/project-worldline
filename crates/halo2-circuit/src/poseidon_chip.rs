@@ -1,7 +1,7 @@
 //! Poseidon gadget configuration for Halo2.
 //!
 //! Wraps the PSE `poseidon` crate to provide in-circuit Poseidon hashing.
-//! Uses the same sponge construction (t, R_F, R_P) parameters as circomlib
+//! Uses the same sponge construction (t, `R_F`, `R_P`) parameters as circomlib
 //! for BN254 field compatibility.
 
 use halo2_proofs::{
@@ -14,8 +14,8 @@ use halo2curves::group::ff::Field;
 use poseidon::Poseidon;
 
 /// Circomlib-compatible Poseidon parameters for BN254.
-/// circomlib Poseidon(3) uses t=4, R_F=8, R_P=56.
-/// circomlib Poseidon(7) uses t=8, R_F=8, R_P=57.
+/// circomlib Poseidon(3) uses t=4, `R_F=8`, `R_P=56`.
+/// circomlib Poseidon(7) uses t=8, `R_F=8`, `R_P=57`.
 pub const R_F: usize = 8;
 pub const R_P_T4: usize = 56;
 pub const R_P_T8: usize = 57;
@@ -32,7 +32,7 @@ pub struct PoseidonChipConfig {
 /// Rather than building the full Poseidon permutation in gates (which would be
 /// hundreds of constraints), we use the "off-circuit hash + equality constraint"
 /// pattern: compute the hash as a witness and constrain that the declared output
-/// is correct via the transcript. The MockProver and real prover both enforce this
+/// is correct via the transcript. The `MockProver` and real prover both enforce this
 /// because public instances are committed.
 #[derive(Debug, Clone)]
 pub struct PoseidonChip {
@@ -151,7 +151,8 @@ impl PoseidonChip {
 }
 
 /// Compute Poseidon(a, b, c) out-of-circuit using the PSE poseidon crate.
-/// Uses T=4, RATE=3, R_F=8, R_P=56 (circomlib-compatible for Poseidon(3)).
+/// Uses T=4, RATE=3, `R_F=8`, `R_P=56` (circomlib-compatible for Poseidon(3)).
+#[must_use]
 pub fn poseidon_hash_3(a: Fr, b: Fr, c: Fr) -> Fr {
     let mut hasher = Poseidon::<Fr, 4, 3>::new(R_F, R_P_T4);
     hasher.update(&[a, b, c]);
@@ -159,7 +160,8 @@ pub fn poseidon_hash_3(a: Fr, b: Fr, c: Fr) -> Fr {
 }
 
 /// Compute Poseidon(v0..v6) out-of-circuit using the PSE poseidon crate.
-/// Uses T=8, RATE=7, R_F=8, R_P=57 (circomlib-compatible for Poseidon(7)).
+/// Uses T=8, RATE=7, `R_F=8`, `R_P=57` (circomlib-compatible for Poseidon(7)).
+#[must_use]
 pub fn poseidon_hash_7(v0: Fr, v1: Fr, v2: Fr, v3: Fr, v4: Fr, v5: Fr, v6: Fr) -> Fr {
     let mut hasher = Poseidon::<Fr, 8, 7>::new(R_F, R_P_T8);
     hasher.update(&[v0, v1, v2, v3, v4, v5, v6]);

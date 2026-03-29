@@ -77,7 +77,7 @@ pub fn decode_blob(blob: &[u8], data_length: usize) -> Result<Vec<u8>> {
 /// produced blobs.
 pub fn validate_blob_field_elements(blob: &[u8]) -> Result<()> {
     if blob.len() != BYTES_PER_BLOB {
-        return Err(anyhow!("Blob must be exactly {} bytes", BYTES_PER_BLOB));
+        return Err(anyhow!("Blob must be exactly {BYTES_PER_BLOB} bytes"));
     }
 
     // BLS modulus high byte check: the high byte of each field element must be 0x00
@@ -86,9 +86,7 @@ pub fn validate_blob_field_elements(blob: &[u8]) -> Result<()> {
         let high_byte = blob[i * BYTES_PER_FIELD_ELEMENT];
         if high_byte != 0x00 {
             return Err(anyhow!(
-                "Field element {} has non-zero high byte 0x{:02x} — may exceed BLS modulus",
-                i,
-                high_byte
+                "Field element {i} has non-zero high byte 0x{high_byte:02x} — may exceed BLS modulus"
             ));
         }
     }

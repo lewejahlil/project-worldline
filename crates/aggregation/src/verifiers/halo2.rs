@@ -6,9 +6,9 @@ use std::path::PathBuf;
 
 /// Off-chain Halo2 verifier.
 ///
-/// Approach: native halo2_proofs (if dependency available) or subprocess fallback.
+/// Approach: native `halo2_proofs` (if dependency available) or subprocess fallback.
 ///
-/// Since halo2_proofs requires a git dependency (PSE fork), this implementation
+/// Since `halo2_proofs` requires a git dependency (PSE fork), this implementation
 /// provides a subprocess fallback. Real verification tests are marked #[ignore].
 ///
 /// Proof format: 192 bytes (compact KZG proof)
@@ -18,6 +18,7 @@ pub struct Halo2Verifier {
 }
 
 impl Halo2Verifier {
+    #[must_use]
     pub fn new(params_path: PathBuf, vkey_path: PathBuf) -> Self {
         Self {
             params_path,
@@ -27,7 +28,7 @@ impl Halo2Verifier {
 
     /// Encode a byte slice as a lowercase hex string.
     fn to_hex(bytes: &[u8]) -> String {
-        bytes.iter().map(|b| format!("{:02x}", b)).collect()
+        bytes.iter().map(|b| format!("{b:02x}")).collect()
     }
 
     /// Encode public inputs as a JSON array of hex strings.

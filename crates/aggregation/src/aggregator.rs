@@ -271,10 +271,12 @@ impl ProofAggregator {
         })
     }
 
+    #[must_use]
     pub fn proof_count(&self) -> usize {
         self.proofs.len()
     }
 
+    #[must_use]
     pub fn valid_proof_count(&self) -> usize {
         self.proofs.iter().filter(|p| validate_proof(p)).count()
     }

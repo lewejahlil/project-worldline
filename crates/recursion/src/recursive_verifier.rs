@@ -68,6 +68,7 @@ impl RecursiveVerifier {
         })
     }
 
+    #[must_use]
     pub fn verify_structure(&self, proof: &RecursiveProof) -> bool {
         proof.recursion_depth <= self.max_depth
             && !proof.outer_proof_data.is_empty()

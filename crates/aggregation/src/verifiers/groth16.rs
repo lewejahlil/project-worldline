@@ -17,13 +17,14 @@ pub struct Groth16Verifier {
 }
 
 impl Groth16Verifier {
+    #[must_use]
     pub fn new(vkey_path: PathBuf) -> Self {
         Self { vkey_path }
     }
 
     /// Encode a byte slice as a lowercase hex string.
     fn to_hex(bytes: &[u8]) -> String {
-        bytes.iter().map(|b| format!("{:02x}", b)).collect()
+        bytes.iter().map(|b| format!("{b:02x}")).collect()
     }
 
     /// Parse 320-byte BN254 Groth16 proof into snarkjs JSON format.
@@ -96,7 +97,7 @@ impl ProofVerifier for Groth16Verifier {
         let output = std::process::Command::new("npx")
             .args(["snarkjs", "groth16", "verify", vkey_str, pub_str, proof_str])
             .output()
-            .map_err(|e| VerificationError::BackendError(format!("snarkjs not found: {}", e)))?;
+            .map_err(|e| VerificationError::BackendError(format!("snarkjs not found: {e}")))?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         if stdout.contains("OK!") {

@@ -9,6 +9,7 @@ pub struct ProverRegistry {
 }
 
 impl ProverRegistry {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -42,14 +43,17 @@ impl ProverRegistry {
         Ok(())
     }
 
+    #[must_use]
     pub fn get(&self, id: ProverId) -> Option<&ProverRecord> {
         self.provers.get(&id)
     }
 
+    #[must_use]
     pub fn active_provers(&self) -> Vec<&ProverRecord> {
         self.provers.values().filter(|r| r.active).collect()
     }
 
+    #[must_use]
     pub fn active_count(&self) -> u8 {
         self.provers.values().filter(|r| r.active).count() as u8
     }

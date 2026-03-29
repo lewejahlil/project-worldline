@@ -7,7 +7,7 @@
 //! - Sorting is applied recursively to nested objects.
 //! - Array element order is preserved (stable, not sorted).
 //! - No trailing commas.
-//! - Numbers serialised using serde_json's default decimal representation.
+//! - Numbers serialised using `serde_json`'s default decimal representation.
 
 use tiny_keccak::{Hasher, Keccak};
 
@@ -16,7 +16,7 @@ use tiny_keccak::{Hasher, Keccak};
 /// # Canonical rules
 /// - Null → `null`
 /// - Bool → `true` / `false`
-/// - Number → minimal decimal representation (serde_json default)
+/// - Number → minimal decimal representation (`serde_json` default)
 /// - String → standard JSON-escaped string with double quotes
 /// - Array  → `[elem0,elem1,...]` — order preserved
 /// - Object → `{"key0":val0,"key1":val1,...}` — keys sorted by UTF-8 byte order
@@ -52,6 +52,7 @@ pub fn canonical_json(value: &serde_json::Value) -> String {
 }
 
 /// Return the Keccak-256 hash of the canonical JSON representation of `value`.
+#[must_use]
 pub fn canonical_keccak(value: &serde_json::Value) -> [u8; 32] {
     let json = canonical_json(value);
     let mut hasher = Keccak::v256();
@@ -62,6 +63,7 @@ pub fn canonical_keccak(value: &serde_json::Value) -> [u8; 32] {
 }
 
 /// Format a 32-byte hash as a `0x`-prefixed lowercase hex string.
+#[must_use]
 pub fn bytes32_to_hex(bytes: &[u8; 32]) -> String {
     format!("0x{}", hex::encode(bytes))
 }

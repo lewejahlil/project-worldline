@@ -54,9 +54,9 @@ impl Default for RecursionConfig {
 pub struct RecursionWitness {
     pub mode: RecursionMode,
     pub k_in_proof: u8,
-    /// Raw proof bytes per inner prover (length == k_in_proof).
+    /// Raw proof bytes per inner prover (length == `k_in_proof`).
     pub inner_proofs: Vec<Vec<u8>>,
-    /// Number of provers that were selected (may be > k_in_proof).
+    /// Number of provers that were selected (may be > `k_in_proof`).
     pub selected_count: u8,
 }
 
