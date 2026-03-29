@@ -5,13 +5,13 @@
 //! (all three use circomlib-compatible Poseidon with identical round constants).
 
 use halo2curves::bn256::Fr;
-use halo2curves::group::ff::{Field, PrimeField};
+use halo2curves::group::ff::PrimeField;
 use worldline_aggregation::{AggregationStrategy, IndividualProof, ProofAggregator, ProofSystemId};
 use worldline_halo2_circuit::{poseidon_compress_3, poseidon_compress_7, WorldlineStfCircuit};
 
 /// Helper: serialize Fr to [u8; 32] little-endian.
 fn fr_to_bytes(fr: Fr) -> [u8; 32] {
-    fr.to_repr().into()
+    fr.to_repr()
 }
 
 // ---------------------------------------------------------------------------
