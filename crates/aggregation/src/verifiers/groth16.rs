@@ -73,24 +73,28 @@ impl ProofVerifier for Groth16Verifier {
         let proof_json = Self::proof_to_json(proof_data);
         let pub_json = Self::public_inputs_to_json(public_inputs);
 
+        let pid = std::process::id();
         let tmp = std::env::temp_dir();
-        let proof_path = tmp.join("worldline_groth16_proof.json");
-        let pub_path = tmp.join("worldline_groth16_public.json");
+        let proof_path = tmp.join(format!("worldline_groth16_proof_{pid}.json"));
+        let pub_path = tmp.join(format!("worldline_groth16_public_{pid}.json"));
 
         std::fs::write(&proof_path, proof_json)
             .map_err(|e| VerificationError::BackendError(e.to_string()))?;
         std::fs::write(&pub_path, pub_json)
             .map_err(|e| VerificationError::BackendError(e.to_string()))?;
 
+        let vkey_str = self.vkey_path.to_str().ok_or_else(|| {
+            VerificationError::BackendError("vkey path is not valid UTF-8".to_string())
+        })?;
+        let pub_str = pub_path.to_str().ok_or_else(|| {
+            VerificationError::BackendError("temp path is not valid UTF-8".to_string())
+        })?;
+        let proof_str = proof_path.to_str().ok_or_else(|| {
+            VerificationError::BackendError("temp path is not valid UTF-8".to_string())
+        })?;
+
         let output = std::process::Command::new("npx")
-            .args([
-                "snarkjs",
-                "groth16",
-                "verify",
-                self.vkey_path.to_str().unwrap(),
-                pub_path.to_str().unwrap(),
-                proof_path.to_str().unwrap(),
-            ])
+            .args(["snarkjs", "groth16", "verify", vkey_str, pub_str, proof_str])
             .output()
             .map_err(|e| VerificationError::BackendError(format!("snarkjs not found: {}", e)))?;
 
