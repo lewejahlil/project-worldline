@@ -36,12 +36,12 @@ Every production source file was read across Solidity (`contracts/src/`, `contra
 - **Risk:** LOW — test-only changes.
 - **Impact:** MEDIUM — reduces ~200 lines of test duplication, improves type safety.
 
-### 4. Fix error naming inconsistency (NotAuthorised vs NotAuthorized) — DEFERRED
+### 4. Fix error naming inconsistency (NotAuthorised vs NotAuthorized) — DONE
 
-- **Files:** `contracts/src/WorldlineRegistry.sol` line 15, `contracts/src/WorldlineFinalizer.sol` line 22
-- **Problem:** `WorldlineRegistry` uses `NotAuthorised` (British spelling), `WorldlineFinalizer` uses `NotAuthorized` (US spelling). Inconsistent across the project.
-- **Status:** **Deferred as a future coordinated change.** Renaming a custom error changes its 4-byte selector, which affects any off-chain code, subgraph, or monitoring that matches on the selector. This should be done as a coordinated change with all consumers updated simultaneously, not as an incidental refactoring fix.
-- **Risk:** MEDIUM if done without coordination — changes error selector ABI.
+- **Files:** `contracts/src/WorldlineRegistry.sol`, `contracts/src/WorldlineFinalizer.sol`, `test/WorldlineRegistry.test.ts`
+- **Problem:** `WorldlineRegistry` used `NotAuthorised` (British spelling), `WorldlineFinalizer` used `NotAuthorized` (US spelling). Inconsistent across the project.
+- **Status:** **Resolved.** `WorldlineRegistry` renamed to `NotAuthorized` (US spelling). All test assertions updated. Error selector ABI updated accordingly.
+- **Risk:** LOW — coordinated rename with all consumers updated simultaneously.
 - **Impact:** LOW — cosmetic consistency fix.
 
 ### 5. Fix `require()` string in MockHalo2Verifier
