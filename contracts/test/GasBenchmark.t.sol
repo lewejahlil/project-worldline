@@ -19,13 +19,7 @@ contract EchoMockAdapter is IZkAggregatorVerifier {
         external
         pure
         override
-        returns (
-            bool valid,
-            bytes32 stfCommitment,
-            bytes32 programVKey,
-            bytes32 policyHash,
-            bytes32 proverSetDigest
-        )
+        returns (bool valid, bytes32 stfCommitment, bytes32 programVKey, bytes32 policyHash, bytes32 proverSetDigest)
     {
         stfCommitment = abi.decode(publicInputs, (bytes32));
         valid = true;
@@ -56,11 +50,7 @@ contract GasBenchmarkTest is Test {
     /// @notice Benchmark Groth16ZkAdapter wrapping a MockGroth16Verifier (always-true).
     function test_gas_adapter_verify() public {
         MockGroth16Verifier mockVerifier = new MockGroth16Verifier();
-        Groth16ZkAdapter adapter = new Groth16ZkAdapter(
-            address(mockVerifier),
-            keccak256("vkey"),
-            keccak256("policy")
-        );
+        Groth16ZkAdapter adapter = new Groth16ZkAdapter(address(mockVerifier), keccak256("vkey"), keccak256("policy"));
 
         // 320-byte proof: pA[2], pB[2][2], pC[2], stfCommitment, proverSetDigest
         bytes memory proof = abi.encode(
@@ -78,26 +68,17 @@ contract GasBenchmarkTest is Test {
     /// @notice Benchmark WorldlineRegistry circuit registration.
     function test_gas_registry_register() public {
         WorldlineRegistry regImpl = new WorldlineRegistry();
-        ERC1967Proxy regProxy = new ERC1967Proxy(
-            address(regImpl),
-            abi.encodeCall(WorldlineRegistry.initialize, (address(1)))
-        );
+        ERC1967Proxy regProxy =
+            new ERC1967Proxy(address(regImpl), abi.encodeCall(WorldlineRegistry.initialize, (address(1))));
         WorldlineRegistry registry = WorldlineRegistry(address(regProxy));
-        registry.registerCircuit(
-            keccak256("circuit-1"),
-            "Benchmark Circuit",
-            address(1),
-            "ipfs://bench"
-        );
+        registry.registerCircuit(keccak256("circuit-1"), "Benchmark Circuit", address(1), "ipfs://bench");
     }
 
     /// @notice Benchmark WorldlineRegistry plugin deprecation (setup: register circuit + plugin, measure deprecatePlugin).
     function test_gas_registry_deregister() public {
         WorldlineRegistry regImpl2 = new WorldlineRegistry();
-        ERC1967Proxy regProxy2 = new ERC1967Proxy(
-            address(regImpl2),
-            abi.encodeCall(WorldlineRegistry.initialize, (address(1)))
-        );
+        ERC1967Proxy regProxy2 =
+            new ERC1967Proxy(address(regImpl2), abi.encodeCall(WorldlineRegistry.initialize, (address(1))));
         WorldlineRegistry registry = WorldlineRegistry(address(regProxy2));
 
         bytes32 circuitId = keccak256("circuit-deregister");
@@ -130,7 +111,7 @@ contract GasBenchmarkTest is Test {
         uint256 closeTs = block.timestamp;
         bytes32 stf = keccak256(abi.encode(l2Start, l2End, outputRoot, l1Hash, domainSep, closeTs));
 
-        bytes memory publicInputs = abi.encode(stf, l2Start, l2End, outputRoot, l1Hash, domainSep, closeTs);
+        bytes memory publicInputs = abi.encode(stf, l2Start, l2End, outputRoot, l1Hash, domainSep, closeTs, stf);
         bytes memory proof = abi.encode(uint256(1), uint256(2));
 
         finalizer.submitZkValidityProof(proof, publicInputs);
@@ -139,11 +120,7 @@ contract GasBenchmarkTest is Test {
     /// @notice Benchmark full on-chain quorum validation: Groth16ZkAdapter wrapping MockGroth16Verifier.
     function test_gas_quorum_check() public {
         MockGroth16Verifier mockVerifier = new MockGroth16Verifier();
-        Groth16ZkAdapter zkAdapter = new Groth16ZkAdapter(
-            address(mockVerifier),
-            keccak256("vkey"),
-            keccak256("policy")
-        );
+        Groth16ZkAdapter zkAdapter = new Groth16ZkAdapter(address(mockVerifier), keccak256("vkey"), keccak256("policy"));
 
         bytes32 domainSep = keccak256("bench-domain");
         WorldlineFinalizer finImpl2 = new WorldlineFinalizer();
@@ -161,7 +138,7 @@ contract GasBenchmarkTest is Test {
         uint256 closeTs = block.timestamp;
         bytes32 stf = keccak256(abi.encode(l2Start, l2End, outputRoot, l1Hash, domainSep, closeTs));
 
-        bytes memory publicInputs = abi.encode(stf, l2Start, l2End, outputRoot, l1Hash, domainSep, closeTs);
+        bytes memory publicInputs = abi.encode(stf, l2Start, l2End, outputRoot, l1Hash, domainSep, closeTs, stf);
 
         // Proof embeds stf at position 8 (index 8 of 10 uint256 words) for Groth16ZkAdapter
         bytes memory proof = abi.encode(

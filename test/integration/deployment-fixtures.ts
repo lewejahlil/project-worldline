@@ -248,11 +248,11 @@ export async function deployAllWithThreeAdapters(deployer?: Signer): Promise<Thr
 // ── Proof encoding helpers ───────────────────────────────────────────────────
 
 /**
- * Compute the stfCommitment as the contract expects:
+ * Compute the MED-001 submission binding:
  *   keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domainSeparator, windowCloseTimestamp))
  *
- * MED-001: the on-chain binding check will reject any proof whose stfCommitment
- * doesn't match this exact encoding.
+ * This value is placed at publicInputs word 7 (submissionBinding). Tests also use it as
+ * the stfCommitment stand-in at word 0 (the real circuit outputs a Poseidon hash).
  */
 export function computeStfCommitment(
   l2Start: bigint,
@@ -269,7 +269,10 @@ export function computeStfCommitment(
 }
 
 /**
- * Encode the 7-word (224-byte) public inputs expected by WorldlineFinalizer._submit().
+ * Encode the 8-word (256-byte) public inputs expected by WorldlineFinalizer._submit().
+ *   Word 0: stfCommitment (test uses the keccak binding as a Poseidon stand-in).
+ *   Words 1–6: l2Start, l2End, outputRoot, l1BlockHash, domainSeparator, windowCloseTimestamp.
+ *   Word 7: submissionBinding = keccak256(abi.encode(words 1–6)) — MED-001 digest.
  */
 export function encodePublicInputs(
   l2Start: bigint,
@@ -279,8 +282,17 @@ export function encodePublicInputs(
 ): string {
   const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp, domain);
   return ethers.AbiCoder.defaultAbiCoder().encode(
-    ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-    [stfCommitment, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, domain, windowCloseTimestamp]
+    ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256", "bytes32"],
+    [
+      stfCommitment,
+      l2Start,
+      l2End,
+      ethers.ZeroHash,
+      ethers.ZeroHash,
+      domain,
+      windowCloseTimestamp,
+      stfCommitment
+    ]
   );
 }
 
