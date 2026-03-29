@@ -33,7 +33,7 @@ pub enum AggregationStrategy {
 /// Expected proof byte sizes for each proof system (BN254 pairing format).
 pub const GROTH16_PROOF_BYTE_SIZE: usize = 320;
 pub const PLONK_PROOF_BYTE_SIZE: usize = 832;
-pub const HALO2_PROOF_BYTE_SIZE: usize = 192;
+pub const HALO2_PROOF_BYTE_SIZE: usize = 1536;
 
 /// Maximum batch size enforced by the STF circuit constraint.
 pub const MAX_BATCH_SIZE: u64 = 1024;

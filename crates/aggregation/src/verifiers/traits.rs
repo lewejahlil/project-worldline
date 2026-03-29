@@ -52,7 +52,7 @@ impl ProofVerifier for MockVerifier {
         match self.system_id {
             ProofSystemId::Groth16 => 320,
             ProofSystemId::Plonk => 832,
-            ProofSystemId::Halo2 => 192,
+            ProofSystemId::Halo2 => 1536,
         }
     }
 }
@@ -104,6 +104,6 @@ mod tests {
             system_id: ProofSystemId::Halo2,
             should_pass: true,
         };
-        assert_eq!(v.expected_proof_length(), 192);
+        assert_eq!(v.expected_proof_length(), 1536);
     }
 }

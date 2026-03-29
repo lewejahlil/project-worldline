@@ -29,7 +29,7 @@ fn halo2_proof(prover_id: u64) -> IndividualProof {
     IndividualProof {
         prover_id,
         proof_system: ProofSystemId::Halo2,
-        proof_data: vec![0u8; 192],
+        proof_data: vec![0u8; 1536],
         public_inputs: vec![[3u8; 32]],
     }
 }
