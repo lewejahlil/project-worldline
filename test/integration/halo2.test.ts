@@ -29,8 +29,8 @@ import {
  * for the finalizer's StfMismatch check.
  */
 function encodeHalo2ProofEnvelope(stfCommitment: string, proverSetDigest: string): string {
-  // Create fake proof bytes of the expected length (1472 bytes)
-  const proofBytes = ethers.hexlify(ethers.randomBytes(1472));
+  // Create fake proof bytes of the expected length (2016 bytes)
+  const proofBytes = ethers.hexlify(ethers.randomBytes(2016));
   return ethers.AbiCoder.defaultAbiCoder().encode(
     ["bytes", "uint256", "uint256"],
     [proofBytes, BigInt(stfCommitment), BigInt(proverSetDigest)]
@@ -46,9 +46,8 @@ describe("Halo2 verifier integration", function () {
     const [owner] = await ethers.getSigners();
     const { router } = await deployAllWithRouter(owner);
 
-    // Deploy Halo2Verifier in mock mode
-    const Halo2Verifier = await ethers.getContractFactory("Halo2Verifier", owner);
-    const halo2Verifier = await Halo2Verifier.deploy(true);
+    const MockHalo2 = await ethers.getContractFactory("MockHalo2Verifier", owner);
+    const halo2Verifier = await MockHalo2.deploy();
     await halo2Verifier.waitForDeployment();
 
     // Deploy Halo2ZkAdapter
@@ -76,8 +75,8 @@ describe("Halo2 verifier integration", function () {
     const { router } = await deployAllWithRouter(owner);
 
     // Deploy and register Halo2 adapter
-    const Halo2Verifier = await ethers.getContractFactory("Halo2Verifier", owner);
-    const halo2Verifier = await Halo2Verifier.deploy(true);
+    const MockHalo2 = await ethers.getContractFactory("MockHalo2Verifier", owner);
+    const halo2Verifier = await MockHalo2.deploy();
     await halo2Verifier.waitForDeployment();
 
     const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", owner);
@@ -122,8 +121,8 @@ describe("Halo2 verifier integration", function () {
     await enablePermissionless(finalizer);
 
     // Deploy Halo2 stack
-    const Halo2Verifier = await ethers.getContractFactory("Halo2Verifier", owner);
-    const halo2Verifier = await Halo2Verifier.deploy(true);
+    const MockHalo2 = await ethers.getContractFactory("MockHalo2Verifier", owner);
+    const halo2Verifier = await MockHalo2.deploy();
     await halo2Verifier.waitForDeployment();
 
     const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", owner);
@@ -177,11 +176,11 @@ describe("Halo2 verifier integration", function () {
 
   // ── 5. Halo2ZkAdapter proofSystemId and expectedProofLength ───────────────
 
-  it("Halo2ZkAdapter reports proofSystemId=3 and expectedProofLength=1600", async function () {
+  it("Halo2ZkAdapter reports proofSystemId=3 and expectedProofLength=2144", async function () {
     const [owner] = await ethers.getSigners();
 
-    const Halo2Verifier = await ethers.getContractFactory("Halo2Verifier", owner);
-    const halo2Verifier = await Halo2Verifier.deploy(true);
+    const MockHalo2 = await ethers.getContractFactory("MockHalo2Verifier", owner);
+    const halo2Verifier = await MockHalo2.deploy();
     await halo2Verifier.waitForDeployment();
 
     const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", owner);
@@ -193,7 +192,7 @@ describe("Halo2 verifier integration", function () {
     await halo2Adapter.waitForDeployment();
 
     expect(await halo2Adapter.proofSystemId()).to.equal(3);
-    expect(await halo2Adapter.expectedProofLength()).to.equal(1600);
+    expect(await halo2Adapter.expectedProofLength()).to.equal(2144);
   });
 
   // ── 6. Multi-prover: Groth16 + Halo2 sequential submission ───────────────
@@ -204,8 +203,8 @@ describe("Halo2 verifier integration", function () {
     await enablePermissionless(finalizer);
 
     // Deploy Halo2 stack
-    const Halo2Verifier = await ethers.getContractFactory("Halo2Verifier", owner);
-    const halo2Verifier = await Halo2Verifier.deploy(true);
+    const MockHalo2 = await ethers.getContractFactory("MockHalo2Verifier", owner);
+    const halo2Verifier = await MockHalo2.deploy();
     await halo2Verifier.waitForDeployment();
 
     const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", owner);
@@ -259,8 +258,8 @@ describe("Halo2 verifier integration", function () {
     const { router } = await deployAllWithRouter(owner);
 
     // Deploy Halo2 stack
-    const Halo2Verifier = await ethers.getContractFactory("Halo2Verifier", owner);
-    const halo2Verifier = await Halo2Verifier.deploy(true);
+    const MockHalo2 = await ethers.getContractFactory("MockHalo2Verifier", owner);
+    const halo2Verifier = await MockHalo2.deploy();
     await halo2Verifier.waitForDeployment();
 
     const Halo2Adapter = await ethers.getContractFactory("Halo2ZkAdapter", owner);

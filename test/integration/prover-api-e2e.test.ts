@@ -228,9 +228,9 @@ describe("Prover API — end-to-end encoding", function () {
 
     // Read the on-chain constant from the deployed adapter
     const minLen = await (halo2Adapter as any).HALO2_PROOF_MIN_LEN();
-    expect(minLen).to.equal(1600n);
+    expect(minLen).to.equal(2144n);
 
-    // The ABI-encoded Halo2 proof must be >= 1600 bytes (HALO2_PROOF_MIN_LEN)
+    // The ABI-encoded Halo2 proof must be >= 2144 bytes (HALO2_PROOF_MIN_LEN)
     // Remove 0x prefix for byte length calculation
     const proofByteLength = (encodedProof.length - 2) / 2;
     expect(proofByteLength).to.be.gte(Number(minLen));
