@@ -324,9 +324,10 @@ No `__gap` array — see **M-02**.
 
 #### 7. Timelock consistency
 
-`registerAdapter()` and `removeAdapter()` are both immediate — no timelock.
-When `WorldlineFinalizer` uses the routed path (`submitZkValidityProofRouted`), proof
-routing bypasses the `adapterChangeDelay` timelock entirely — see **H-02**.
+`removeAdapter()` is timelocked (H-02 resolved): it schedules a removal delayed by
+`adapterChangeDelay` (min 1 day); `activateAdapterRemoval()` completes it.
+`registerAdapter()` is intentionally immediate — it is additive-only (can only fill
+empty slots); see H-02 resolution notes for rationale.
 
 #### 8. Event emission
 
@@ -426,7 +427,7 @@ parameter on this contract.
 
 **Severity:** HIGH
 **File:** `contracts/src/ProofRouter.sol:85,100`
-**Status:** Open
+**Status:** RESOLVED — Chunk 2
 
 ```solidity
 function registerAdapter(uint8 proofSystemId, address adapter) external onlyOwner { ... }
@@ -441,6 +442,24 @@ the routed path.
 
 **Impact:** Same as H-01 — complete bypass of adapter-change delay for the routed
 proof-submission path.
+
+**Resolution (Chunk 2):** `removeAdapter()` was converted to a two-step timelocked flow:
+`removeAdapter()` schedules the removal at `block.timestamp + adapterChangeDelay` (minimum
+1 day); `activateAdapterRemoval()` completes it after the delay elapses. A new
+`setAdapterChangeDelay()` function allows the owner to adjust the delay subject to a
+`MIN_ADAPTER_CHANGE_DELAY = 1 days` floor. New events `AdapterRemovalScheduled` and
+`AdapterChangeDelaySet` are emitted.
+
+**`registerAdapter()` — intentionally left immediate (additive-only):**
+`registerAdapter()` can only register into **empty slots** — it reverts with
+`AdapterAlreadyRegistered` if the slot is already occupied. Registering into an empty
+slot is purely additive: it adds new routing capability without disrupting any existing
+routing path. The security-critical operation is *replacing* an existing adapter (slot A →
+slot B), which requires completing the timelocked `removeAdapter` flow first (at least 1
+day of observable warning via `AdapterRemovalScheduled`), then re-registering into the
+now-empty slot (observable via `AdapterRegistered`). The timelock on removal is the
+security control; the subsequent re-registration after removal is both observable and
+unambiguous. No timelock on `registerAdapter()` is required.
 
 ---
 
@@ -462,7 +481,7 @@ is required or possible; the init chain is complete as written.
 
 **Severity:** MEDIUM
 **Files:** All four contracts
-**Status:** Open
+**Status:** RESOLVED — Chunk 3
 
 None of the four contracts declare a `uint256[N] private __gap` storage reservation.
 Without a gap:
@@ -479,10 +498,15 @@ inheritance level. The exact size depends on the current slot consumption:
 
 | Contract                 | Current user-defined slots | Suggested gap |
 | ------------------------ | -------------------------- | ------------- |
-| WorldlineFinalizer       | ~19                        | 31            |
-| WorldlineRegistry        | ~10                        | 40            |
-| WorldlineOutputsRegistry | ~4                         | 46            |
-| ProofRouter              | 1                          | 49            |
+| WorldlineFinalizer       | 22 (slots 0–21)            | 28            |
+| WorldlineRegistry        | 12 (slots 0–11)            | 38            |
+| WorldlineOutputsRegistry | 3 (slots 0–2)              | 47            |
+| ProofRouter              | 3 (slots 0–2)              | 47            |
+
+**Resolution (Chunk 3):** `uint256[N] private __gap` arrays added at the end of
+user-defined storage in all four contracts, sized per the table above. Slot counts
+verified with `forge inspect <Contract> storageLayout`. Total reserved slots per contract
+= 50 (used + gap).
 
 ---
 
@@ -511,7 +535,7 @@ PlonkZkAdapter, Halo2ZkAdapter, and the full `registerAdapter` wiring are also a
 
 **Severity:** MEDIUM
 **File:** `test/integration/upgrade.test.ts`
-**Status:** Open
+**Status:** RESOLVED — Chunk 3
 
 The following test scenarios are missing:
 
@@ -529,6 +553,14 @@ The following test scenarios are missing:
 WorldlineFinalizerV2 and ProofRouterV2 test contracts exist in
 `contracts/src/test/`. No equivalent V2 contracts exist for WorldlineRegistry or
 WorldlineOutputsRegistry, so items 1–2 require creating those test contracts.
+
+**Resolution (Chunk 3):**
+- Created `contracts/src/test/WorldlineRegistryV2.sol` with `@custom:oz-upgrades-from WorldlineRegistry`
+- Created `contracts/src/test/WorldlineOutputsRegistryV2.sol` with `@custom:oz-upgrades-from WorldlineOutputsRegistry`
+- Added WorldlineRegistry v1→v2 upgrade test block: deploy, write state, upgrade, version check, state preservation, non-owner revert
+- Added WorldlineOutputsRegistry v1→v2 upgrade test block: deploy, write state (schedule+activate entry), upgrade, version check, state preservation, non-owner revert
+- Added "double-initialize reverts" test block covering all 4 contracts
+- Added "implementation contract locked" test block covering all 4 contracts
 
 ---
 
@@ -607,8 +639,8 @@ The following audit checklist items were examined and found to have no issues:
 | H-01 | HIGH     | RESOLVED — Chunk 2   | Add timelock for `setProofRouter`                               |
 | H-02 | HIGH     | RESOLVED — Chunk 2   | Add timelock for `removeAdapter` in ProofRouter                 |
 | M-01 | MEDIUM   | CLOSED — N/A (OZ v5) | `__UUPSUpgradeable_init()` does not exist in OZ v5              |
-| M-02 | MEDIUM   | Chunk 3              | Add `__gap` arrays to all four contracts                        |
+| M-02 | MEDIUM   | RESOLVED — Chunk 3   | Add `__gap` arrays to all four contracts                        |
 | M-03 | MEDIUM   | RESOLVED — Chunk 2   | Add ProofRouter deployment to `deploy.ts`                       |
-| M-04 | MEDIUM   | Chunk 3              | Expand upgrade test suite                                       |
+| M-04 | MEDIUM   | RESOLVED — Chunk 3   | Expand upgrade test suite                                       |
 | L-01 | LOW      | Chunk 4              | Add upgrade-authorization event (or document deferral)          |
 | L-02 | LOW      | Chunk 4              | Replace `FacadeTimelockActive(0)` with `FacadeAlreadySet` error |

@@ -85,6 +85,10 @@ contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgrad
     ///         is a valid target to disable the facade).
     bool public facadeChangeScheduled;
 
+    /// @dev Storage gap to allow future upgrades to add variables without shifting slots.
+    ///      Slots 0–11 are used (12 total); gap fills to 50.
+    uint256[38] private __gap;
+
     // ── Constructor ─────────────────────────────────────────────────────────────
 
     /// @custom:oz-upgrades-unsafe-allow constructor

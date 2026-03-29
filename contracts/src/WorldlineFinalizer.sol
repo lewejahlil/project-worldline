@@ -153,6 +153,10 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     address public pendingProofRouter;
     uint256 public pendingProofRouterActivation;
 
+    /// @dev Storage gap to allow future upgrades to add variables without shifting slots.
+    ///      Slots 0–21 are used (22 total); gap fills to 50.
+    uint256[28] private __gap;
+
     // ── Constructor ─────────────────────────────────────────────────────────────
 
     /// @custom:oz-upgrades-unsafe-allow constructor

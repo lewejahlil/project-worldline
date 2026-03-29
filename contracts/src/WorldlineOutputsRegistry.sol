@@ -67,6 +67,10 @@ contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUP
     /// @notice Pending entries awaiting activation.
     mapping(bytes32 => PendingEntry) public pendingEntries;
 
+    /// @dev Storage gap to allow future upgrades to add variables without shifting slots.
+    ///      Slots 0–2 are used (3 total); gap fills to 50.
+    uint256[47] private __gap;
+
     // ── Constructor ─────────────────────────────────────────────────────────────
 
     /// @custom:oz-upgrades-unsafe-allow constructor

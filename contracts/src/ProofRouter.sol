@@ -82,6 +82,10 @@ contract ProofRouter is Initializable, Ownable2StepUpgradeable, UUPSUpgradeable 
     ///      Zero means no removal is scheduled.
     mapping(uint8 => uint256) private _pendingRemovalActivations;
 
+    /// @dev Storage gap to allow future upgrades to add variables without shifting slots.
+    ///      Slots 0–2 are used (3 total); gap fills to 50.
+    uint256[47] private __gap;
+
     // ── Constructor ─────────────────────────────────────────────────────────────
 
     /// @custom:oz-upgrades-unsafe-allow constructor
