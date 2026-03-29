@@ -36,13 +36,13 @@ Every production source file was read across Solidity (`contracts/src/`, `contra
 - **Risk:** LOW — test-only changes.
 - **Impact:** MEDIUM — reduces ~200 lines of test duplication, improves type safety.
 
-### 4. Fix error naming inconsistency (NotAuthorised vs NotAuthorized)
+### 4. Fix error naming inconsistency (NotAuthorised vs NotAuthorized) — DEFERRED
 
 - **Files:** `contracts/src/WorldlineRegistry.sol` line 15, `contracts/src/WorldlineFinalizer.sol` line 22
 - **Problem:** `WorldlineRegistry` uses `NotAuthorised` (British spelling), `WorldlineFinalizer` uses `NotAuthorized` (US spelling). Inconsistent across the project.
-- **Approach:** Rename `NotAuthorised` → `NotAuthorized` in WorldlineRegistry and update the one modifier that references it.
-- **Risk:** LOW — custom error rename, no behavioral change. Tests use the contract's ABI so they'll pick up the rename automatically.
-- **Impact:** LOW — consistency fix.
+- **Status:** **Deferred as a future coordinated change.** Renaming a custom error changes its 4-byte selector, which affects any off-chain code, subgraph, or monitoring that matches on the selector. This should be done as a coordinated change with all consumers updated simultaneously, not as an incidental refactoring fix.
+- **Risk:** MEDIUM if done without coordination — changes error selector ABI.
+- **Impact:** LOW — cosmetic consistency fix.
 
 ### 5. Fix `require()` string in MockHalo2Verifier
 
