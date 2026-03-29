@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/worldline-api",
     "crates/worldline-driver",
     "crates/worldline-registry",
     "crates/worldline-compat",
