@@ -23,6 +23,10 @@ contract WorldlineCompat is Ownable {
     /// @notice Register a new circuit through the registry.
     /// @dev Caller must be the owner of this compat facade. The registry must
     ///      have this contract set as its compatFacade address.
+    /// @param id          Unique identifier for the circuit.
+    /// @param description Human-readable description of the circuit.
+    /// @param verifier    Address of the on-chain verifier contract.
+    /// @param abiURI      URI pointing to the circuit's ABI specification.
     function registerCircuit(
         bytes32 id,
         string calldata description,
@@ -33,6 +37,9 @@ contract WorldlineCompat is Ownable {
     }
 
     /// @notice Register a new driver through the registry.
+    /// @param id       Unique identifier for the driver.
+    /// @param version  Semantic version string (e.g. "1.0.0").
+    /// @param endpoint URL or URI of the driver's service endpoint.
     function registerDriver(
         bytes32 id,
         string calldata version,
@@ -42,6 +49,10 @@ contract WorldlineCompat is Ownable {
     }
 
     /// @notice Register a new plugin through the registry.
+    /// @param id             Unique identifier for the plugin.
+    /// @param version        Semantic version string.
+    /// @param implementation Address of the plugin's implementation contract.
+    /// @param circuitId      Identifier of the circuit this plugin is bound to.
     function registerPlugin(
         bytes32 id,
         string calldata version,
@@ -52,11 +63,14 @@ contract WorldlineCompat is Ownable {
     }
 
     /// @notice Deprecate a plugin through the registry.
+    /// @param id Identifier of the plugin to deprecate.
     function deprecatePlugin(bytes32 id) external onlyOwner {
         registry.deprecatePlugin(id);
     }
 
     /// @notice Read a circuit from the registry (view, no delegation needed).
+    /// @param id Identifier of the circuit to retrieve.
+    /// @return The Circuit struct containing description, verifier address, and ABI URI.
     function getCircuit(
         bytes32 id
     ) external view returns (WorldlineRegistry.Circuit memory) {
@@ -64,6 +78,8 @@ contract WorldlineCompat is Ownable {
     }
 
     /// @notice Read a driver from the registry.
+    /// @param id Identifier of the driver to retrieve.
+    /// @return The Driver struct containing version and endpoint.
     function getDriver(
         bytes32 id
     ) external view returns (WorldlineRegistry.Driver memory) {
@@ -71,6 +87,8 @@ contract WorldlineCompat is Ownable {
     }
 
     /// @notice Read a plugin from the registry.
+    /// @param id Identifier of the plugin to retrieve.
+    /// @return The Plugin struct containing version, implementation, circuit binding, and deprecation status.
     function getPlugin(
         bytes32 id
     ) external view returns (WorldlineRegistry.Plugin memory) {
