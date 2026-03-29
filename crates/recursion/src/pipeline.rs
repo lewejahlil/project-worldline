@@ -454,7 +454,7 @@ mod tests {
     #[test]
     #[ignore = "requires snarkjs installed and circuit artifacts"]
     fn pipeline_two_of_three_quorum() {
-        use crate::{Groth16Prover, PlonkProver};
+        use crate::Groth16Prover;
         use std::path::PathBuf;
 
         // quorum=2 with all 3 provers — should succeed
