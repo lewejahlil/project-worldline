@@ -1,6 +1,6 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-test-domain"));
 const PROGRAM_VKEY = ethers.keccak256(ethers.toUtf8Bytes("program-vkey"));
@@ -25,7 +25,12 @@ describe("WorldlineFinalizer", function () {
 
     // Deploy the Finalizer with 1-hour max acceptance delay
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-    const finalizer = await Finalizer.deploy(await adapter.getAddress(), DOMAIN, 3600, 0);
+    const finalizer = (await upgrades.deployProxy(
+      Finalizer,
+      [await adapter.getAddress(), DOMAIN, 3600, 0, ethers.ZeroAddress],
+      { kind: "uups" }
+    )) as any;
+    await finalizer.waitForDeployment();
 
     // Grant submitter role
     await finalizer.connect(owner).setSubmitter(submitter.address, true);
@@ -113,7 +118,9 @@ describe("WorldlineFinalizer", function () {
     it("reverts if deployed with zero adapter", async function () {
       const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
       await expect(
-        Finalizer.deploy(ethers.ZeroAddress, DOMAIN, 3600, 0)
+        upgrades.deployProxy(Finalizer, [ethers.ZeroAddress, DOMAIN, 3600, 0, ethers.ZeroAddress], {
+          kind: "uups"
+        })
       ).to.be.revertedWithCustomError(Finalizer, "AdapterZero");
     });
 
@@ -121,7 +128,11 @@ describe("WorldlineFinalizer", function () {
       const { adapter } = await loadFixture(deployFixture);
       const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
       await expect(
-        Finalizer.deploy(await adapter.getAddress(), DOMAIN, 0, 0)
+        upgrades.deployProxy(
+          Finalizer,
+          [await adapter.getAddress(), DOMAIN, 0, 0, ethers.ZeroAddress],
+          { kind: "uups" }
+        )
       ).to.be.revertedWithCustomError(Finalizer, "MaxAcceptanceDelayZero");
     });
   });

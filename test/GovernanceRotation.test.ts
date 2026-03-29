@@ -10,7 +10,7 @@
 
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 
 const DOMAIN = ethers.keccak256(ethers.toUtf8Bytes("worldline-governance-test"));
 const PROGRAM_VKEY_V1 = ethers.keccak256(ethers.toUtf8Bytes("program-vkey-v1"));
@@ -30,7 +30,10 @@ describe("GovernanceRotation", function () {
 
     // 2. Deploy WorldlineRegistry
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await Registry.deploy(await mockVerifier.getAddress());
+    const registry = (await upgrades.deployProxy(Registry, [await mockVerifier.getAddress()], {
+      kind: "uups"
+    })) as any;
+    await registry.waitForDeployment();
 
     // 3. Deploy initial Groth16ZkAdapter (v1 pinned values)
     const Adapter = await ethers.getContractFactory("Groth16ZkAdapter");
@@ -42,11 +45,19 @@ describe("GovernanceRotation", function () {
 
     // 4. Deploy WorldlineFinalizer (1-hour max acceptance delay)
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-    const finalizer = await Finalizer.deploy(await adapterV1.getAddress(), DOMAIN, 3600, 0);
+    const finalizer = (await upgrades.deployProxy(
+      Finalizer,
+      [await adapterV1.getAddress(), DOMAIN, 3600, 0, ethers.ZeroAddress],
+      { kind: "uups" }
+    )) as any;
+    await finalizer.waitForDeployment();
 
     // 5. Deploy WorldlineOutputsRegistry (24-hour minimum timelock)
     const OutputsRegistry = await ethers.getContractFactory("WorldlineOutputsRegistry");
-    const outputsRegistry = await OutputsRegistry.deploy(MIN_TIMELOCK);
+    const outputsRegistry = (await upgrades.deployProxy(OutputsRegistry, [MIN_TIMELOCK], {
+      kind: "uups"
+    })) as any;
+    await outputsRegistry.waitForDeployment();
 
     // 6. Deploy WorldlineCompat facade
     const Compat = await ethers.getContractFactory("WorldlineCompat");

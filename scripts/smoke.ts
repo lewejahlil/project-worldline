@@ -16,7 +16,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { ethers, network } from "hardhat";
+import { ethers, network, upgrades } from "hardhat";
 
 const PROVER_SET_DIGEST = ethers.keccak256(ethers.toUtf8Bytes("smoke-prover-set-digest"));
 const GENESIS_L2_BLOCK = 0n;
@@ -91,16 +91,21 @@ async function deployMockStack(deployer: Awaited<ReturnType<typeof ethers.getSig
   const adapter = await Adapter.deploy(await mockVerifier.getAddress(), PROGRAM_VKEY, POLICY_HASH);
   await adapter.waitForDeployment();
 
-  const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", deployer);
-  const finalizer = await Finalizer.deploy(
-    await adapter.getAddress(),
-    DOMAIN,
-    MAX_DELAY,
-    GENESIS_L2_BLOCK
-  );
-  await finalizer.waitForDeployment();
+  const BlobKzgVerifier = await ethers.getContractFactory("BlobKzgVerifier", deployer);
+  const blobKzgVerifier = await BlobKzgVerifier.deploy();
+  await blobKzgVerifier.waitForDeployment();
+  const blobKzgVerifierAddr = await blobKzgVerifier.getAddress();
 
-  return { finalizerAddr: await finalizer.getAddress(), domain: DOMAIN };
+  const FinalizerFactory = await ethers.getContractFactory("WorldlineFinalizer", deployer);
+  const finalizerProxy = await upgrades.deployProxy(
+    FinalizerFactory,
+    [await adapter.getAddress(), DOMAIN, MAX_DELAY, GENESIS_L2_BLOCK, blobKzgVerifierAddr],
+    { kind: "uups", initializer: "initialize" }
+  );
+  await finalizerProxy.waitForDeployment();
+  const finalizerAddr = await finalizerProxy.getAddress();
+
+  return { finalizerAddr, domain: DOMAIN };
 }
 
 async function main(): Promise<void> {
@@ -143,7 +148,11 @@ async function main(): Promise<void> {
     const latestFile = files[files.length - 1];
     console.log(`\nUsing deployment: ${latestFile}`);
     const deployment = JSON.parse(fs.readFileSync(path.join(deploymentsDir, latestFile), "utf-8"));
-    finalizerAddr = deployment.contracts.WorldlineFinalizer;
+    const wlFinalizer = deployment.contracts.WorldlineFinalizer;
+    finalizerAddr =
+      wlFinalizer && typeof wlFinalizer === "object" && "proxy" in wlFinalizer
+        ? wlFinalizer.proxy
+        : wlFinalizer;
     domain =
       deployment.config?.domainSeparator ??
       ethers.keccak256(ethers.toUtf8Bytes("worldline-testnet"));

@@ -1,6 +1,6 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 
 const CIRCUIT_ID = ethers.encodeBytes32String("circuit-1");
 const DRIVER_ID = ethers.encodeBytes32String("driver-1");
@@ -14,7 +14,10 @@ describe("WorldlineCompat", function () {
     const mockVerifier = await MockVerifier.deploy();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry = await Registry.deploy(await mockVerifier.getAddress());
+    const registry = (await upgrades.deployProxy(Registry, [await mockVerifier.getAddress()], {
+      kind: "uups"
+    })) as any;
+    await registry.waitForDeployment();
 
     const Compat = await ethers.getContractFactory("WorldlineCompat");
     const compat = await Compat.deploy(await registry.getAddress());

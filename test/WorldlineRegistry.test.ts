@@ -1,7 +1,7 @@
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import { WorldlineRegistry } from "../typechain-types";
 
 const CIRCUIT_ID = ethers.encodeBytes32String("circuit-1");
@@ -17,7 +17,12 @@ describe("WorldlineRegistry", function () {
     const mockVerifier = await MockVerifier.deploy();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry");
-    const registry: WorldlineRegistry = await Registry.deploy(await mockVerifier.getAddress());
+    const registry: WorldlineRegistry = (await upgrades.deployProxy(
+      Registry,
+      [await mockVerifier.getAddress()],
+      { kind: "uups" }
+    )) as any;
+    await registry.waitForDeployment();
 
     return { registry, mockVerifier, owner, admin, stranger };
   }
@@ -37,10 +42,9 @@ describe("WorldlineRegistry", function () {
 
     it("reverts if deployed with zero verifier address", async function () {
       const Registry = await ethers.getContractFactory("WorldlineRegistry");
-      await expect(Registry.deploy(ethers.ZeroAddress)).to.be.revertedWithCustomError(
-        Registry,
-        "InvalidVerifier"
-      );
+      await expect(
+        upgrades.deployProxy(Registry, [ethers.ZeroAddress], { kind: "uups" })
+      ).to.be.revertedWithCustomError(Registry, "InvalidVerifier");
     });
   });
 
@@ -83,14 +87,15 @@ describe("WorldlineRegistry", function () {
       const { registry, stranger } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).transferOwnership(stranger.address)
-      ).to.be.revertedWithCustomError(registry, "NotOwner");
+      ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
     });
 
-    it("transferring ownership to zero address reverts", async function () {
+    it("transferring ownership to zero address sets pendingOwner to 0 (OZ v5 two-step)", async function () {
       const { registry, owner } = await loadFixture(deployFixture);
-      await expect(
-        registry.connect(owner).transferOwnership(ethers.ZeroAddress)
-      ).to.be.revertedWithCustomError(registry, "NewOwnerIsZero");
+      // In OZ v5 Ownable2StepUpgradeable, transferOwnership(0) does NOT revert —
+      // it sets pendingOwner = 0 which can be used to cancel a pending transfer.
+      await expect(registry.connect(owner).transferOwnership(ethers.ZeroAddress)).to.not.be
+        .reverted;
     });
   });
 
@@ -109,7 +114,7 @@ describe("WorldlineRegistry", function () {
       const { registry, stranger } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).setCompatFacade(stranger.address)
-      ).to.be.revertedWithCustomError(registry, "NotOwner");
+      ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
     });
 
     it("compat facade can be disabled via timelocked two-step", async function () {

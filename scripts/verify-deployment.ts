@@ -10,7 +10,18 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { ethers, network } from "hardhat";
+import { ethers, network, upgrades } from "hardhat";
+
+/**
+ * Resolve a contract address from the deployment record. Supports both plain
+ * address strings and {proxy, implementation} objects (for UUPS proxied contracts).
+ */
+function getAddr(contracts: Record<string, unknown>, name: string): string {
+  const val = contracts[name];
+  if (typeof val === "string") return val;
+  if (val && typeof val === "object" && "proxy" in val) return (val as any).proxy;
+  throw new Error(`Contract ${name} not found in deployment`);
+}
 
 async function main(): Promise<void> {
   console.log("=== Worldline Deployment Verification ===");
@@ -57,11 +68,13 @@ async function main(): Promise<void> {
   console.log("\n[1] Checking contracts are live…");
 
   // Groth16Verifier — no read function, just check code exists
-  const verifierCode = await ethers.provider.getCode(contracts.Groth16Verifier);
-  check("Groth16Verifier bytecode", verifierCode !== "0x", contracts.Groth16Verifier);
+  const groth16VerifierAddr = getAddr(contracts, "Groth16Verifier");
+  const verifierCode = await ethers.provider.getCode(groth16VerifierAddr);
+  check("Groth16Verifier bytecode", verifierCode !== "0x", groth16VerifierAddr);
 
-  // WorldlineRegistry
-  const Registry = await ethers.getContractAt("WorldlineRegistry", contracts.WorldlineRegistry);
+  // WorldlineRegistry (proxy)
+  const registryAddr = getAddr(contracts, "WorldlineRegistry");
+  const Registry = await ethers.getContractAt("WorldlineRegistry", registryAddr);
   try {
     const owner = await (Registry as any).owner();
     check("WorldlineRegistry.owner()", owner !== ethers.ZeroAddress, owner);
@@ -70,22 +83,25 @@ async function main(): Promise<void> {
   }
 
   // Groth16ZkAdapter — check bytecode
-  const adapterCode = await ethers.provider.getCode(contracts.Groth16ZkAdapter);
-  check("Groth16ZkAdapter bytecode", adapterCode !== "0x", contracts.Groth16ZkAdapter);
+  const adapterAddr = getAddr(contracts, "Groth16ZkAdapter");
+  const adapterCode = await ethers.provider.getCode(adapterAddr);
+  check("Groth16ZkAdapter bytecode", adapterCode !== "0x", adapterAddr);
 
-  // WorldlineFinalizer
-  const Finalizer = await ethers.getContractAt("WorldlineFinalizer", contracts.WorldlineFinalizer);
+  // WorldlineFinalizer (proxy)
+  const finalizerAddr = getAddr(contracts, "WorldlineFinalizer");
+  const Finalizer = await ethers.getContractAt("WorldlineFinalizer", finalizerAddr);
   try {
     const nextWindow = await (Finalizer as any).nextWindowIndex();
-    check("WorldlineFinalizer.nextWindowIndex()", true, nextWindow.toString());
+    check("WorldlineFinalizer initialized", true, `nextWindowIndex=${nextWindow.toString()}`);
   } catch (e) {
-    check("WorldlineFinalizer.nextWindowIndex()", false, String(e));
+    check("WorldlineFinalizer initialized", false, String(e));
   }
 
-  // WorldlineOutputsRegistry
+  // WorldlineOutputsRegistry (proxy)
+  const outputsRegistryAddr = getAddr(contracts, "WorldlineOutputsRegistry");
   const OutputsRegistry = await ethers.getContractAt(
     "WorldlineOutputsRegistry",
-    contracts.WorldlineOutputsRegistry
+    outputsRegistryAddr
   );
   try {
     const owner = await (OutputsRegistry as any).owner();
@@ -95,26 +111,89 @@ async function main(): Promise<void> {
   }
 
   // WorldlineCompat
-  const compatCode = await ethers.provider.getCode(contracts.WorldlineCompat);
-  check("WorldlineCompat bytecode", compatCode !== "0x", contracts.WorldlineCompat);
+  const compatAddr = getAddr(contracts, "WorldlineCompat");
+  const compatCode = await ethers.provider.getCode(compatAddr);
+  check("WorldlineCompat bytecode", compatCode !== "0x", compatAddr);
 
   // BlobKzgVerifier
+  const blobKzgVerifierAddr = getAddr(contracts, "BlobKzgVerifier");
   try {
-    const BlobVerifier = await ethers.getContractAt("BlobKzgVerifier", contracts.BlobKzgVerifier);
+    const BlobVerifier = await ethers.getContractAt("BlobKzgVerifier", blobKzgVerifierAddr);
     const blobFee = await (BlobVerifier as any).currentBlobBaseFee();
     check("BlobKzgVerifier.currentBlobBaseFee()", true, blobFee.toString());
   } catch (e) {
     check("BlobKzgVerifier.currentBlobBaseFee()", false, String(e));
   }
 
+  // ── Verify UUPS proxy implementation addresses ───────────────────────────────
+  console.log("\n[2] Checking UUPS proxy implementations…");
+
+  // WorldlineRegistry implementation
+  try {
+    const registryRaw = contracts["WorldlineRegistry"];
+    if (registryRaw && typeof registryRaw === "object" && "implementation" in registryRaw) {
+      const storedImpl = (registryRaw as any).implementation as string;
+      const liveImpl = await upgrades.erc1967.getImplementationAddress(registryAddr);
+      check(
+        "WorldlineRegistry implementation",
+        liveImpl !== ethers.ZeroAddress && liveImpl.toLowerCase() === storedImpl.toLowerCase(),
+        liveImpl
+      );
+    } else {
+      // Legacy plain-address format — just verify ERC1967 slot is readable
+      const implAddr = await upgrades.erc1967.getImplementationAddress(registryAddr);
+      check("WorldlineRegistry implementation", implAddr !== ethers.ZeroAddress, implAddr);
+    }
+  } catch (e) {
+    check("WorldlineRegistry implementation", false, String(e));
+  }
+
+  // WorldlineFinalizer implementation
+  try {
+    const finalizerRaw = contracts["WorldlineFinalizer"];
+    if (finalizerRaw && typeof finalizerRaw === "object" && "implementation" in finalizerRaw) {
+      const storedImpl = (finalizerRaw as any).implementation as string;
+      const liveImpl = await upgrades.erc1967.getImplementationAddress(finalizerAddr);
+      check(
+        "WorldlineFinalizer implementation",
+        liveImpl !== ethers.ZeroAddress && liveImpl.toLowerCase() === storedImpl.toLowerCase(),
+        liveImpl
+      );
+    } else {
+      const implAddr = await upgrades.erc1967.getImplementationAddress(finalizerAddr);
+      check("WorldlineFinalizer implementation", implAddr !== ethers.ZeroAddress, implAddr);
+    }
+  } catch (e) {
+    check("WorldlineFinalizer implementation", false, String(e));
+  }
+
+  // WorldlineOutputsRegistry implementation
+  try {
+    const outputsRaw = contracts["WorldlineOutputsRegistry"];
+    if (outputsRaw && typeof outputsRaw === "object" && "implementation" in outputsRaw) {
+      const storedImpl = (outputsRaw as any).implementation as string;
+      const liveImpl = await upgrades.erc1967.getImplementationAddress(outputsRegistryAddr);
+      check(
+        "WorldlineOutputsRegistry implementation",
+        liveImpl !== ethers.ZeroAddress && liveImpl.toLowerCase() === storedImpl.toLowerCase(),
+        liveImpl
+      );
+    } else {
+      const implAddr = await upgrades.erc1967.getImplementationAddress(outputsRegistryAddr);
+      check("WorldlineOutputsRegistry implementation", implAddr !== ethers.ZeroAddress, implAddr);
+    }
+  } catch (e) {
+    check("WorldlineOutputsRegistry implementation", false, String(e));
+  }
+
   // ── Verify contract linkage ──────────────────────────────────────────────────
-  console.log("\n[2] Checking contract linkage…");
+  console.log("\n[3] Checking contract linkage…");
 
   try {
     const adapterOnFinalizer = await (Finalizer as any).adapter();
     check(
       "WorldlineFinalizer.adapter() → Groth16ZkAdapter",
-      adapterOnFinalizer.toLowerCase() === contracts.Groth16ZkAdapter.toLowerCase(),
+      adapterOnFinalizer.toLowerCase() === adapterAddr.toLowerCase(),
       adapterOnFinalizer
     );
   } catch (e) {
@@ -125,7 +204,7 @@ async function main(): Promise<void> {
     const blobOnFinalizer = await (Finalizer as any).blobKzgVerifier();
     check(
       "WorldlineFinalizer.blobKzgVerifier() → BlobKzgVerifier",
-      blobOnFinalizer.toLowerCase() === contracts.BlobKzgVerifier.toLowerCase(),
+      blobOnFinalizer.toLowerCase() === blobKzgVerifierAddr.toLowerCase(),
       blobOnFinalizer
     );
   } catch (e) {
@@ -136,7 +215,7 @@ async function main(): Promise<void> {
     const compatOnRegistry = await (Registry as any).compatFacade();
     check(
       "WorldlineRegistry.compatFacade() → WorldlineCompat",
-      compatOnRegistry.toLowerCase() === contracts.WorldlineCompat.toLowerCase(),
+      compatOnRegistry.toLowerCase() === compatAddr.toLowerCase(),
       compatOnRegistry
     );
   } catch (e) {
@@ -160,7 +239,7 @@ async function main(): Promise<void> {
     console.error("\nVerification FAILED.");
     process.exit(1);
   }
-  console.log("\nVerification PASSED. ✓");
+  console.log("\nVerification PASSED.");
 }
 
 main().catch((err) => {

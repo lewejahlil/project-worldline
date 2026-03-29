@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Ownable} from "./utils/Ownable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 /// @title WorldlineRegistry
 /// @notice Stores metadata about available circuits, drivers, and plugins.
-contract WorldlineRegistry is Ownable {
+/// @custom:oz-upgrades-from WorldlineRegistry
+contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgradeable {
     // ── Errors ──────────────────────────────────────────────────────────────────
 
     error InvalidVerifier();
@@ -66,7 +69,7 @@ contract WorldlineRegistry is Ownable {
     /// @notice Minimum floor for `facadeChangeDelay`. MED-005 remediation.
     uint256 public constant MIN_FACADE_DELAY = 1 days;
 
-    address public immutable defaultVerifier;
+    address public defaultVerifier;
     address public compatFacade;
 
     /// @notice Delay (seconds) before a scheduled facade change can be activated.
@@ -82,17 +85,36 @@ contract WorldlineRegistry is Ownable {
     ///         is a valid target to disable the facade).
     bool public facadeChangeScheduled;
 
+    // ── Constructor ─────────────────────────────────────────────────────────────
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    // ── Initializer ─────────────────────────────────────────────────────────────
+
     /// @param verifier Address of the default ZK verifier contract (must be non-zero).
-    constructor(address verifier) {
+    function initialize(address verifier) external initializer {
+        __Ownable_init(msg.sender);
+        __Ownable2Step_init();
         if (verifier == address(0)) revert InvalidVerifier();
         defaultVerifier = verifier;
         facadeChangeDelay = 1 days;
     }
 
+    // ── UUPS ────────────────────────────────────────────────────────────────────
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    // ── Modifiers ───────────────────────────────────────────────────────────────
+
     modifier onlyAdmin() {
         if (msg.sender != owner() && msg.sender != compatFacade) revert NotAuthorised();
         _;
     }
+
+    // ── Admin ───────────────────────────────────────────────────────────────────
 
     /// @notice Schedule a timelocked compat facade change. The new facade cannot be
     ///         activated until `facadeChangeDelay` seconds have passed.

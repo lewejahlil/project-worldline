@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Ownable} from "./utils/Ownable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 /// @title WorldlineOutputsRegistry
 /// @notice Timelocked registry for managing {programVKey, policyHash, oracle}
 ///         tuples per domain. Uses a two-step schedule/activate flow to ensure
 ///         changes are visible before taking effect.
-contract WorldlineOutputsRegistry is Ownable {
+/// @custom:oz-upgrades-from WorldlineOutputsRegistry
+contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgradeable {
     // ── Errors ──────────────────────────────────────────────────────────────────
 
     error TimelockNotElapsed();
@@ -79,12 +82,25 @@ contract WorldlineOutputsRegistry is Ownable {
 
     // ── Constructor ─────────────────────────────────────────────────────────────
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    // ── Initializer ─────────────────────────────────────────────────────────────
+
     /// @param _minTimelock Minimum delay in seconds before a scheduled entry can be activated.
     ///                     Must be >= MIN_TIMELOCK_FLOOR (1 day).
-    constructor(uint256 _minTimelock) {
+    function initialize(uint256 _minTimelock) external initializer {
+        __Ownable_init(msg.sender);
+        __Ownable2Step_init();
         if (_minTimelock < MIN_TIMELOCK_FLOOR) revert TimelockTooShort(MIN_TIMELOCK_FLOOR, _minTimelock);
         minTimelock = _minTimelock;
     }
+
+    // ── UUPS ────────────────────────────────────────────────────────────────────
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     // ── Admin ───────────────────────────────────────────────────────────────────
 

@@ -24,7 +24,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { ethers, network } from "hardhat";
+import { ethers, network, upgrades } from "hardhat";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -79,13 +79,18 @@ async function main() {
   const groth16VerifierAddr = await groth16Verifier.getAddress();
   console.log(`   Groth16Verifier: ${groth16VerifierAddr}`);
 
-  // ── 2. Deploy WorldlineRegistry ─────────────────────────────────────────────
-  console.log("2. Deploying WorldlineRegistry…");
-  const Registry = await ethers.getContractFactory("WorldlineRegistry");
-  const registry = await Registry.deploy(groth16VerifierAddr);
-  await registry.waitForDeployment();
-  const registryAddr = await registry.getAddress();
-  console.log(`   WorldlineRegistry: ${registryAddr}`);
+  // ── 2. Deploy WorldlineRegistry proxy (UUPS) ────────────────────────────────
+  console.log("2. Deploying WorldlineRegistry (UUPS proxy)…");
+  const RegistryFactory = await ethers.getContractFactory("WorldlineRegistry");
+  const registryProxy = await upgrades.deployProxy(RegistryFactory, [groth16VerifierAddr], {
+    kind: "uups",
+    initializer: "initialize"
+  });
+  await registryProxy.waitForDeployment();
+  const registryProxyAddr = await registryProxy.getAddress();
+  const registryImplAddr = await upgrades.erc1967.getImplementationAddress(registryProxyAddr);
+  console.log(`   WorldlineRegistry proxy: ${registryProxyAddr}`);
+  console.log(`   WorldlineRegistry impl:  ${registryImplAddr}`);
 
   // ── 3. Deploy Groth16ZkAdapter ──────────────────────────────────────────────
   console.log("3. Deploying Groth16ZkAdapter…");
@@ -95,92 +100,100 @@ async function main() {
   const adapterAddr = await adapter.getAddress();
   console.log(`   Groth16ZkAdapter: ${adapterAddr}`);
 
-  // ── 4. Deploy WorldlineFinalizer ────────────────────────────────────────────
-  console.log("4. Deploying WorldlineFinalizer…");
-  const Finalizer = await ethers.getContractFactory("WorldlineFinalizer");
-  const finalizer = await Finalizer.deploy(
-    adapterAddr,
-    DOMAIN_SEPARATOR,
-    MAX_ACCEPTANCE_DELAY,
-    GENESIS_L2_BLOCK
-  );
-  await finalizer.waitForDeployment();
-  const finalizerAddr = await finalizer.getAddress();
-  console.log(`   WorldlineFinalizer: ${finalizerAddr}`);
-
-  // ── 5. Deploy WorldlineOutputsRegistry ─────────────────────────────────────
-  console.log("5. Deploying WorldlineOutputsRegistry…");
-  const OutputsRegistry = await ethers.getContractFactory("WorldlineOutputsRegistry");
-  const outputsRegistry = await OutputsRegistry.deploy(MIN_TIMELOCK);
-  await outputsRegistry.waitForDeployment();
-  const outputsRegistryAddr = await outputsRegistry.getAddress();
-  console.log(`   WorldlineOutputsRegistry: ${outputsRegistryAddr}`);
-
-  // ── 6. Deploy WorldlineCompat ───────────────────────────────────────────────
-  console.log("6. Deploying WorldlineCompat…");
-  const Compat = await ethers.getContractFactory("WorldlineCompat");
-  const compat = await Compat.deploy(registryAddr);
-  await compat.waitForDeployment();
-  const compatAddr = await compat.getAddress();
-  console.log(`   WorldlineCompat: ${compatAddr}`);
-
-  // ── 7. Deploy BlobKzgVerifier ─────────────────────────────────────────────
-  console.log("7. Deploying BlobKzgVerifier…");
+  // ── 4. Deploy BlobKzgVerifier (must be before Finalizer — passed to initialize()) ──
+  console.log("4. Deploying BlobKzgVerifier…");
   const BlobKzgVerifier = await ethers.getContractFactory("BlobKzgVerifier");
   const blobKzgVerifier = await BlobKzgVerifier.deploy();
   await blobKzgVerifier.waitForDeployment();
   const blobKzgVerifierAddr = await blobKzgVerifier.getAddress();
   console.log(`   BlobKzgVerifier: ${blobKzgVerifierAddr}`);
 
-  // ── 8. Wire BlobKzgVerifier to WorldlineFinalizer ──────────────────────────
-  console.log("8. Wiring BlobKzgVerifier to WorldlineFinalizer…");
-  const blobWireTx = await finalizer.setBlobKzgVerifier(blobKzgVerifierAddr);
-  await blobWireTx.wait();
-  console.log(`   setBlobKzgVerifier tx: ${blobWireTx.hash}`);
+  // ── 5. Deploy WorldlineFinalizer proxy (UUPS) ───────────────────────────────
+  console.log("5. Deploying WorldlineFinalizer (UUPS proxy)…");
+  const FinalizerFactory = await ethers.getContractFactory("WorldlineFinalizer");
+  const finalizerProxy = await upgrades.deployProxy(
+    FinalizerFactory,
+    [adapterAddr, DOMAIN_SEPARATOR, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, blobKzgVerifierAddr],
+    { kind: "uups", initializer: "initialize" }
+  );
+  await finalizerProxy.waitForDeployment();
+  const finalizerProxyAddr = await finalizerProxy.getAddress();
+  const finalizerImplAddr = await upgrades.erc1967.getImplementationAddress(finalizerProxyAddr);
+  console.log(`   WorldlineFinalizer proxy: ${finalizerProxyAddr}`);
+  console.log(`   WorldlineFinalizer impl:  ${finalizerImplAddr}`);
 
-  // ── 9. Wire compat facade to registry ───────────────────────────────────────
-  console.log("9. Wiring WorldlineCompat facade to WorldlineRegistry…");
-  const wireTx = await registry.setCompatFacade(compatAddr);
+  // ── 6. Deploy WorldlineOutputsRegistry proxy (UUPS) ─────────────────────────
+  console.log("6. Deploying WorldlineOutputsRegistry (UUPS proxy)…");
+  const OutputsRegistryFactory = await ethers.getContractFactory("WorldlineOutputsRegistry");
+  const outputsRegistryProxy = await upgrades.deployProxy(OutputsRegistryFactory, [MIN_TIMELOCK], {
+    kind: "uups",
+    initializer: "initialize"
+  });
+  await outputsRegistryProxy.waitForDeployment();
+  const outputsRegistryProxyAddr = await outputsRegistryProxy.getAddress();
+  const outputsRegistryImplAddr =
+    await upgrades.erc1967.getImplementationAddress(outputsRegistryProxyAddr);
+  console.log(`   WorldlineOutputsRegistry proxy: ${outputsRegistryProxyAddr}`);
+  console.log(`   WorldlineOutputsRegistry impl:  ${outputsRegistryImplAddr}`);
+
+  // ── 7. Deploy WorldlineCompat ───────────────────────────────────────────────
+  console.log("7. Deploying WorldlineCompat…");
+  const Compat = await ethers.getContractFactory("WorldlineCompat");
+  const compat = await Compat.deploy(registryProxyAddr);
+  await compat.waitForDeployment();
+  const compatAddr = await compat.getAddress();
+  console.log(`   WorldlineCompat: ${compatAddr}`);
+
+  // ── 8. Wire compat facade to registry ───────────────────────────────────────
+  console.log("8. Wiring WorldlineCompat facade to WorldlineRegistry…");
+  const registry = await ethers.getContractAt("WorldlineRegistry", registryProxyAddr);
+  const wireTx = await (registry as any).setCompatFacade(compatAddr);
   await wireTx.wait();
   console.log(`   setCompatFacade tx: ${wireTx.hash}`);
 
-  // ── 10. Transfer ownership to multisig (INF-002 remediation) ────────────────
+  // ── 9. Transfer ownership to multisig (INF-002 remediation) ────────────────
+  const finalizer = await ethers.getContractAt("WorldlineFinalizer", finalizerProxyAddr);
+  const outputsRegistry = await ethers.getContractAt(
+    "WorldlineOutputsRegistry",
+    outputsRegistryProxyAddr
+  );
+
   if (MULTISIG_ADDRESS) {
-    console.log(`10. Transferring ownership to multisig ${MULTISIG_ADDRESS}…`);
+    console.log(`9. Transferring ownership to multisig ${MULTISIG_ADDRESS}…`);
 
     // WorldlineFinalizer — two-step transfer (HI-003).
-    const finalizerTx = await finalizer.transferOwnership(MULTISIG_ADDRESS);
+    const finalizerTx = await (finalizer as any).transferOwnership(MULTISIG_ADDRESS);
     await finalizerTx.wait();
     console.log(
       `   WorldlineFinalizer.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`
     );
 
     // WorldlineRegistry — two-step transfer (HI-003).
-    const registryTx = await registry.transferOwnership(MULTISIG_ADDRESS);
+    const registryTx = await (registry as any).transferOwnership(MULTISIG_ADDRESS);
     await registryTx.wait();
     console.log(
       `   WorldlineRegistry.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`
     );
 
     // WorldlineOutputsRegistry — two-step transfer (HI-003).
-    const outputsTx = await outputsRegistry.transferOwnership(MULTISIG_ADDRESS);
+    const outputsTx = await (outputsRegistry as any).transferOwnership(MULTISIG_ADDRESS);
     await outputsTx.wait();
     console.log(
       `   WorldlineOutputsRegistry.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`
     );
 
     console.log(
-      "   ⚠  Multisig must call acceptOwnership() on each contract to complete the transfer."
+      "   Multisig must call acceptOwnership() on each contract to complete the transfer."
     );
   } else {
-    console.log("10. Skipping ownership transfer (dev network).");
+    console.log("9. Skipping ownership transfer (dev network).");
   }
 
-  // ── 11. Post-deploy verification ─────────────────────────────────────────────
-  console.log("11. Running post-deploy verification checks…");
+  // ── 10. Post-deploy verification ─────────────────────────────────────────────
+  console.log("10. Running post-deploy verification checks…");
 
   // Verify WorldlineRegistry owner
-  const registryOwner = await registry.owner();
+  const registryOwner = await (registry as any).owner();
   if (registryOwner !== deployer.address) {
     throw new Error(
       `WorldlineRegistry owner mismatch: expected ${deployer.address}, got ${registryOwner}`
@@ -189,7 +202,7 @@ async function main() {
   console.log("   WorldlineRegistry.owner() matches deployer");
 
   // Verify WorldlineFinalizer adapter is set correctly
-  const currentAdapter = await finalizer.adapter();
+  const currentAdapter = await (finalizer as any).adapter();
   if (currentAdapter !== adapterAddr) {
     throw new Error(
       `WorldlineFinalizer adapter mismatch: expected ${adapterAddr}, got ${currentAdapter}`
@@ -198,34 +211,34 @@ async function main() {
   console.log("   WorldlineFinalizer.adapter() matches deployed adapter");
 
   // Verify WorldlineFinalizer domain separator
-  const currentDomain = await finalizer.domainSeparator();
+  const currentDomain = await (finalizer as any).domainSeparator();
   if (currentDomain !== DOMAIN_SEPARATOR) {
     throw new Error(`WorldlineFinalizer domainSeparator mismatch`);
   }
   console.log("   WorldlineFinalizer.domainSeparator() matches config");
 
   // Verify WorldlineFinalizer is not paused and nextWindowIndex is 0
-  const isPaused = await finalizer.paused();
+  const isPaused = await (finalizer as any).paused();
   if (isPaused) {
     throw new Error("WorldlineFinalizer is unexpectedly paused after deployment");
   }
   console.log("   WorldlineFinalizer is not paused");
 
-  const nextWindow = await finalizer.nextWindowIndex();
+  const nextWindow = await (finalizer as any).nextWindowIndex();
   if (nextWindow !== 0n) {
     throw new Error(`WorldlineFinalizer.nextWindowIndex expected 0, got ${nextWindow}`);
   }
   console.log("   WorldlineFinalizer.nextWindowIndex() is 0");
 
   // Verify WorldlineOutputsRegistry owner
-  const outputsOwner = await outputsRegistry.owner();
+  const outputsOwner = await (outputsRegistry as any).owner();
   if (outputsOwner !== deployer.address) {
     throw new Error(`WorldlineOutputsRegistry owner mismatch`);
   }
   console.log("   WorldlineOutputsRegistry.owner() matches deployer");
 
   // Verify WorldlineCompat is wired to registry
-  const compatFacade = await registry.compatFacade();
+  const compatFacade = await (registry as any).compatFacade();
   if (compatFacade !== compatAddr) {
     throw new Error(
       `WorldlineRegistry.compatFacade mismatch: expected ${compatAddr}, got ${compatFacade}`
@@ -234,7 +247,7 @@ async function main() {
   console.log("   WorldlineRegistry.compatFacade() matches deployed WorldlineCompat");
 
   // Verify BlobKzgVerifier is wired to finalizer
-  const currentBlobVerifier = await finalizer.blobKzgVerifier();
+  const currentBlobVerifier = await (finalizer as any).blobKzgVerifier();
   if (currentBlobVerifier !== blobKzgVerifierAddr) {
     throw new Error(
       `WorldlineFinalizer.blobKzgVerifier mismatch: expected ${blobKzgVerifierAddr}, got ${currentBlobVerifier}`
@@ -243,8 +256,28 @@ async function main() {
   console.log("   WorldlineFinalizer.blobKzgVerifier() matches deployed BlobKzgVerifier");
 
   // Verify BlobKzgVerifier blob base fee read
-  const blobFee = await blobKzgVerifier.currentBlobBaseFee();
+  const blobFee = await (blobKzgVerifier as any).currentBlobBaseFee();
   console.log(`   BlobKzgVerifier.currentBlobBaseFee() = ${blobFee.toString()}`);
+
+  // Verify proxy implementation addresses are non-zero
+  const verifiedRegistryImpl = await upgrades.erc1967.getImplementationAddress(registryProxyAddr);
+  if (verifiedRegistryImpl === ethers.ZeroAddress) {
+    throw new Error("WorldlineRegistry implementation address is zero");
+  }
+  console.log(`   WorldlineRegistry implementation: ${verifiedRegistryImpl}`);
+
+  const verifiedFinalizerImpl = await upgrades.erc1967.getImplementationAddress(finalizerProxyAddr);
+  if (verifiedFinalizerImpl === ethers.ZeroAddress) {
+    throw new Error("WorldlineFinalizer implementation address is zero");
+  }
+  console.log(`   WorldlineFinalizer implementation: ${verifiedFinalizerImpl}`);
+
+  const verifiedOutputsImpl =
+    await upgrades.erc1967.getImplementationAddress(outputsRegistryProxyAddr);
+  if (verifiedOutputsImpl === ethers.ZeroAddress) {
+    throw new Error("WorldlineOutputsRegistry implementation address is zero");
+  }
+  console.log(`   WorldlineOutputsRegistry implementation: ${verifiedOutputsImpl}`);
 
   console.log("   All post-deploy checks passed.");
   console.log();
@@ -257,10 +290,19 @@ async function main() {
     deployer: deployer.address,
     contracts: {
       Groth16Verifier: groth16VerifierAddr,
-      WorldlineRegistry: registryAddr,
+      WorldlineRegistry: {
+        proxy: registryProxyAddr,
+        implementation: registryImplAddr
+      },
       Groth16ZkAdapter: adapterAddr,
-      WorldlineFinalizer: finalizerAddr,
-      WorldlineOutputsRegistry: outputsRegistryAddr,
+      WorldlineFinalizer: {
+        proxy: finalizerProxyAddr,
+        implementation: finalizerImplAddr
+      },
+      WorldlineOutputsRegistry: {
+        proxy: outputsRegistryProxyAddr,
+        implementation: outputsRegistryImplAddr
+      },
       WorldlineCompat: compatAddr,
       BlobKzgVerifier: blobKzgVerifierAddr
     },
@@ -289,6 +331,10 @@ async function main() {
   console.log(`\nDeployment record written to: ${outPath}`);
 
   // ── Etherscan verification (optional) ────────────────────────────────────────
+  // Note: proxied contracts (WorldlineRegistry, WorldlineFinalizer,
+  // WorldlineOutputsRegistry) are verified via their implementation addresses.
+  // Use `upgrades.admin.verifyContract()` or verify the impl addresses manually
+  // on Etherscan if needed.
   const etherscanKey = process.env["ETHERSCAN_API_KEY"];
   if (etherscanKey && network.name !== "hardhat" && network.name !== "localhost") {
     console.log("\n── Etherscan Verification ────────────────────────────────────────");
@@ -298,25 +344,16 @@ async function main() {
 
     const { run } = await import("hardhat");
 
+    // Only verify non-proxied contracts directly; proxied contracts need
+    // separate Etherscan verification of their implementation addresses.
     const toVerify: Array<{ name: string; address: string; args: unknown[] }> = [
       { name: "Groth16Verifier", address: groth16VerifierAddr, args: [] },
-      { name: "WorldlineRegistry", address: registryAddr, args: [groth16VerifierAddr] },
       {
         name: "Groth16ZkAdapter",
         address: adapterAddr,
         args: [groth16VerifierAddr, PROGRAM_VKEY, POLICY_HASH]
       },
-      {
-        name: "WorldlineFinalizer",
-        address: finalizerAddr,
-        args: [adapterAddr, DOMAIN_SEPARATOR, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK]
-      },
-      {
-        name: "WorldlineOutputsRegistry",
-        address: outputsRegistryAddr,
-        args: [MIN_TIMELOCK]
-      },
-      { name: "WorldlineCompat", address: compatAddr, args: [registryAddr] },
+      { name: "WorldlineCompat", address: compatAddr, args: [registryProxyAddr] },
       { name: "BlobKzgVerifier", address: blobKzgVerifierAddr, args: [] }
     ];
 
@@ -324,11 +361,33 @@ async function main() {
       try {
         console.log(`  Verifying ${name} at ${address}…`);
         await run("verify:verify", { address, constructorArguments: args });
-        console.log(`  ${name}: verified ✓`);
+        console.log(`  ${name}: verified`);
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes("Already Verified")) {
-          console.log(`  ${name}: already verified ✓`);
+          console.log(`  ${name}: already verified`);
+        } else {
+          console.warn(`  ${name}: verification failed — ${msg}`);
+        }
+      }
+    }
+
+    // Verify proxied contract implementations
+    const proxiedImpls: Array<{ name: string; address: string }> = [
+      { name: "WorldlineRegistry (impl)", address: registryImplAddr },
+      { name: "WorldlineFinalizer (impl)", address: finalizerImplAddr },
+      { name: "WorldlineOutputsRegistry (impl)", address: outputsRegistryImplAddr }
+    ];
+
+    for (const { name, address } of proxiedImpls) {
+      try {
+        console.log(`  Verifying ${name} at ${address}…`);
+        await run("verify:verify", { address, constructorArguments: [] });
+        console.log(`  ${name}: verified`);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes("Already Verified")) {
+          console.log(`  ${name}: already verified`);
         } else {
           console.warn(`  ${name}: verification failed — ${msg}`);
         }

@@ -6,7 +6,7 @@
  */
 
 import { expect } from "chai";
-import { ethers, network } from "hardhat";
+import { ethers, network, upgrades } from "hardhat";
 
 const FORK_RPC = process.env["MAINNET_RPC_URL"] || "https://ethereum-rpc.publicnode.com";
 
@@ -145,16 +145,23 @@ describe("Fork — Verification", function () {
     await adapter.waitForDeployment();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry", deployer);
-    const registry = await Registry.deploy(await verifier.getAddress());
+    const registry = (await upgrades.deployProxy(Registry, [await verifier.getAddress()], {
+      kind: "uups"
+    })) as any;
     await registry.waitForDeployment();
 
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", deployer);
-    const finalizer = await Finalizer.deploy(
-      await adapter.getAddress(),
-      DOMAIN,
-      MAX_ACCEPTANCE_DELAY,
-      GENESIS_L2_BLOCK
-    );
+    const finalizer = (await upgrades.deployProxy(
+      Finalizer,
+      [
+        await adapter.getAddress(),
+        DOMAIN,
+        MAX_ACCEPTANCE_DELAY,
+        GENESIS_L2_BLOCK,
+        ethers.ZeroAddress
+      ],
+      { kind: "uups" }
+    )) as any;
     await finalizer.waitForDeployment();
 
     expect(await verifier.getAddress()).to.match(/^0x[0-9a-fA-F]{40}$/);
@@ -171,7 +178,9 @@ describe("Fork — Verification", function () {
     await verifier.waitForDeployment();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry", owner);
-    const registry = await Registry.deploy(await verifier.getAddress());
+    const registry = (await upgrades.deployProxy(Registry, [await verifier.getAddress()], {
+      kind: "uups"
+    })) as any;
     await registry.waitForDeployment();
 
     const Adapter = await ethers.getContractFactory("Groth16ZkAdapter", owner);
@@ -179,12 +188,17 @@ describe("Fork — Verification", function () {
     await adapter.waitForDeployment();
 
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", owner);
-    const finalizer = await Finalizer.deploy(
-      await adapter.getAddress(),
-      DOMAIN,
-      MAX_ACCEPTANCE_DELAY,
-      GENESIS_L2_BLOCK
-    );
+    const finalizer = (await upgrades.deployProxy(
+      Finalizer,
+      [
+        await adapter.getAddress(),
+        DOMAIN,
+        MAX_ACCEPTANCE_DELAY,
+        GENESIS_L2_BLOCK,
+        ethers.ZeroAddress
+      ],
+      { kind: "uups" }
+    )) as any;
     await finalizer.waitForDeployment();
 
     // Register driver in registry
@@ -210,12 +224,17 @@ describe("Fork — Verification", function () {
     await adapter.waitForDeployment();
 
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", owner);
-    const finalizer = await Finalizer.deploy(
-      await adapter.getAddress(),
-      DOMAIN,
-      MAX_ACCEPTANCE_DELAY,
-      GENESIS_L2_BLOCK
-    );
+    const finalizer = (await upgrades.deployProxy(
+      Finalizer,
+      [
+        await adapter.getAddress(),
+        DOMAIN,
+        MAX_ACCEPTANCE_DELAY,
+        GENESIS_L2_BLOCK,
+        ethers.ZeroAddress
+      ],
+      { kind: "uups" }
+    )) as any;
     await finalizer.waitForDeployment();
 
     await (await (finalizer as any).setPermissionless(true)).wait();
@@ -243,16 +262,23 @@ describe("Fork — Verification", function () {
     await adapter.waitForDeployment();
 
     const Registry = await ethers.getContractFactory("WorldlineRegistry", owner);
-    const registry = await Registry.deploy(await verifier.getAddress());
+    const registry = (await upgrades.deployProxy(Registry, [await verifier.getAddress()], {
+      kind: "uups"
+    })) as any;
     await registry.waitForDeployment();
 
     const Finalizer = await ethers.getContractFactory("WorldlineFinalizer", owner);
-    const finalizer = await Finalizer.deploy(
-      await adapter.getAddress(),
-      DOMAIN,
-      MAX_ACCEPTANCE_DELAY,
-      GENESIS_L2_BLOCK
-    );
+    const finalizer = (await upgrades.deployProxy(
+      Finalizer,
+      [
+        await adapter.getAddress(),
+        DOMAIN,
+        MAX_ACCEPTANCE_DELAY,
+        GENESIS_L2_BLOCK,
+        ethers.ZeroAddress
+      ],
+      { kind: "uups" }
+    )) as any;
     await finalizer.waitForDeployment();
 
     // Register
