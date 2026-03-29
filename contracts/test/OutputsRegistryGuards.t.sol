@@ -7,8 +7,8 @@ import "../src/WorldlineRegistry.sol";
 import "../src/WorldlineCompat.sol";
 import "../src/WorldlineOutputsRegistry.sol";
 
-/// @title Chunk 5 Tests — HI-004, MED-003, MED-004, MED-005
-contract Chunk5Test is Test {
+/// @title Outputs Registry & Registry Guards — HI-004, MED-003, MED-004, MED-005
+contract OutputsRegistryGuardsTest is Test {
     WorldlineRegistry registry;
     WorldlineCompat compat;
     WorldlineOutputsRegistry outputsRegistry;

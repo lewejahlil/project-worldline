@@ -43,7 +43,7 @@ import {
   PROVER_SET_DIGEST,
   MAX_ACCEPTANCE_DELAY,
   GENESIS_L2_BLOCK
-} from "./helpers";
+} from "./deployment-fixtures";
 
 // ── Utility: extract ZkProofAccepted from receipt ──────────────────────────
 

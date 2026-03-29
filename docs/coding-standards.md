@@ -10,7 +10,7 @@
 
 ## Solidity
 
-- Solidity ^0.8.20
+- Solidity ^0.8.24
 - Hardhat + ethers v6 for integration tests
 - Forge for unit tests and fuzz tests
 - Gas benchmarks via `hardhat-gas-reporter`
@@ -30,5 +30,5 @@
 
 - No floating point in circuit or contract math
 - All PRs must pass CI before merge
-- Commit messages: `chunk-N: description`
-- Branch naming: `chunk-N-short-description`
+- Commit messages: `scope: description` (e.g., `circuits: add Poseidon constraint tests`)
+- Branch naming: `scope-short-description` (e.g., `contracts-plonk-adapter`)

@@ -14,8 +14,8 @@ import {
   DOMAIN,
   PROGRAM_VKEY,
   POLICY_HASH
-} from "./helpers";
-import { deployAll } from "./helpers";
+} from "./deployment-fixtures";
+import { deployAll } from "./deployment-fixtures";
 
 describe("Proof routing", function () {
   // ── 1. Deploy full stack with router ────────────────────────────────────────

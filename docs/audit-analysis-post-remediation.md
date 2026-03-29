@@ -23,9 +23,9 @@ The Solidity contracts and TypeScript test harnesses are consistent:
 
 ### Findings
 
-| Finding | File                                    | Line    | Severity   | Description                                                                                                                                             |
-| ------- | --------------------------------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ABI-1   | `contracts/src/zk/Groth16ZkAdapter.sol` | 128-136 | **Medium** | Production mode decodes proof into `memory` arrays (`pA`, `pB`, `pC`) instead of using `calldata` slicing. Gas optimization opportunity — see Chunk 2A. |
+| Finding | File                                    | Line    | Severity   | Description                                                                                                                                                              |
+| ------- | --------------------------------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ABI-1   | `contracts/src/zk/Groth16ZkAdapter.sol` | 128-136 | **Medium** | Production mode decodes proof into `memory` arrays (`pA`, `pB`, `pC`) instead of using `calldata` slicing. Gas optimization opportunity — see gas optimization analysis. |
 
 ---
 

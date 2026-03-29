@@ -14,7 +14,7 @@ import {
   GENESIS_L2_BLOCK,
   PROGRAM_VKEY,
   POLICY_HASH
-} from "./helpers";
+} from "./deployment-fixtures";
 
 describe("Plonk adapter", function () {
   // ── 1. Deploy full stack with Groth16 + Plonk adapters ───────────────────

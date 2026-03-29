@@ -6,5 +6,5 @@
  *   2. Report constraint count
  *   3. Verify zero unconstrained signals via --inspect
  *
- * Implemented in Phase 1, Chunk 2.
+ * Produces artifacts needed by the trusted setup and test scripts.
  */

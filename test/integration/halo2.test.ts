@@ -17,7 +17,7 @@ import {
   PROGRAM_VKEY,
   POLICY_HASH,
   computeStfCommitment
-} from "./helpers";
+} from "./deployment-fixtures";
 
 /**
  * Encode a Halo2 proof envelope matching the Halo2ZkAdapter format:

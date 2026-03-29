@@ -15,7 +15,7 @@ import {
   GENESIS_L2_BLOCK,
   DOMAIN,
   PROVER_SET_DIGEST
-} from "./helpers";
+} from "./deployment-fixtures";
 
 describe("Proof submission", function () {
   // ── 1. Valid 320-byte Groth16 proof accepted ──────────────────────────────

@@ -2,50 +2,42 @@
 
 Multi-ZK-prover verification architecture. Groth16/Plonk/Halo2 provers submit validity proofs for state transitions, aggregated via quorum-based verification.
 
+## Architecture
+
+- **ProofRouter** — UUPS-upgradeable on-chain router that dispatches proofs to registered ZK adapters by proof system ID
+- **Proof systems** — Groth16 (ID=1), Plonk (ID=2), Halo2 (ID=3), each with a dedicated verifier contract and ZkAdapter
+- **WorldlineFinalizer** — UUPS-upgradeable contract that accepts validity proofs per window, verifies via the router, and finalizes state transitions
+- **WorldlineRegistry** — UUPS-upgradeable registry with timelocked compat facade changes
+- **Multi-prover quorum** — Up to 3 provers per window; quorum threshold configurable (1–3)
+- **Proof aggregation** — Off-chain Rust aggregator collects and verifies proofs from multiple systems
+- **Proof recursion** — Recursive verification over inner proofs before on-chain submission
+- **Circom circuits** — BN254 STF circuit with circomlib-compatible Poseidon, independent Plonk circuit (Path B)
+
 ## Repo Layout
 
 ```
 circuits/src/          → Circom circuits (BN254, pragma 2.1.6)
+circuits/stf/          → STF and prover set binding circuits
 circuits/zkeys/        → Trusted setup artifacts (dev ceremony)
 circuits/test/         → Mocha/Chai circuit tests
-contracts/src/         → Solidity verifier + registry (^0.8.20)
-contracts/test/        → Forge + Hardhat tests
+contracts/src/         → Solidity verifier + registry (^0.8.24)
+contracts/src/zk/      → ZK verifiers and adapters (Groth16, Plonk, Halo2)
+contracts/src/blob/    → EIP-4844 blob verification
+contracts/test/        → Forge unit + fuzz tests
 crates/registry/       → Rust prover registry
 crates/aggregation/    → Proof aggregation module
 crates/recursion/      → Proof recursion module
+crates/halo2-circuit/  → Halo2 STF circuit (KZG/BN254, circomlib-compatible Poseidon)
+crates/worldline-driver/ → CLI driver for aggregation, recursion, blob encoding
+crates/worldline-registry/ → Extended registry with directory, selection, canonical hashing
+crates/worldline-compat/   → Compatibility facade
+crates/worldline-devnet/   → Devnet utilities
 crates/benches/        → Criterion benchmarks
 devnet/                → Docker local devnet
 scripts/               → Deploy, simulation, CI
+test/                  → Hardhat integration tests
+test/integration/      → Multi-prover integration tests
 .github/workflows/     → CI pipeline
-```
-
-## Chunk Status
-
-| #   | Scope                                        | Status |
-| --- | -------------------------------------------- | ------ |
-| 1   | Circuit design + Poseidon constraints        | ✅     |
-| 2   | Trusted setup + circuit tests (8/8 pass)     | ✅     |
-| 3   | Solidity verifier contracts (175 tests pass) | ✅     |
-| 4   | Rust registry crate                          | ✅     |
-| 5   | Proof aggregation + recursion                | ✅     |
-| 6   | Benchmarks (Solidity gas + Criterion)        | ✅     |
-| 7   | Devnet hardening + integration tests         | ✅     |
-| 8   | Mainnet fork simulation                      | ✅     |
-| 9   | Testnet deploy + CI pipeline                 | ✅     |
-| A   | Proof routing layer                          | ✅     |
-| B   | Plonk verifier (Path A — snarkjs backend)    | ✅     |
-| C   | Halo2 verifier (KZG/BN254)                   | ✅     |
-| D   | Independent Plonk circuit (Path B)           | ✅     |
-| E   | Poseidon circomlib compatibility             | ✅     |
-| F   | PlonkV2 swap + multi-prover quorum           | ✅     |
-
-## Dependencies
-
-```
-1 → 2 → 3 ─┬→ 6 ─┐
-             │     ├→ 7 → 8 → 9
-   2 → 5 ───┤     │
-        4 ──┴→ 6 ─┘
 ```
 
 ## Domain Quick-Ref
@@ -56,7 +48,7 @@ scripts/               → Deploy, simulation, CI
 - Public outputs: stfCommitment, proverSetDigest
 - stfCommitment = Poseidon(preStateRoot, postStateRoot, batchCommitment)
 - proverSetDigest = Poseidon(proverIds[], proofSystemIds[], quorumCount)
-- Proof format: 320-byte production (BN254 pairing)
+- Proof sizes: Groth16=320 bytes, Plonk=832 bytes, Halo2=192 bytes (BN254 pairing format)
 - Powers of Tau: 2^11 ptau, 1867 constraints, 1859 wires
 
 ## RPC Endpoints
@@ -80,9 +72,9 @@ cargo bench                                        # criterion benchmarks
 See `docs/coding-standards.md` for full conventions. Key rules:
 
 - Circom: pragma 2.1.6, BN254 only, zero unconstrained signals
-- Solidity: ^0.8.20, Hardhat + ethers v6, Forge for fuzz tests
+- Solidity: ^0.8.24, Hardhat + ethers v6, Forge for fuzz tests
 - Rust: edition 2021, stable, `#[deny(clippy::all)]`, no `unwrap()` outside tests
-- Commits: `chunk-N: description`
+- Commits: `scope: description` (e.g., `contracts: add Plonk adapter`)
 
 ## Sub-Agent Rules
 

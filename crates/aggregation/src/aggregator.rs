@@ -1,4 +1,7 @@
-use crate::types::{AggregatedProof, AggregationStrategy, IndividualProof, ProofSystemId};
+use crate::types::{
+    AggregatedProof, AggregationStrategy, IndividualProof, ProofSystemId, GROTH16_PROOF_BYTE_SIZE,
+    HALO2_PROOF_BYTE_SIZE, PLONK_PROOF_BYTE_SIZE,
+};
 use std::collections::HashMap;
 use thiserror::Error;
 
@@ -30,9 +33,9 @@ pub struct VerificationReport {
 
 fn expected_proof_size(system: ProofSystemId) -> usize {
     match system {
-        ProofSystemId::Groth16 => 320,
-        ProofSystemId::Plonk => 832,
-        ProofSystemId::Halo2 => 192,
+        ProofSystemId::Groth16 => GROTH16_PROOF_BYTE_SIZE,
+        ProofSystemId::Plonk => PLONK_PROOF_BYTE_SIZE,
+        ProofSystemId::Halo2 => HALO2_PROOF_BYTE_SIZE,
     }
 }
 

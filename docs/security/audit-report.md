@@ -1059,18 +1059,18 @@ Pin to an exact version: `"snarkjs": "0.7.4"` (or whichever version is confirmed
 
 The Foundry fuzz suite (`WorldlineFinalizer.fuzz.t.sol`, `WorldlineRegistry.fuzz.t.sol`, 256 runs each) and the Hardhat integration suite cover the primary happy paths and all documented revert conditions. The remediation added dedicated test files:
 
-- `Chunk5.t.sol` — 19 tests covering HI-004 dev-only guards, MED-003 zero-value guards, MED-004 SecretTooLarge, MED-005 timelocked facade changes
-- `Chunk7.t.sol` — 8 tests covering LOW-003 genesis validation, LOW-004 ManifestAnnounced emission, LOW-005 CEI state update ordering
+- `OutputsRegistryGuards.t.sol` — 19 tests covering HI-004 dev-only guards, MED-003 zero-value guards, MED-004 SecretTooLarge, MED-005 timelocked facade changes
+- `FinalizerGenesisAndEvents.t.sol` — 8 tests covering LOW-003 genesis validation, LOW-004 ManifestAnnounced emission, LOW-005 CEI state update ordering
 - `AccessControl.t.sol` — 18 tests covering HI-001 timelocked adapter, HI-003 two-step ownership, HI-002 timelock floors
 
 **Previously uncovered paths now tested:**
 
-- ~~`setAdapter()` with a malicious/reentering adapter~~ → CEI fix (LOW-005) + timelocked adapter (HI-001) mitigate; structural test in Chunk7
+- ~~`setAdapter()` with a malicious/reentering adapter~~ → CEI fix (LOW-005) + timelocked adapter (HI-001) mitigate; structural test in FinalizerGenesisAndEvents.t.sol
 - ~~`setMinTimelock(1)` → immediate schedule/activate~~ → MIN_TIMELOCK_FLOOR enforced; tested in AccessControl.t.sol
-- ~~`WorldlineRegistry.verify()` with `secret > 2^128`~~ → SecretTooLarge guard; tested in Chunk5.t.sol and Verifier.test.ts
-- ~~`submitZkValidityProofWithMeta` locator emission~~ → ManifestAnnounced event tested in Chunk7.t.sol
-- ~~`WorldlineOutputsRegistry.schedule()` with `oracle = address(0)`~~ → OracleZero guard; tested in Chunk5.t.sol
-- ~~`setCompatFacade(address(0))` to disable the facade~~ → Timelocked two-step; tested in Chunk5.t.sol and WorldlineRegistry.test.ts
+- ~~`WorldlineRegistry.verify()` with `secret > 2^128`~~ → SecretTooLarge guard; tested in OutputsRegistryGuards.t.sol and Verifier.test.ts
+- ~~`submitZkValidityProofWithMeta` locator emission~~ → ManifestAnnounced event tested in FinalizerGenesisAndEvents.t.sol
+- ~~`WorldlineOutputsRegistry.schedule()` with `oracle = address(0)`~~ → OracleZero guard; tested in OutputsRegistryGuards.t.sol
+- ~~`setCompatFacade(address(0))` to disable the facade~~ → Timelocked two-step; tested in OutputsRegistryGuards.t.sol and WorldlineRegistry.test.ts
 
 **Remaining gaps (production prerequisites):**
 
