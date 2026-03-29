@@ -239,12 +239,12 @@ impl InnerProver for Groth16Prover {
     fn prove(&self, inputs: &StfInputs) -> Result<InnerProofOutput, ProverError> {
         validate_stf_inputs(inputs)?;
 
-        let pid = std::process::id();
+        let uid = unique_id();
         let tmp = std::env::temp_dir();
-        let input_path = tmp.join(format!("wl_g16_input_{pid}.json"));
-        let witness_path = tmp.join(format!("wl_g16_witness_{pid}.wtns"));
-        let proof_path = tmp.join(format!("wl_g16_proof_{pid}.json"));
-        let public_path = tmp.join(format!("wl_g16_public_{pid}.json"));
+        let input_path = tmp.join(format!("wl_g16_input_{uid}.json"));
+        let witness_path = tmp.join(format!("wl_g16_witness_{uid}.wtns"));
+        let proof_path = tmp.join(format!("wl_g16_proof_{uid}.json"));
+        let public_path = tmp.join(format!("wl_g16_public_{uid}.json"));
 
         // 1. Write witness input JSON
         let witness_json = Self::build_witness_json(inputs);
@@ -285,6 +285,16 @@ impl InnerProver for Groth16Prover {
 }
 
 // ── Shared utility functions ─────────────────────────────────────────────────
+
+/// Generate a unique ID for temp files (PID + atomic counter to avoid collisions
+/// when multiple provers run in parallel threads within the same process).
+pub(crate) fn unique_id() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let pid = std::process::id();
+    let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
+    format!("{pid}_{seq}")
+}
 
 /// Validate STF inputs against circuit constraints.
 pub(crate) fn validate_stf_inputs(inputs: &StfInputs) -> Result<(), ProverError> {
