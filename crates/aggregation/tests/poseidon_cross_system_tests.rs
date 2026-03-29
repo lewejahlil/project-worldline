@@ -57,7 +57,7 @@ fn test_prover_set_digest_matches_halo2_poseidon() {
     agg.add_proof(IndividualProof {
         prover_id: 103,
         proof_system: ProofSystemId::Halo2,
-        proof_data: vec![0u8; 192],
+        proof_data: vec![0u8; 1536],
         public_inputs: vec![[0u8; 32]],
     })
     .unwrap();
@@ -146,7 +146,7 @@ fn test_aggregator_digests_match_circuit_public_outputs() {
     agg.add_proof(IndividualProof {
         prover_id: 103,
         proof_system: ProofSystemId::Halo2,
-        proof_data: vec![0u8; 192],
+        proof_data: vec![0u8; 1536],
         public_inputs: vec![fr_to_bytes(pre_state_root), fr_to_bytes(post_state_root)],
     })
     .unwrap();
