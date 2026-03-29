@@ -56,8 +56,8 @@ function encodeProof(stf: string): string {
 function encodeInputs(l2Start: bigint, l2End: bigint, ts: bigint): { inputs: string; stf: string } {
   const stf = computeStf(l2Start, l2End, ts);
   const inputs = ethers.AbiCoder.defaultAbiCoder().encode(
-    ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-    [stf, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts]
+    ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256", "bytes32"],
+    [stf, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts, stf]
   );
   return { inputs, stf };
 }

@@ -205,7 +205,7 @@ contract ProofRouter is Initializable, Ownable2StepUpgradeable, UUPSUpgradeable 
     ///      in addition to IZkAdapter. A revert with an EvmError will occur otherwise.
     /// @param proofSystemId  Proof system to route to.
     /// @param proof          Encoded proof bytes (format depends on adapter).
-    /// @param publicInputs   224-byte ABI-encoded public inputs (WorldlineFinalizer format).
+    /// @param publicInputs   256-byte ABI-encoded public inputs (WorldlineFinalizer format, 8 words).
     /// @return valid              Whether the proof is valid.
     /// @return stfCommitment      STF commitment extracted from the proof.
     /// @return programVKey        Program verifying key pinned by the adapter.

@@ -56,8 +56,8 @@ function encodePublicInputs(
 ): { inputs: string; stf: string } {
   const stf = computeStf(l2Start, l2End, windowCloseTimestamp);
   const inputs = ethers.AbiCoder.defaultAbiCoder().encode(
-    ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-    [stf, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, windowCloseTimestamp]
+    ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256", "bytes32"],
+    [stf, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, windowCloseTimestamp, stf]
   );
   return { inputs, stf };
 }

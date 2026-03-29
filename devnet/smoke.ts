@@ -143,8 +143,17 @@ function encodePublicInputs(
   windowCloseTimestamp: bigint
 ): string {
   return ethers.AbiCoder.defaultAbiCoder().encode(
-    ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-    [stfCommitment, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, windowCloseTimestamp]
+    ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256", "bytes32"],
+    [
+      stfCommitment,
+      l2Start,
+      l2End,
+      ethers.ZeroHash,
+      ethers.ZeroHash,
+      DOMAIN,
+      windowCloseTimestamp,
+      stfCommitment
+    ]
   );
 }
 

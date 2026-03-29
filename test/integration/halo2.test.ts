@@ -147,9 +147,9 @@ describe("Halo2 verifier integration", function () {
 
     const halo2Proof = encodeHalo2ProofEnvelope(stfCommitment, proverSetDigest);
 
-    // Encode public inputs
+    // Encode public inputs (8 words: stfCommitment, l2Start, l2End, outputRoot, l1Hash, domain, ts, submissionBinding)
     const publicInputs = ethers.AbiCoder.defaultAbiCoder().encode(
-      ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
+      ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256", "bytes32"],
       [
         stfCommitment,
         GENESIS_L2_BLOCK,
@@ -157,7 +157,8 @@ describe("Halo2 verifier integration", function () {
         ethers.ZeroHash,
         ethers.ZeroHash,
         ethers.keccak256(ethers.toUtf8Bytes("integration-test-domain")),
-        windowCloseTimestamp
+        windowCloseTimestamp,
+        stfCommitment // submissionBinding = keccak256(words 1–6) = stfCommitment for zero outputRoot/l1Hash
       ]
     );
 
@@ -234,7 +235,7 @@ describe("Halo2 verifier integration", function () {
 
     const halo2Proof = encodeHalo2ProofEnvelope(stfCommitment, proverSetDigest);
     const halo2Inputs = ethers.AbiCoder.defaultAbiCoder().encode(
-      ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
+      ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256", "bytes32"],
       [
         stfCommitment,
         l2Start,
@@ -242,7 +243,8 @@ describe("Halo2 verifier integration", function () {
         ethers.ZeroHash,
         ethers.ZeroHash,
         ethers.keccak256(ethers.toUtf8Bytes("integration-test-domain")),
-        windowCloseTimestamp
+        windowCloseTimestamp,
+        stfCommitment // submissionBinding = keccak256(words 1–6) = stfCommitment for zero outputRoot/l1Hash
       ]
     );
 

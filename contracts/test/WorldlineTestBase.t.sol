@@ -9,12 +9,11 @@ import "../src/zk/Groth16ZkAdapter.sol";
 /// @notice View-compatible mock that always returns true for Groth16 verification.
 ///         Shared across all Forge test suites that need a finalizer with a mock adapter.
 contract ViewMockGroth16Verifier {
-    function verifyProof(
-        uint256[2] calldata,
-        uint256[2][2] calldata,
-        uint256[2] calldata,
-        uint256[2] calldata
-    ) external pure returns (bool) {
+    function verifyProof(uint256[2] calldata, uint256[2][2] calldata, uint256[2] calldata, uint256[2] calldata)
+        external
+        pure
+        returns (bool)
+    {
         return true;
     }
 }
@@ -32,10 +31,7 @@ abstract contract WorldlineTestBase is Test {
     bytes32 constant PROVER_DIGEST = keccak256("prover-set");
 
     /// @dev Deploy finalizer behind a UUPS proxy with a ViewMockGroth16Verifier.
-    function _deployFinalizer(
-        uint256 maxAcceptanceDelay,
-        uint256 genesisL2Block
-    ) internal {
+    function _deployFinalizer(uint256 maxAcceptanceDelay, uint256 genesisL2Block) internal {
         ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier();
         adapter = new Groth16ZkAdapter(address(mock), PROGRAM_VKEY, POLICY_HASH);
         WorldlineFinalizer finImpl = new WorldlineFinalizer();
@@ -49,12 +45,9 @@ abstract contract WorldlineTestBase is Test {
         finalizer = WorldlineFinalizer(address(finProxy));
     }
 
-    /// @dev Compute stfCommitment = keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domain, windowCloseTimestamp))
-    function computeStf(
-        uint256 l2Start,
-        uint256 l2End,
-        uint256 windowCloseTimestamp
-    ) internal pure returns (bytes32) {
+    /// @dev Compute the MED-001 submission binding = keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domain, windowCloseTimestamp)).
+    ///      Used as both the stfCommitment stand-in (word 0) and the submissionBinding (word 7) in test publicInputs.
+    function computeStf(uint256 l2Start, uint256 l2End, uint256 windowCloseTimestamp) internal pure returns (bytes32) {
         return keccak256(abi.encode(l2Start, l2End, bytes32(0), bytes32(0), DOMAIN, windowCloseTimestamp));
     }
 
@@ -70,14 +63,16 @@ abstract contract WorldlineTestBase is Test {
         return keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domain, windowCloseTimestamp));
     }
 
-    /// @dev Encode 224-byte public inputs for submitZkValidityProof.
-    function encodeInputs(
-        uint256 l2Start,
-        uint256 l2End,
-        uint256 windowCloseTimestamp
-    ) internal pure returns (bytes memory) {
+    /// @dev Encode 256-byte public inputs (8 words) for submitZkValidityProof.
+    ///      Word 0: stfCommitment (test uses the keccak binding as a stand-in for the Poseidon circuit output).
+    ///      Word 7: submissionBinding = keccak256(abi.encode(words 1–6)) — MED-001 digest.
+    function encodeInputs(uint256 l2Start, uint256 l2End, uint256 windowCloseTimestamp)
+        internal
+        pure
+        returns (bytes memory)
+    {
         bytes32 stf = computeStf(l2Start, l2End, windowCloseTimestamp);
-        return abi.encode(stf, l2Start, l2End, bytes32(0), bytes32(0), DOMAIN, windowCloseTimestamp);
+        return abi.encode(stf, l2Start, l2End, bytes32(0), bytes32(0), DOMAIN, windowCloseTimestamp, stf);
     }
 
     /// @dev Encode a 320-byte Groth16 proof embedding the given stfCommitment.

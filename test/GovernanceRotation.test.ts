@@ -103,8 +103,8 @@ describe("GovernanceRotation", function () {
   ): { inputs: string; stf: string } {
     const stf = computeStf(l2Start, l2End, domainSep, windowCloseTimestamp);
     const inputs = ethers.AbiCoder.defaultAbiCoder().encode(
-      ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-      [stf, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, domainSep, windowCloseTimestamp]
+      ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256", "bytes32"],
+      [stf, l2Start, l2End, ethers.ZeroHash, ethers.ZeroHash, domainSep, windowCloseTimestamp, stf]
     );
     return { inputs, stf };
   }

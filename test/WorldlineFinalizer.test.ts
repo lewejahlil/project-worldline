@@ -39,7 +39,8 @@ describe("WorldlineFinalizer", function () {
     return { finalizer, adapter, mockVerifier, owner, submitter, stranger };
   }
 
-  // MED-001: stfCommitment = keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domainSep, windowCloseTimestamp))
+  // submissionBinding (word 7) = keccak256(abi.encode(l2Start, l2End, outputRoot, l1BlockHash, domainSep, windowCloseTimestamp))
+  // stfCommitment (word 0) = Poseidon circuit output; tests use the same keccak value as a stand-in.
   function computeStf(
     l2Start: bigint,
     l2End: bigint,
@@ -64,6 +65,7 @@ describe("WorldlineFinalizer", function () {
     domainSep: string,
     windowCloseTimestamp: bigint
   ): { inputs: string; stf: string } {
+    // stf is the keccak binding used as both word 0 (stfCommitment stand-in) and word 7 (submissionBinding).
     const stf = computeStf(
       l2Start,
       l2End,
@@ -73,8 +75,8 @@ describe("WorldlineFinalizer", function () {
       windowCloseTimestamp
     );
     const inputs = ethers.AbiCoder.defaultAbiCoder().encode(
-      ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256"],
-      [stf, l2Start, l2End, outputRoot, l1BlockHash, domainSep, windowCloseTimestamp]
+      ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256", "bytes32"],
+      [stf, l2Start, l2End, outputRoot, l1BlockHash, domainSep, windowCloseTimestamp, stf]
     );
     return { inputs, stf };
   }
@@ -486,15 +488,37 @@ describe("WorldlineFinalizer", function () {
       const { finalizer, owner } = await loadFixture(deployFixture);
       const ts = BigInt(await time.latest()) + 200n;
 
-      // publicInputs has correctly bound stfCommitment
+      // publicInputs has correctly bound stfCommitment (word 0) and submissionBinding (word 7)
       const { inputs } = encodePublicInputs(0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
-      // proof encodes a DIFFERENT stfCommitment (adapter will return this)
+      // proof encodes a DIFFERENT stfCommitment (adapter will return this, triggering StfMismatch)
       const stfWrong = ethers.keccak256(ethers.toUtf8Bytes("stf-wrong"));
       const proof = encodeProof(stfWrong, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
 
       await expect(
         finalizer.connect(owner).submitZkValidityProof(proof, inputs)
       ).to.be.revertedWithCustomError(finalizer, "StfMismatch");
+    });
+  });
+
+  describe("StfBindingMismatch", function () {
+    it("reverts when submissionBinding (word 7) does not match keccak256 of metadata words 1–6", async function () {
+      const { finalizer, owner } = await loadFixture(deployFixture);
+      const ts = BigInt(await time.latest()) + 200n;
+
+      // Compute the correct stfCommitment stand-in so the proof and word 0 agree (StfMismatch would pass).
+      const stf = computeStf(0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts);
+      const proof = encodeProof(stf, PROGRAM_VKEY, POLICY_HASH, PROVER_DIGEST);
+
+      // Fabricate an incorrect submissionBinding at word 7 while keeping all other words valid.
+      const wrongBinding = ethers.keccak256(ethers.toUtf8Bytes("fabricated-binding"));
+      const inputs = ethers.AbiCoder.defaultAbiCoder().encode(
+        ["bytes32", "uint256", "uint256", "bytes32", "bytes32", "bytes32", "uint256", "bytes32"],
+        [stf, 0n, 100n, ethers.ZeroHash, ethers.ZeroHash, DOMAIN, ts, wrongBinding]
+      );
+
+      await expect(
+        finalizer.connect(owner).submitZkValidityProof(proof, inputs)
+      ).to.be.revertedWithCustomError(finalizer, "StfBindingMismatch");
     });
   });
 

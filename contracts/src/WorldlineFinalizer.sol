@@ -88,8 +88,11 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
 
     // ── Constants ───────────────────────────────────────────────────────────────
 
-    /// @dev Expected length of the public inputs ABI payload (7 × 32 = 224 bytes).
-    uint256 private constant PUBLIC_INPUTS_LEN = 224;
+    /// @dev Expected length of the public inputs ABI payload (8 × 32 = 256 bytes).
+    ///      Word 0: Poseidon stfCommitment (circuit output).
+    ///      Words 1–6: submission metadata (l2Start, l2End, outputRoot, l1BlockHash, domainSep, timestamp).
+    ///      Word 7: submissionBinding = keccak256(abi.encode(words 1–6)) — MED-001 binding digest.
+    uint256 private constant PUBLIC_INPUTS_LEN = 256;
 
     /// @dev Expected length of a KZG commitment (48 bytes). Used to distinguish
     ///      KZG mode from hash-only mode in submitZkValidityProofWithBlob().
@@ -359,7 +362,8 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
 
     /// @notice Submit a ZK validity proof for the next contiguous window.
     /// @param proof         Encoded proof bytes (format depends on the adapter).
-    /// @param publicInputs  224-byte ABI-encoded public inputs.
+    /// @param publicInputs  256-byte ABI-encoded public inputs (8 words: stfCommitment, l2Start, l2End,
+    ///                      outputRoot, l1BlockHash, domainSeparator, windowCloseTimestamp, submissionBinding).
     function submitZkValidityProof(bytes calldata proof, bytes calldata publicInputs) external whenNotPaused {
         _submit(proof, publicInputs);
     }
@@ -368,7 +372,7 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     ///         LOW-004 remediation: emits ManifestAnnounced with the proverSetDigest
     ///         decoded from the proof and the caller-supplied metaLocator.
     /// @param proof         Encoded proof bytes.
-    /// @param publicInputs  224-byte ABI-encoded public inputs.
+    /// @param publicInputs  256-byte ABI-encoded public inputs (8 words).
     /// @param metaLocator   Optional off-chain locator (capped at 96 bytes).
     function submitZkValidityProofWithMeta(
         bytes calldata proof,
@@ -386,7 +390,7 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     ///         submitZkValidityProof(). Requires proofRouter to be configured.
     /// @param proofSystemId  Numeric identifier of the proof system (1=Groth16, 2=Plonk, 3=Halo2).
     /// @param proof          Encoded proof bytes (adapter-specific format).
-    /// @param publicInputs   224-byte ABI-encoded public inputs.
+    /// @param publicInputs   256-byte ABI-encoded public inputs (8 words).
     function submitZkValidityProofRouted(uint8 proofSystemId, bytes calldata proof, bytes calldata publicInputs)
         external
         whenNotPaused
@@ -400,7 +404,7 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     ///         If blobKzgVerifier is not set, falls back to hash-only verification
     ///         via the BlobVerifier library.
     /// @param proof              Encoded proof bytes.
-    /// @param publicInputs       224-byte ABI-encoded public inputs.
+    /// @param publicInputs       256-byte ABI-encoded public inputs (8 words).
     /// @param expectedBlobHash   Expected versioned hash of blob at blobIndex.
     /// @param blobDataHash       Hash of the actual blob data payload (for indexer reference).
     /// @param blobIndex          Index of the blob in the transaction sidecar.
@@ -468,15 +472,27 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
         // ABI length check (cheapest possible — pure calldata length comparison)
         if (publicInputs.length != PUBLIC_INPUTS_LEN) revert BadInputsLen();
 
-        // Decode the seven public input words
+        // Decode the eight public input words.
+        // Word 0: Poseidon stfCommitment (circuit output — Poseidon(preStateRoot, postStateRoot, batchCommitment)).
+        // Words 1–6: submission metadata.
+        // Word 7: submissionBinding = keccak256(abi.encode(words 1–6)) — MED-001 on-chain binding digest.
         uint256 l2Start;
         uint256 l2End;
         bytes32 outputRoot;
         bytes32 l1BlockHash;
         bytes32 inputDomainSeparator;
         uint256 windowCloseTimestamp;
-        (v.stfCommitment, l2Start, l2End, outputRoot, l1BlockHash, inputDomainSeparator, windowCloseTimestamp) =
-            abi.decode(publicInputs, (bytes32, uint256, uint256, bytes32, bytes32, bytes32, uint256));
+        bytes32 submissionBinding;
+        (
+            v.stfCommitment,
+            l2Start,
+            l2End,
+            outputRoot,
+            l1BlockHash,
+            inputDomainSeparator,
+            windowCloseTimestamp,
+            submissionBinding
+        ) = abi.decode(publicInputs, (bytes32, uint256, uint256, bytes32, bytes32, bytes32, uint256, bytes32));
 
         // ── Cheap validation first (comparisons before keccak/SLOAD) ────────
         // Domain binding — single SLOAD + comparison
@@ -499,12 +515,15 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
         }
 
         // ── Expensive validation (keccak256) after all cheap checks pass ────
-        // MED-001: Defense-in-depth — verify stfCommitment binds to the decoded ABI content.
+        // MED-001: Defense-in-depth — verify the submission binding digest (word 7) matches
+        // the keccak256 of the six metadata words (words 1–6). This binds the on-chain
+        // submission to the specific L2 block range, output root, and domain without
+        // conflicting with the circuit's Poseidon stfCommitment at word 0.
         {
-            bytes32 expectedStf = keccak256(
+            bytes32 expectedBinding = keccak256(
                 abi.encode(l2Start, l2End, outputRoot, l1BlockHash, inputDomainSeparator, windowCloseTimestamp)
             );
-            if (v.stfCommitment != expectedStf) revert StfBindingMismatch();
+            if (submissionBinding != expectedBinding) revert StfBindingMismatch();
         }
 
         // ── Effects (LOW-005 CEI remediation) ─────────────────────────────────

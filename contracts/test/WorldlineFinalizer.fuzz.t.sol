@@ -21,9 +21,9 @@ contract WorldlineFinalizerFuzzTest is WorldlineTestBase {
 
     // ── Fuzz tests ────────────────────────────────────────────────────────────
 
-    /// Any publicInputs with length != 224 must revert with BadInputsLen.
+    /// Any publicInputs with length != 256 must revert with BadInputsLen.
     function testFuzz_rejectBadInputLength(bytes calldata randomInputs) public {
-        vm.assume(randomInputs.length != 224);
+        vm.assume(randomInputs.length != 256);
         bytes memory proof = encodeProof(keccak256("stf"));
         vm.expectRevert(WorldlineFinalizer.BadInputsLen.selector);
         finalizer.submitZkValidityProof(proof, randomInputs);
@@ -42,7 +42,8 @@ contract WorldlineFinalizerFuzzTest is WorldlineTestBase {
             bytes32(0),
             bytes32(0),
             wrongDomain,
-            ts
+            ts,
+            stf // submissionBinding — DomainMismatch fires first so value is irrelevant
         );
         vm.expectRevert(WorldlineFinalizer.DomainMismatch.selector);
         finalizer.submitZkValidityProof(proof, inputs);
@@ -65,7 +66,8 @@ contract WorldlineFinalizerFuzzTest is WorldlineTestBase {
                 bytes32(0),
                 bytes32(0),
                 DOMAIN,
-                ts
+                ts,
+                stf // submissionBinding = keccak256(words 1–6) = stf for default zero outputRoot/l1Hash
             );
             finalizer.submitZkValidityProof(proof, inputs);
         }
@@ -80,7 +82,8 @@ contract WorldlineFinalizerFuzzTest is WorldlineTestBase {
         uint256 ts = block.timestamp + 3600;
         bytes32 stfGenesis = computeStfFull(0, 100, bytes32(0), bytes32(0), DOMAIN, ts);
         bytes memory proof = encodeProof(stfGenesis);
-        bytes memory inputs = abi.encode(stfGenesis, uint256(0), uint256(100), bytes32(0), bytes32(0), DOMAIN, ts);
+        bytes memory inputs =
+            abi.encode(stfGenesis, uint256(0), uint256(100), bytes32(0), bytes32(0), DOMAIN, ts, stfGenesis);
         finalizer.submitZkValidityProof(proof, inputs);
 
         // Now attempt a non-contiguous submission (l2Start != 100) on window 1.
@@ -89,7 +92,16 @@ contract WorldlineFinalizerFuzzTest is WorldlineTestBase {
 
         bytes32 stfBad = computeStfFull(uint256(l2Start), uint256(l2End), bytes32(0), bytes32(0), DOMAIN, ts);
         proof = encodeProof(stfBad);
-        inputs = abi.encode(stfBad, uint256(l2Start), uint256(l2End), bytes32(0), bytes32(0), DOMAIN, ts);
+        inputs = abi.encode(
+            stfBad,
+            uint256(l2Start),
+            uint256(l2End),
+            bytes32(0),
+            bytes32(0),
+            DOMAIN,
+            ts,
+            stfBad // submissionBinding — NotContiguous fires first
+        );
         vm.expectRevert(WorldlineFinalizer.NotContiguous.selector);
         finalizer.submitZkValidityProof(proof, inputs);
     }
@@ -108,7 +120,8 @@ contract WorldlineFinalizerFuzzTest is WorldlineTestBase {
             bytes32(0),
             bytes32(0),
             DOMAIN,
-            windowCloseTimestamp
+            windowCloseTimestamp,
+            stf // submissionBinding — TooOld fires first
         );
         vm.expectRevert(WorldlineFinalizer.TooOld.selector);
         finalizer.submitZkValidityProof(proof, inputs);
@@ -126,9 +139,33 @@ contract WorldlineFinalizerFuzzTest is WorldlineTestBase {
             bytes32(0),
             bytes32(0),
             DOMAIN,
-            ts
+            ts,
+            stf // submissionBinding — InvalidWindowRange fires first
         );
         vm.expectRevert(WorldlineFinalizer.InvalidWindowRange.selector);
+        finalizer.submitZkValidityProof(proof, inputs);
+    }
+
+    /// Word 7 (submissionBinding) must equal keccak256(abi.encode(words 1–6)).
+    /// A fabricated binding while word 0 and the proof remain valid must revert with StfBindingMismatch.
+    function test_rejectBadSubmissionBinding() public {
+        uint256 ts = block.timestamp + 100;
+        // stf is the correct Poseidon stand-in; proof embeds it so StfMismatch would pass.
+        bytes32 stf = computeStf(0, 100, ts);
+        bytes memory proof = encodeProof(stf);
+        // Fabricate a wrong submission binding — any value other than computeStf(0, 100, ts).
+        bytes32 wrongBinding = keccak256(abi.encode("wrong-binding"));
+        bytes memory inputs = abi.encode(
+            stf, // word 0: stfCommitment (correct)
+            uint256(0), // word 1
+            uint256(100), // word 2
+            bytes32(0), // word 3
+            bytes32(0), // word 4
+            DOMAIN, // word 5
+            ts, // word 6
+            wrongBinding // word 7: submissionBinding (fabricated — must trigger StfBindingMismatch)
+        );
+        vm.expectRevert(WorldlineFinalizer.StfBindingMismatch.selector);
         finalizer.submitZkValidityProof(proof, inputs);
     }
 }
