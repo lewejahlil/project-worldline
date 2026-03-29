@@ -53,12 +53,11 @@ pub struct AggregatorOutput {
 pub fn run_aggregator(config: &AggregatorConfig) -> Result<AggregatorOutput, AggregatorError> {
     // ── Step 1: Load directory ────────────────────────────────────────────────
     info!(path = %config.directory_path.display(), "loading signed directory");
-    let dir_str = std::fs::read_to_string(&config.directory_path).map_err(|e| {
-        AggregatorError::FileRead {
+    let dir_str =
+        std::fs::read_to_string(&config.directory_path).map_err(|e| AggregatorError::FileRead {
             path: config.directory_path.display().to_string(),
             reason: e.to_string(),
-        }
-    })?;
+        })?;
     let directory: SignedDirectory = serde_json::from_str(&dir_str)
         .map_err(|e| AggregatorError::ParseJson(format!("directory JSON: {e}")))?;
     info!(
@@ -153,10 +152,7 @@ pub fn run_aggregator(config: &AggregatorConfig) -> Result<AggregatorOutput, Agg
         std::fs::create_dir_all(parent)?;
     }
     std::fs::write(&config.output_manifest_path, &result.manifest_json).map_err(|e| {
-        AggregatorError::ManifestWrite(format!(
-            "{}: {e}",
-            config.output_manifest_path.display()
-        ))
+        AggregatorError::ManifestWrite(format!("{}: {e}", config.output_manifest_path.display()))
     })?;
     info!(
         path = %config.output_manifest_path.display(),

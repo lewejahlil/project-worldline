@@ -47,8 +47,7 @@ pub async fn sync_registry(url: &str, output: &Path) -> Result<(), SyncError> {
         });
     }
 
-    let body = std::str::from_utf8(&bytes)
-        .map_err(|e| SyncError::InvalidUtf8(e.to_string()))?;
+    let body = std::str::from_utf8(&bytes).map_err(|e| SyncError::InvalidUtf8(e.to_string()))?;
 
     let snapshot: registry::RegistrySnapshot =
         serde_json::from_str(body).map_err(|e| SyncError::ParseJson(e.to_string()))?;
@@ -60,8 +59,7 @@ pub async fn sync_registry(url: &str, output: &Path) -> Result<(), SyncError> {
         "parsed registry snapshot"
     );
 
-    registry::save(output, &snapshot)
-        .map_err(|e| SyncError::Save(e.to_string()))?;
+    registry::save(output, &snapshot).map_err(|e| SyncError::Save(e.to_string()))?;
     info!(
         output = %output.display(),
         bytes = bytes.len(),
@@ -74,8 +72,7 @@ pub async fn sync_registry(url: &str, output: &Path) -> Result<(), SyncError> {
 /// Load a registry snapshot and export it as a JSON compat snapshot.
 pub fn export_compat(input: &Path) -> Result<String, RegistryError> {
     info!(input = %input.display(), "exporting compat snapshot");
-    let snapshot =
-        registry::load(input).map_err(|e| RegistryError::Load(e.to_string()))?;
+    let snapshot = registry::load(input).map_err(|e| RegistryError::Load(e.to_string()))?;
     let compat = build_compat_snapshot(&snapshot);
     let json = serde_json::to_string_pretty(&compat)
         .map_err(|e| RegistryError::Serialize(e.to_string()))?;
@@ -90,8 +87,7 @@ pub fn export_compat(input: &Path) -> Result<String, RegistryError> {
 /// Verify that a plugin exists in a local registry snapshot.
 pub fn check_plugin(input: &Path, plugin_id: &str) -> Result<(), RegistryError> {
     info!(input = %input.display(), plugin_id = %plugin_id, "checking plugin existence");
-    let snapshot =
-        registry::load(input).map_err(|e| RegistryError::Load(e.to_string()))?;
+    let snapshot = registry::load(input).map_err(|e| RegistryError::Load(e.to_string()))?;
     ensure_plugin_exists(&snapshot, plugin_id)
         .map_err(|e| RegistryError::PluginNotFound(e.to_string()))?;
     Ok(())

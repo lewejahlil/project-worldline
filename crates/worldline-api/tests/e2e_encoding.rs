@@ -4,9 +4,7 @@
 //! the ABI encoding of both publicInputs and the Halo2 proof calldata.
 
 use tiny_keccak::{Hasher, Keccak};
-use worldline_api::{
-    ProofRequest, ProofResponse, ProofStatus, ProvingService, ServiceConfig,
-};
+use worldline_api::{ProofRequest, ProofResponse, ProofStatus, ProvingService, ServiceConfig};
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -57,7 +55,9 @@ fn word_to_u64(word: &[u8]) -> u64 {
 fn prove_halo2() -> ProofResponse {
     let mut service = ProvingService::new(halo2_config());
     let request = halo2_request();
-    service.prove(&request).expect("Halo2 proving should succeed")
+    service
+        .prove(&request)
+        .expect("Halo2 proving should succeed")
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────
@@ -93,8 +93,7 @@ fn e2e_public_inputs_word0_is_stf_commitment() {
     );
     // Also verify it is non-zero (Poseidon output of real inputs).
     assert_ne!(
-        response.stf_commitment,
-        [0u8; 32],
+        response.stf_commitment, [0u8; 32],
         "stfCommitment should be non-zero for valid inputs"
     );
 }
