@@ -45,4 +45,4 @@
 - **Deployment gas** for WorldlineFinalizer increased by +19,491 due to the additional event definition and keccak call in the submission path.
 - **All other methods** show marginal improvements (-2 to -41 gas) from the Solidity 0.8.24 compiler upgrade and Cancun EVM target.
 - **Total deployment savings** across non-Finalizer contracts: -31,449 gas (Solc 0.8.24 optimizer improvements).
-- The `viaIR` optimizer already handles most low-level optimizations, so manual Solidity changes (Chunk 2A) produced modest gains. The compiler upgrade to 0.8.24 with Cancun EVM provided additional marginal savings.
+- The `viaIR` optimizer already handles most low-level optimizations, so manual Solidity changes (Solidity gas optimization pass) produced modest gains. The compiler upgrade to 0.8.24 with Cancun EVM provided additional marginal savings.

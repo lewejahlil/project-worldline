@@ -1,8 +1,8 @@
 # Worldline Security Audit v2.0
 
 **Date:** 2026-03-28
-**Scope:** Full-stack re-audit across all 9 chunks (circuits, contracts, Rust crates, infrastructure)
-**Status:** All 9 chunks remediated from v1.0 findings. This is a clean v2.0 re-audit.
+**Scope:** Full-stack re-audit across all system components (circuits, contracts, Rust crates, infrastructure)
+**Status:** All components remediated from v1.0 findings. This is a clean v2.0 re-audit.
 
 ---
 
@@ -164,9 +164,9 @@ Prioritized production-readiness improvements:
 
 ## 6. Appendix
 
-### A. Gas Comparison: Chunk 6 (Local) vs Chunk 8 (Fork)
+### A. Gas Comparison: Local Hardhat vs Mainnet Fork
 
-| Operation                       | Chunk 6 (Local Hardhat) | Chunk 8 (Mainnet Fork) | Notes                                |
+| Operation                       | Local Hardhat           | Mainnet Fork           | Notes                                |
 | ------------------------------- | ----------------------- | ---------------------- | ------------------------------------ |
 | Groth16Verifier.verifyProof     | ~1B gas (real pairing)  | N/A (mock used)        | Local uses real verifier in Forge    |
 | MockGroth16Verifier.verifyProof | ~25K gas                | ~25K gas               | Mock returns true, no precompile     |
@@ -219,7 +219,7 @@ Prioritized production-readiness improvements:
 | 46  | Quorum/submitter model consistency                     | ✅ CONSISTENT -- Circuit: `proverSetDigest = Poseidon(proverIds, proofSystemIds, quorumCount)` with quorum 1-3. Contracts: submitter whitelist gates submission. Rust: quorum enforced 1-3 in registry and aggregation.                                 |
 | 47  | Prover/driver ID validation across layers              | ✅ CONSISTENT -- Circuit: non-zero proverIds enforced via IsZero. Contracts: bytes32(0) rejected for all entity types. Rust: ProverID 0 rejected.                                                                                                       |
 | 48  | Batch size (1-1024) where referenced                   | ✅ CONSISTENT -- Circuit constrains batchSize 1-1024. Not directly referenced in contracts (batch semantics are off-chain). Rust aggregation has no explicit batch-size cap (proofs are added individually).                                            |
-| 49  | Gas: Chunk 6 local vs Chunk 8 fork                     | ✅ EXPECTED -- Fork uses MockGroth16Verifier (~25K gas for verifyProof) vs local Forge using real verifier (~1B gas under Hardhat JS EVM). Fork gas is lower as expected due to mock usage. Real mainnet precompile pricing for ecPairing is ~113K gas. |
+| 49  | Gas: local Hardhat vs mainnet fork                     | ✅ EXPECTED -- Fork uses MockGroth16Verifier (~25K gas for verifyProof) vs local Forge using real verifier (~1B gas under Hardhat JS EVM). Fork gas is lower as expected due to mock usage. Real mainnet precompile pricing for ecPairing is ~113K gas. |
 
 ### F. Agent File Coverage Map
 

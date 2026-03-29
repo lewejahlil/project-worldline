@@ -102,13 +102,12 @@ pub fn build_recursion_witness(
         bail!("k_in_proof ({k}) exceeds max_inner ({max}) — configuration constraint violated");
     }
 
-    // PLACEHOLDER: replaced in Phase 1 Chunk 4
-    // TODO: Actual inner proof collection from live prover endpoints.
+    // TODO: Collect inner proofs from live prover endpoints.
     // In production, this would:
     // 1. Contact each of the first `k_in_proof` prover endpoints.
     // 2. Request a proof for the current window's witness.
     // 3. Collect and validate each proof against the prover's vkey_commitment.
-    // For now, return structured placeholder witnesses (empty proof bytes).
+    // For now, return structured witnesses with empty proof bytes.
     let inner_proofs: Vec<Vec<u8>> = (0..k).map(|_| vec![]).collect();
 
     Ok(Some(RecursionWitness {

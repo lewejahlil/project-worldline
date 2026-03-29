@@ -17,7 +17,7 @@ import {
   PROGRAM_VKEY,
   POLICY_HASH,
   PROVER_SET_DIGEST
-} from "./helpers";
+} from "./deployment-fixtures";
 
 describe("E2E — full pipeline", function () {
   // ── 1. Deploy and register ─────────────────────────────────────────────────

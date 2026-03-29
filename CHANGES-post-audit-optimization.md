@@ -27,19 +27,19 @@
 
 ## Prover Performance Optimizations
 
-### Chunk 2A — Solidity Verifier Optimization
+### Solidity Verifier Optimization
 
 - Reordered `_submit()` validation: cheap checks (domain binding, window range, contiguity, staleness) before expensive keccak256 STF binding verification
 - Inlined `pubSignals` array in `Groth16ZkAdapter.verifyProof()` to avoid extra memory allocation
 - Upgraded Solidity from 0.8.20 to 0.8.24 with `evmVersion: "cancun"` for EIP-4844 support
 
-### Chunk 2B — Rust Registry & Off-Chain Prover Optimization
+### Rust Registry & Off-Chain Prover Optimization
 
 - Removed unused `url` dependency from `worldline-registry`
 - Expanded Criterion benchmarks: `bench_circuit_lookup`, `bench_snapshot_save_load_roundtrip`, `bench_serialization_roundtrip` at 100/1000/10000 entries
 - Fixed bench_aggregation to respect `MAX_MANIFEST_ENTRIES = 8`
 
-### Chunk 2C — Circuit-Level Optimization
+### Circuit-Level Optimization
 
 - Compiled SquareHash circuit: 1 constraint on BN-128 (already minimal after INF-005 fix)
 - Documented constraint counts in `docs/circuit-constraint-counts.txt`
@@ -104,21 +104,21 @@
 | `contracts/src/blob/BlobVerifier.sol`                 | New file                                        | P2 EIP-4844            |
 | `contracts/src/blob/IBlobSubmission.sol`              | New file                                        | P2 EIP-4844            |
 | `contracts/src/blob/BlobVerifierHarness.sol`          | New file                                        | P2 test harness        |
-| `contracts/src/zk/Groth16ZkAdapter.sol`               | Inline pubSignals                               | Chunk 2A gas opt       |
+| `contracts/src/zk/Groth16ZkAdapter.sol`               | Inline pubSignals                               | Solidity optimization  |
 | `crates/worldline-registry/src/selection.rs`          | SelectionEvent, fallback chain, edge case tests | P3, P4                 |
 | `crates/worldline-registry/Cargo.toml`                | Removed `url` dep                               | DEAD-1                 |
-| `crates/worldline-registry/benches/registry_bench.rs` | Expanded benchmarks                             | Chunk 2B               |
+| `crates/worldline-registry/benches/registry_bench.rs` | Expanded benchmarks                             | Rust optimization      |
 | `crates/worldline-driver/src/aggregator.rs`           | Event logging                                   | P3, P6                 |
 | `crates/worldline-driver/src/lib.rs`                  | Structured logging                              | P6                     |
-| `crates/benches/src/bench_aggregation.rs`             | Fixed panic, capped policy                      | Chunk 2B               |
+| `crates/benches/src/bench_aggregation.rs`             | Fixed panic, capped policy                      | Rust optimization      |
 | `scripts/deploy.ts`                                   | Post-deploy verification                        | P5                     |
 | `test/WorldlineFinalizer.test.ts`                     | +2 tests (ProofConsumed, duplicate)             | P1                     |
 | `test/BlobVerifier.test.ts`                           | New file, +5 tests                              | P2                     |
-| `.gitignore`                                          | Added `circuits/artifacts/*_js/`                | Chunk 2C               |
-| `docs/audit-analysis-post-remediation.md`             | Chunk 1 full analysis                           | Chunk 1                |
-| `docs/chunk-2c-circuit-optimization.md`               | Circuit analysis                                | Chunk 2C               |
-| `docs/circuit-constraint-counts.txt`                  | Constraint counts                               | Chunk 2C               |
-| `docs/gas-report-post-optimization.md`                | Before/after gas comparison                     | Chunk 4                |
+| `.gitignore`                                          | Added `circuits/artifacts/*_js/`                | Circuit optimization   |
+| `docs/audit-analysis-post-remediation.md`             | Full codebase analysis                          | Initial analysis       |
+| `docs/circuit-optimization-report.md`                 | Circuit analysis                                | Circuit optimization   |
+| `docs/circuit-constraint-counts.txt`                  | Constraint counts                               | Circuit optimization   |
+| `docs/gas-report-post-optimization.md`                | Before/after gas comparison                     | Gas benchmarking       |
 
 ## Test Suite Delta
 

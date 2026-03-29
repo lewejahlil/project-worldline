@@ -1,4 +1,4 @@
-# Chunk 2C — Circuit-Level Optimization Report
+# Circuit-Level Optimization Report
 
 **Date:** 2026-03-27
 
@@ -45,7 +45,7 @@ Witness generation (`build_recursion_witness()` in `recursion.rs`) is synchronou
 
 **Status: N/A — No Halo2 implementation exists.**
 
-Per the Chunk 1 analysis (finding PSP-3), no Halo2 verifier, adapter, circuit, or lookup table exists anywhere in the codebase. The Rust registry accepts `BackendMeta.kind = "halo2"` as a string, but no Halo2-specific logic is present. This item is deferred until Halo2 support is implemented.
+Per the initial circuit analysis (finding PSP-3), no Halo2 verifier, adapter, circuit, or lookup table exists anywhere in the codebase. The Rust registry accepts `BackendMeta.kind = "halo2"` as a string, but no Halo2-specific logic is present. This item is deferred until Halo2 support is implemented.
 
 ---
 
@@ -53,7 +53,7 @@ Per the Chunk 1 analysis (finding PSP-3), no Halo2 verifier, adapter, circuit, o
 
 **Status: N/A — Recursion circuits not implemented.**
 
-Per the Chunk 1 analysis (finding PSP-4), the recursion circuits (`accum.circom`, `miniverifier.circom`) documented in `circuits/recursion/README.md` are not yet implemented. The off-chain scaffolding in `recursion.rs` returns empty placeholder proof bytes.
+Per the initial circuit analysis (finding PSP-4), the recursion circuits (`accum.circom`, `miniverifier.circom`) documented in `circuits/recursion/README.md` are not yet implemented. The off-chain scaffolding in `recursion.rs` returns empty placeholder proof bytes.
 
 **Recommendations for when recursion circuits are implemented:**
 
@@ -73,4 +73,4 @@ Per the Chunk 1 analysis (finding PSP-4), the recursion circuits (`accum.circom`
 | Halo2 lookup tables         | N/A    | No Halo2 implementation            |
 | Aggregation inner verifiers | N/A    | Recursion circuits not implemented |
 
-**Chunk 2C is complete.** Most items are N/A due to the early implementation state (only a demo SquareHash circuit exists). The circuit is already optimized at 1 constraint. Meaningful circuit-level optimization work will begin when production circuits and recursion modes are implemented.
+**Circuit-level optimization is complete.** Most items are N/A due to the early implementation state (only a demo SquareHash circuit exists). The circuit is already optimized at 1 constraint. Meaningful circuit-level optimization work will begin when production circuits and recursion modes are implemented.

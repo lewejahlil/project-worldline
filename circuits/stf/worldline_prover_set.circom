@@ -1,1 +1,1 @@
-// Prover set binding circuit — implemented in Phase 1, Chunk 6
+// Prover set binding circuit — computes proverSetDigest from prover IDs, proof system IDs, and quorum count

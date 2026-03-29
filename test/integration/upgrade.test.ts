@@ -16,7 +16,7 @@ import {
   PROGRAM_VKEY,
   POLICY_HASH,
   makeWindowFixture
-} from "./helpers";
+} from "./deployment-fixtures";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

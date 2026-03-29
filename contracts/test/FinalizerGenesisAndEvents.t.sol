@@ -18,16 +18,16 @@ contract ViewMockGroth16Verifier {
     }
 }
 
-/// @title Chunk 7 Tests — LOW-003, LOW-004, LOW-005
+/// @title Finalizer Genesis & Events — LOW-003, LOW-004, LOW-005
 /// @notice Unit tests for genesis block validation, ManifestAnnounced event,
 ///         and CEI pattern (state update before external call).
-contract Chunk7Test is Test {
+contract FinalizerGenesisAndEventsTest is Test {
     event ManifestAnnounced(bytes32 indexed proverSetDigest, bytes metaLocator);
 
     WorldlineFinalizer finalizer;
     Groth16ZkAdapter adapter;
 
-    bytes32 constant DOMAIN = keccak256("chunk7-domain");
+    bytes32 constant DOMAIN = keccak256("finalizer-test-domain");
     bytes32 constant PROGRAM_VKEY = keccak256("program-vkey");
     bytes32 constant POLICY_HASH = keccak256("policy-hash");
     bytes32 constant PROVER_DIGEST = keccak256("prover-set");

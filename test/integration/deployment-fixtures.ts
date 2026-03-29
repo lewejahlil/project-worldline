@@ -18,6 +18,14 @@ export const PROVER_SET_DIGEST = ethers.keccak256(
 );
 export const MAX_ACCEPTANCE_DELAY = 3600; // 1 hour
 export const GENESIS_L2_BLOCK = 0n;
+/** Groth16 proof byte size: pA[2] + pB[2][2] + pC[2] + stfCommitment + proverSetDigest */
+export const GROTH16_PROOF_BYTE_SIZE = 320;
+/** Plonk proof byte size: uint256[24] proofWords + stfCommitment + proverSetDigest */
+export const PLONK_PROOF_BYTE_SIZE = 832;
+/** Halo2 raw proof byte size (KZG/BN254 commitment scheme) */
+export const HALO2_RAW_PROOF_BYTE_SIZE = 1472;
+/** Maximum batch size enforced by circuit constraints */
+export const MAX_BATCH_SIZE = 1024;
 
 // ── Deployment helpers ───────────────────────────────────────────────────────
 
@@ -382,7 +390,7 @@ export function encodeHalo2Proof(
   proverSetDigest: string = PROVER_SET_DIGEST
 ): string {
   const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp, domain);
-  const rawProofBytes = new Uint8Array(1472); // 1472 zero bytes; mock verifier accepts any input
+  const rawProofBytes = new Uint8Array(HALO2_RAW_PROOF_BYTE_SIZE); // 1472 zero bytes; mock verifier accepts any input
   return ethers.AbiCoder.defaultAbiCoder().encode(
     ["bytes", "uint256", "uint256"],
     [rawProofBytes, BigInt(stfCommitment), BigInt(proverSetDigest)]

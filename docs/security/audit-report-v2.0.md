@@ -753,8 +753,8 @@ Create `docs/security/known-risks.md` with entries for each accepted risk:
 **New test suites added during remediation:**
 
 - `contracts/test/AccessControl.t.sol` — 18 tests (HI-001, HI-002, HI-003)
-- `contracts/test/Chunk5.t.sol` — 19 tests (HI-004, MED-003, MED-004, MED-005)
-- `contracts/test/Chunk7.t.sol` — 8 tests (LOW-003, LOW-004, LOW-005)
+- `contracts/test/OutputsRegistryGuards.t.sol` — 19 tests (HI-004, MED-003, MED-004, MED-005)
+- `contracts/test/FinalizerGenesisAndEvents.t.sol` — 8 tests (LOW-003, LOW-004, LOW-005)
 - `contracts/test/Groth16ZkAdapter.t.sol` — 7 tests (CRI-003 production path)
 - Rust: 8 new directory tests (CRI-001), 3 selection tests (MED-002/LOW-006)
 

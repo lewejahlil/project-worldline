@@ -1,5 +1,5 @@
 /**
- * Chunk D — Independent Plonk circuit tests (Path B).
+ * Independent Plonk circuit tests (Path B).
  *
  * Tests the independently-written worldline_stf_plonk.circom against:
  *   1. Cross-circuit conformance with the original worldline_stf.circom
@@ -7,13 +7,13 @@
  *   3. End-to-end Plonk proof generation and on-chain verification
  *
  * Prerequisites:
- *   New circuit (Chunk D):
+ *   Plonk V2 circuit:
  *     circuits/build/plonk_v2/worldline_stf_plonk_js/worldline_stf_plonk.wasm
  *     circuits/zkeys/worldline_stf_plonk_v2.zkey
  *     circuits/zkeys/worldline_stf_plonk_v2_vkey.json
- *   Original circuit (for conformance):
+ *   Original Groth16 circuit (for conformance):
  *     circuits/build/original/worldline_stf_js/worldline_stf.wasm
- *     circuits/zkeys/worldline_stf_final.zkey  (Groth16, from Chunk 2)
+ *     circuits/zkeys/worldline_stf_final.zkey
  *
  * E2E Solidity test (optional — runs if Hardhat artifact exists):
  *     artifacts/contracts/src/PlonkVerifierV2.sol/PlonkVerifierV2.json
@@ -29,7 +29,7 @@ const ethers = require("ethers");
 
 const CIRCUITS_DIR = path.resolve(__dirname, "..");
 
-// ── New circuit (Chunk D) artifacts ─────────────────────────────────────────
+// ── Plonk V2 circuit artifacts ──────────────────────────────────────────────
 const NEW_WASM = path.join(
   CIRCUITS_DIR,
   "build/plonk_v2/worldline_stf_plonk_js/worldline_stf_plonk.wasm"
@@ -37,7 +37,7 @@ const NEW_WASM = path.join(
 const NEW_ZKEY = path.join(CIRCUITS_DIR, "zkeys/worldline_stf_plonk_v2.zkey");
 const NEW_VKEY = path.join(CIRCUITS_DIR, "zkeys/worldline_stf_plonk_v2_vkey.json");
 
-// ── Original circuit (Chunk 2) — Groth16 artifacts for conformance ───────────
+// ── Original Groth16 circuit artifacts (for conformance) ────────────────────
 const ORIG_WASM = path.join(CIRCUITS_DIR, "build/original/worldline_stf_js/worldline_stf.wasm");
 const ORIG_ZKEY = path.join(CIRCUITS_DIR, "zkeys/worldline_stf_final.zkey");
 
@@ -63,7 +63,7 @@ const newArtifactsExist =
 const origArtifactsExist = fs.existsSync(ORIG_WASM) && fs.existsSync(ORIG_ZKEY);
 
 // ---------------------------------------------------------------------------
-// Standard valid inputs — identical to Chunk 2 test inputs.
+// Standard valid inputs — identical to the original Groth16 circuit test inputs.
 // ---------------------------------------------------------------------------
 function validInputs() {
   return {
@@ -78,7 +78,7 @@ function validInputs() {
 }
 
 /**
- * Generate a Plonk proof from the new (Chunk D) circuit.
+ * Generate a Plonk proof from the Plonk V2 circuit.
  * Returns { proof, publicSignals }.
  */
 async function proveNew(inputs) {
@@ -86,7 +86,7 @@ async function proveNew(inputs) {
 }
 
 /**
- * Generate a Groth16 proof from the original (Chunk 2) circuit.
+ * Generate a Groth16 proof from the original circuit.
  * Returns publicSignals — the two public outputs in order:
  *   publicSignals[0] = stfCommitment
  *   publicSignals[1] = proverSetDigest

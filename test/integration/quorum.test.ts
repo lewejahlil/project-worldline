@@ -18,7 +18,7 @@
 
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { deployAll, makeWindowFixture, GENESIS_L2_BLOCK } from "./helpers";
+import { deployAll, makeWindowFixture, GENESIS_L2_BLOCK } from "./deployment-fixtures";
 
 describe("Quorum — submitter access control", function () {
   // ── 1. Quorum met with exact count ────────────────────────────────────────
