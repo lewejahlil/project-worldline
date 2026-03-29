@@ -11,7 +11,7 @@ use std::path::PathBuf;
 /// Since `halo2_proofs` requires a git dependency (PSE fork), this implementation
 /// provides a subprocess fallback. Real verification tests are marked #[ignore].
 ///
-/// Proof format: 192 bytes (compact KZG proof)
+/// Proof format: 1536 bytes (KZG proof, k=8 BN254)
 pub struct Halo2Verifier {
     params_path: PathBuf,
     vkey_path: PathBuf,
@@ -117,7 +117,7 @@ impl ProofVerifier for Halo2Verifier {
     }
 
     fn expected_proof_length(&self) -> usize {
-        192
+        1536
     }
 }
 
@@ -141,7 +141,7 @@ mod tests {
         assert!(matches!(
             err,
             VerificationError::InvalidLength {
-                expected: 192,
+                expected: 1536,
                 actual: 100
             }
         ));
@@ -154,16 +154,16 @@ mod tests {
     }
 
     #[test]
-    fn expected_length_is_192() {
+    fn expected_length_is_1536() {
         let v = make_verifier();
-        assert_eq!(v.expected_proof_length(), 192);
+        assert_eq!(v.expected_proof_length(), 1536);
     }
 
     #[test]
     #[ignore = "requires halo2-verify helper binary"]
     fn verify_real_proof() {
         let v = make_verifier();
-        let proof = vec![0u8; 192];
+        let proof = vec![0u8; 1536];
         let _ = v.verify(&proof, &[]);
     }
 }

@@ -11,6 +11,7 @@ worldline-registry = { path = "../worldline-registry" }
 prover-registry = { package = "worldline-prover-registry", path = "../registry" }
 worldline-aggregation = { package = "worldline-aggregation", path = "../aggregation" }
 worldline-recursion = { package = "worldline-recursion", path = "../recursion" }
+halo2curves = "0.6"
 
 [dev-dependencies]
 criterion = { workspace = true }
@@ -33,6 +34,11 @@ harness = false
 [[bench]]
 name = "bench_canonical"
 path = "src/bench_canonical.rs"
+harness = false
+
+[[bench]]
+name = "bench_inner_provers"
+path = "src/bench_inner_provers.rs"
 harness = false
 
 [[bench]]

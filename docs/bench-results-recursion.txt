@@ -1,0 +1,65 @@
+    Finished `bench` profile [optimized] target(s) in 14.43s
+     Running src/bench_inner_provers.rs (target/release/deps/bench_inner_provers-ea711a88bb30b769)
+Gnuplot not found, using plotters backend
+Benchmarking inner_provers/halo2_prove
+Benchmarking inner_provers/halo2_prove: Warming up for 3.0000 s
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 13.2s, or reduce sample count to 30.
+Benchmarking inner_provers/halo2_prove: Collecting 100 samples in estimated 13.193 s (100 iterations)
+Benchmarking inner_provers/halo2_prove: Analyzing
+inner_provers/halo2_prove
+                        time:   [90.865 ms 93.154 ms 95.621 ms]
+Found 6 outliers among 100 measurements (6.00%)
+  5 (5.00%) high mild
+  1 (1.00%) high severe
+
+Benchmarking inner_provers/halo2_setup
+Benchmarking inner_provers/halo2_setup: Warming up for 3.0000 s
+Benchmarking inner_provers/halo2_setup: Collecting 10 samples in estimated 8.2661 s (110 iterations)
+Benchmarking inner_provers/halo2_setup: Analyzing
+inner_provers/halo2_setup
+                        time:   [75.461 ms 84.729 ms 92.762 ms]
+
+Benchmarking pipeline/single_halo2
+Benchmarking pipeline/single_halo2: Warming up for 3.0000 s
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 21.2s, or reduce sample count to 20.
+Benchmarking pipeline/single_halo2: Collecting 100 samples in estimated 21.180 s (100 iterations)
+Benchmarking pipeline/single_halo2: Analyzing
+pipeline/single_halo2   time:   [114.68 ms 117.81 ms 120.96 ms]
+
+   Compiling worldline-benches v0.1.0 (/home/user/project-worldline/crates/benches)
+    Finished `bench` profile [optimized] target(s) in 26.48s
+     Running src/bench_recursion.rs (target/release/deps/bench_recursion-4612703607edd417)
+Gnuplot not found, using plotters backend
+Benchmarking recursion_depth/witness_depth/1
+Benchmarking recursion_depth/witness_depth/1: Warming up for 3.0000 s
+Benchmarking recursion_depth/witness_depth/1: Collecting 100 samples in estimated 5.0000 s (227M iterations)
+Benchmarking recursion_depth/witness_depth/1: Analyzing
+recursion_depth/witness_depth/1
+                        time:   [22.048 ns 22.620 ns 23.307 ns]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking recursion_depth/witness_depth/2
+Benchmarking recursion_depth/witness_depth/2: Warming up for 3.0000 s
+Benchmarking recursion_depth/witness_depth/2: Collecting 100 samples in estimated 5.0000 s (208M iterations)
+Benchmarking recursion_depth/witness_depth/2: Analyzing
+recursion_depth/witness_depth/2
+                        time:   [28.009 ns 28.785 ns 29.543 ns]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking recursion_depth/witness_depth/4
+Benchmarking recursion_depth/witness_depth/4: Warming up for 3.0000 s
+Benchmarking recursion_depth/witness_depth/4: Collecting 100 samples in estimated 5.0001 s (181M iterations)
+Benchmarking recursion_depth/witness_depth/4: Analyzing
+recursion_depth/witness_depth/4
+                        time:   [29.187 ns 30.287 ns 31.337 ns]
+Benchmarking recursion_depth/witness_depth/8
+Benchmarking recursion_depth/witness_depth/8: Warming up for 3.0000 s
+Benchmarking recursion_depth/witness_depth/8: Collecting 100 samples in estimated 5.0000 s (155M iterations)
+Benchmarking recursion_depth/witness_depth/8: Analyzing
+recursion_depth/witness_depth/8
+                        time:   [29.146 ns 30.118 ns 31.219 ns]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+
