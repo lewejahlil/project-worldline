@@ -2,8 +2,11 @@ use crate::types::{
     AggregatedProof, AggregationStrategy, IndividualProof, ProofSystemId, GROTH16_PROOF_BYTE_SIZE,
     HALO2_PROOF_BYTE_SIZE, PLONK_PROOF_BYTE_SIZE,
 };
+use halo2curves::bn256::Fr;
+use halo2curves::group::ff::{Field, PrimeField};
 use std::collections::HashMap;
 use thiserror::Error;
+use worldline_halo2_circuit::{poseidon_compress_3, poseidon_compress_7};
 
 #[derive(Debug, Error)]
 pub enum AggregationError {
@@ -43,15 +46,15 @@ fn validate_proof(proof: &IndividualProof) -> bool {
     proof.proof_data.len() == expected_proof_size(proof.proof_system)
 }
 
-/// Compute a simple Poseidon-placeholder digest over a byte slice.
-/// In production this would be a real Poseidon hash; here we XOR-fold
-/// into a 32-byte array as a deterministic stand-in.
-fn simple_digest(data: &[u8]) -> [u8; 32] {
-    let mut out = [0u8; 32];
-    for (i, byte) in data.iter().enumerate() {
-        out[i % 32] ^= byte;
-    }
-    out
+/// Convert a 32-byte array (little-endian) to a BN254 scalar field element.
+/// Returns `Fr::ZERO` if the bytes do not represent a valid field element.
+fn bytes_to_fr(bytes: &[u8; 32]) -> Fr {
+    Fr::from_repr(*bytes).unwrap_or(Fr::ZERO)
+}
+
+/// Serialize a BN254 scalar field element to a 32-byte little-endian array.
+fn fr_to_bytes(fr: Fr) -> [u8; 32] {
+    fr.to_repr()
 }
 
 pub struct ProofAggregator {
@@ -281,24 +284,54 @@ impl ProofAggregator {
         self.proofs.iter().filter(|p| validate_proof(p)).count()
     }
 
+    /// Compute `stfCommitment = Poseidon(preStateRoot, postStateRoot, batchCommitment)`.
+    ///
+    /// Uses circomlib-compatible Poseidon with `t=4`, `R_F=8`, `R_P=56`.
+    /// The first public input of the first proof is treated as preStateRoot,
+    /// the second as postStateRoot, and `self.batch_commitment` as batchCommitment.
     fn compute_stf_commitment(&self, proofs: &[IndividualProof]) -> [u8; 32] {
-        let mut data = Vec::new();
-        data.extend_from_slice(&self.batch_commitment);
-        for proof in proofs {
-            for input in &proof.public_inputs {
-                data.extend_from_slice(input);
-            }
-        }
-        simple_digest(&data)
+        // Extract preStateRoot and postStateRoot from the first proof's public inputs.
+        // If fewer than 2 public inputs exist, default to Fr::ZERO.
+        let pre_state_root = proofs
+            .first()
+            .and_then(|p| p.public_inputs.first())
+            .map(bytes_to_fr)
+            .unwrap_or(Fr::ZERO);
+        let post_state_root = proofs
+            .first()
+            .and_then(|p| p.public_inputs.get(1))
+            .map(bytes_to_fr)
+            .unwrap_or(Fr::ZERO);
+        let batch_commitment = bytes_to_fr(&self.batch_commitment);
+
+        fr_to_bytes(poseidon_compress_3(
+            pre_state_root,
+            post_state_root,
+            batch_commitment,
+        ))
     }
 
+    /// Compute `proverSetDigest = Poseidon(proverIds[0..3], proofSystemIds[0..3], quorumCount)`.
+    ///
+    /// Uses circomlib-compatible Poseidon with `t=8`, `R_F=8`, `R_P=64`.
+    /// Pads to exactly 3 prover slots (matching the Circom circuit's `N=3`).
     fn compute_prover_set_digest(&self, proofs: &[IndividualProof]) -> [u8; 32] {
-        let mut data = Vec::new();
-        for proof in proofs {
-            data.extend_from_slice(&proof.prover_id.to_le_bytes());
-            data.push(proof.proof_system as u8);
+        let mut prover_ids = [Fr::ZERO; 3];
+        let mut proof_system_ids = [Fr::ZERO; 3];
+        for (i, proof) in proofs.iter().take(3).enumerate() {
+            prover_ids[i] = Fr::from(proof.prover_id);
+            proof_system_ids[i] = Fr::from(proof.proof_system as u64);
         }
-        data.push(self.quorum_required);
-        simple_digest(&data)
+        let quorum_count = Fr::from(u64::from(self.quorum_required));
+
+        fr_to_bytes(poseidon_compress_7(
+            prover_ids[0],
+            prover_ids[1],
+            prover_ids[2],
+            proof_system_ids[0],
+            proof_system_ids[1],
+            proof_system_ids[2],
+            quorum_count,
+        ))
     }
 }

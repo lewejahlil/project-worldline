@@ -7,5 +7,7 @@ description = "Proof aggregation module for the Worldline multi-prover system"
 
 [dependencies]
 thiserror = { workspace = true }
+worldline-halo2-circuit = { path = "../halo2-circuit" }
+halo2curves = "0.6"
 
 [dev-dependencies]
