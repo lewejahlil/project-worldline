@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../src/WorldlineFinalizer.sol";
 import "../src/zk/Groth16ZkAdapter.sol";
 
@@ -39,7 +40,12 @@ contract WorldlineFinalizerFuzzTest is Test {
 
         ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier();
         adapter = new Groth16ZkAdapter(address(mock), PROGRAM_VKEY, POLICY_HASH);
-        finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, MAX_DELAY, 0);
+        WorldlineFinalizer finImpl = new WorldlineFinalizer();
+        ERC1967Proxy finProxy = new ERC1967Proxy(
+            address(finImpl),
+            abi.encodeCall(WorldlineFinalizer.initialize, (address(adapter), DOMAIN, MAX_DELAY, 0, address(0)))
+        );
+        finalizer = WorldlineFinalizer(address(finProxy));
         // Enable permissionless mode so the fuzzer address can submit.
         finalizer.setPermissionless(true);
     }

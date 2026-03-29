@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../src/ProofRouter.sol";
 import "../src/IZkAdapter.sol";
 import "../src/interfaces/IZkAggregatorVerifier.sol";
@@ -100,7 +101,12 @@ contract ProofRouterTest is Test {
     function setUp() public {
         owner = address(this);
         stranger = address(0xBEEF);
-        router = new ProofRouter();
+        ProofRouter routerImpl = new ProofRouter();
+        ERC1967Proxy routerProxy = new ERC1967Proxy(
+            address(routerImpl),
+            abi.encodeCall(ProofRouter.initialize, ())
+        );
+        router = ProofRouter(address(routerProxy));
     }
 
     // ── Helper ───────────────────────────────────────────────────────────────
@@ -198,7 +204,9 @@ contract ProofRouterTest is Test {
         MockZkAdapter adapter = _mockAdapter(1);
 
         vm.prank(stranger);
-        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NotOwner()"))));
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("OwnableUnauthorizedAccount(address)")), stranger)
+        );
         router.registerAdapter(1, address(adapter));
     }
 
@@ -209,7 +217,9 @@ contract ProofRouterTest is Test {
         router.registerAdapter(1, address(adapter));
 
         vm.prank(stranger);
-        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NotOwner()"))));
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("OwnableUnauthorizedAccount(address)")), stranger)
+        );
         router.removeAdapter(1);
     }
 

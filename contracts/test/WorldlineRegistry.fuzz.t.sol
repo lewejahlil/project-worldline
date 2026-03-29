@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../src/WorldlineRegistry.sol";
 
 /// @title WorldlineRegistry Fuzz Tests
@@ -10,7 +11,12 @@ contract WorldlineRegistryFuzzTest is Test {
     WorldlineRegistry registry;
 
     function setUp() public {
-        registry = new WorldlineRegistry(address(1));
+        WorldlineRegistry regImpl = new WorldlineRegistry();
+        ERC1967Proxy regProxy = new ERC1967Proxy(
+            address(regImpl),
+            abi.encodeCall(WorldlineRegistry.initialize, (address(1)))
+        );
+        registry = WorldlineRegistry(address(regProxy));
     }
 
     /// @notice Any non-zero circuit ID with a description can be registered exactly once.

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../src/utils/Ownable.sol";
 import "../src/WorldlineOutputsRegistry.sol";
 import "../src/WorldlineFinalizer.sol";
@@ -44,11 +45,23 @@ contract AccessControlTest is Test {
         stranger = address(0xBEEF);
 
         ownable = new OwnableHarness();
-        outputsRegistry = new WorldlineOutputsRegistry(1 days);
+
+        WorldlineOutputsRegistry outImpl = new WorldlineOutputsRegistry();
+        ERC1967Proxy outProxy = new ERC1967Proxy(
+            address(outImpl),
+            abi.encodeCall(WorldlineOutputsRegistry.initialize, (1 days))
+        );
+        outputsRegistry = WorldlineOutputsRegistry(address(outProxy));
 
         ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier();
         adapter = new Groth16ZkAdapter(address(mock), PROGRAM_VKEY, POLICY_HASH);
-        finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, 3600, 0);
+
+        WorldlineFinalizer finImpl = new WorldlineFinalizer();
+        ERC1967Proxy finProxy = new ERC1967Proxy(
+            address(finImpl),
+            abi.encodeCall(WorldlineFinalizer.initialize, (address(adapter), DOMAIN, 3600, 0, address(0)))
+        );
+        finalizer = WorldlineFinalizer(address(finProxy));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -113,8 +126,9 @@ contract AccessControlTest is Test {
     // HI-002: MIN_TIMELOCK_FLOOR on WorldlineOutputsRegistry
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /// @notice Constructor reverts if timelock < 1 day.
+    /// @notice initialize reverts if timelock < 1 day.
     function test_outputsRegistry_constructor_revert_timelockTooShort() public {
+        WorldlineOutputsRegistry impl = new WorldlineOutputsRegistry();
         vm.expectRevert(
             abi.encodeWithSelector(
                 WorldlineOutputsRegistry.TimelockTooShort.selector,
@@ -122,7 +136,10 @@ contract AccessControlTest is Test {
                 12 hours
             )
         );
-        new WorldlineOutputsRegistry(12 hours);
+        new ERC1967Proxy(
+            address(impl),
+            abi.encodeCall(WorldlineOutputsRegistry.initialize, (12 hours))
+        );
     }
 
     /// @notice setMinTimelock(0.5 days) reverts with TimelockTooShort.
@@ -217,7 +234,9 @@ contract AccessControlTest is Test {
     /// @notice Non-owner cannot schedule adapter change.
     function test_scheduleAdapter_revert_notOwner() public {
         vm.prank(stranger);
-        vm.expectRevert(Ownable.NotOwner.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("OwnableUnauthorizedAccount(address)")), stranger)
+        );
         finalizer.scheduleAdapterChange(address(adapter));
     }
 }

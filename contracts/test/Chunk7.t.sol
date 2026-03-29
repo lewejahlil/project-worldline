@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../src/WorldlineFinalizer.sol";
 import "../src/zk/Groth16ZkAdapter.sol";
 
@@ -36,7 +37,12 @@ contract Chunk7Test is Test {
         vm.warp(100_000);
         ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier();
         adapter = new Groth16ZkAdapter(address(mock), PROGRAM_VKEY, POLICY_HASH);
-        finalizer = new WorldlineFinalizer(address(adapter), DOMAIN, 3600, GENESIS_BLOCK);
+        WorldlineFinalizer finImpl = new WorldlineFinalizer();
+        ERC1967Proxy finProxy = new ERC1967Proxy(
+            address(finImpl),
+            abi.encodeCall(WorldlineFinalizer.initialize, (address(adapter), DOMAIN, 3600, GENESIS_BLOCK, address(0)))
+        );
+        finalizer = WorldlineFinalizer(address(finProxy));
         finalizer.setPermissionless(true);
     }
 
@@ -100,7 +106,12 @@ contract Chunk7Test is Test {
 
     /// @notice genesisL2Block=0 (default) accepts l2Start=0 for window 0.
     function test_genesisBlockZero_acceptsZeroStart() public {
-        WorldlineFinalizer f2 = new WorldlineFinalizer(address(adapter), DOMAIN, 3600, 0);
+        WorldlineFinalizer f2Impl = new WorldlineFinalizer();
+        ERC1967Proxy f2Proxy = new ERC1967Proxy(
+            address(f2Impl),
+            abi.encodeCall(WorldlineFinalizer.initialize, (address(adapter), DOMAIN, 3600, 0, address(0)))
+        );
+        WorldlineFinalizer f2 = WorldlineFinalizer(address(f2Proxy));
         f2.setPermissionless(true);
         uint256 ts = block.timestamp + 100;
         bytes32 stf = computeStf(0, 100, ts);

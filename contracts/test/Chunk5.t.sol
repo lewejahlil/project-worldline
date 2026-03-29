@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../src/WorldlineRegistry.sol";
 import "../src/WorldlineCompat.sol";
 import "../src/WorldlineOutputsRegistry.sol";
@@ -19,9 +20,20 @@ contract Chunk5Test is Test {
         owner = address(this);
         stranger = address(0xBEEF);
 
-        registry = new WorldlineRegistry(address(1));
+        WorldlineRegistry regImpl = new WorldlineRegistry();
+        ERC1967Proxy regProxy = new ERC1967Proxy(
+            address(regImpl),
+            abi.encodeCall(WorldlineRegistry.initialize, (address(1)))
+        );
+        registry = WorldlineRegistry(address(regProxy));
         compat = new WorldlineCompat(address(registry));
-        outputsRegistry = new WorldlineOutputsRegistry(1 days);
+
+        WorldlineOutputsRegistry outImpl = new WorldlineOutputsRegistry();
+        ERC1967Proxy outProxy = new ERC1967Proxy(
+            address(outImpl),
+            abi.encodeCall(WorldlineOutputsRegistry.initialize, (1 days))
+        );
+        outputsRegistry = WorldlineOutputsRegistry(address(outProxy));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -133,7 +145,9 @@ contract Chunk5Test is Test {
     /// @notice Non-owner cannot schedule facade change.
     function test_scheduleCompatFacade_revert_notOwner() public {
         vm.prank(stranger);
-        vm.expectRevert(Ownable.NotOwner.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("OwnableUnauthorizedAccount(address)")), stranger)
+        );
         registry.scheduleCompatFacade(address(compat));
     }
 }

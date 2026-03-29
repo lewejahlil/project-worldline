@@ -68,6 +68,17 @@ function loadArtifact(name: string): { abi: ethers.InterfaceAbi; bytecode: strin
   );
 }
 
+function loadProxyArtifact(): { abi: ethers.InterfaceAbi; bytecode: string } {
+  const p = path.resolve(
+    __dirname,
+    "../artifacts/@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol/ERC1967Proxy.json"
+  );
+  if (fs.existsSync(p)) {
+    return JSON.parse(fs.readFileSync(p, "utf-8"));
+  }
+  throw new Error("ERC1967Proxy artifact not found. Run 'npm run contracts:build' first.");
+}
+
 async function deployContract(
   wallet: ethers.Signer,
   name: string,
@@ -80,6 +91,33 @@ async function deployContract(
   const addr = await contract.getAddress();
   console.log(`  [deploy] ${name} → ${addr}`);
   return contract as ethers.BaseContract;
+}
+
+async function deployProxy(
+  wallet: ethers.Signer,
+  name: string,
+  initAbi: string[],
+  initArgs: unknown[]
+): Promise<ethers.BaseContract> {
+  const implArtifact = loadArtifact(name);
+  const implFactory = new ethers.ContractFactory(implArtifact.abi, implArtifact.bytecode, wallet);
+  const impl = await implFactory.deploy();
+  await impl.waitForDeployment();
+
+  const initIface = new ethers.Interface(initAbi);
+  const initData = initIface.encodeFunctionData("initialize", initArgs);
+
+  const proxyArtifact = loadProxyArtifact();
+  const proxyFactory = new ethers.ContractFactory(
+    proxyArtifact.abi,
+    proxyArtifact.bytecode,
+    wallet
+  );
+  const proxy = await proxyFactory.deploy(await impl.getAddress(), initData);
+  await proxy.waitForDeployment();
+  const proxyAddr = await proxy.getAddress();
+  console.log(`  [deploy] ${name} (UUPS proxy) → ${proxyAddr}`);
+  return new ethers.Contract(proxyAddr, implArtifact.abi, wallet) as ethers.BaseContract;
 }
 
 // ── Proof encoding (matches WorldlineFinalizer test helpers) ─────────────────
@@ -255,7 +293,12 @@ async function main(): Promise<void> {
     console.log("\n[2] Deploying contracts…");
 
     const verifier = await deployContract(wallet, "MockGroth16Verifier");
-    const registry = await deployContract(wallet, "WorldlineRegistry", await verifier.getAddress());
+    const registry = await deployProxy(
+      wallet,
+      "WorldlineRegistry",
+      ["function initialize(address verifier) external"],
+      [await verifier.getAddress()]
+    );
     const adapter = await deployContract(
       wallet,
       "Groth16ZkAdapter",
@@ -263,15 +306,15 @@ async function main(): Promise<void> {
       PROGRAM_VKEY,
       POLICY_HASH
     );
-    const finalizer = await deployContract(
+    const finalizer = await deployProxy(wallet, "WorldlineFinalizer", [
+      "function initialize(address _adapter, bytes32 _domainSeparator, uint256 _maxAcceptanceDelay, uint256 _genesisL2Block, address _blobKzgVerifier) external"
+    ], [await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, 0, ethers.ZeroAddress]);
+    const outputsRegistry = await deployProxy(
       wallet,
-      "WorldlineFinalizer",
-      await adapter.getAddress(),
-      DOMAIN,
-      MAX_ACCEPTANCE_DELAY,
-      0 // genesisL2Block (LOW-003)
+      "WorldlineOutputsRegistry",
+      ["function initialize(uint256 _minTimelock) external"],
+      [86400]
     );
-    const outputsRegistry = await deployContract(wallet, "WorldlineOutputsRegistry", 86400);
     const compat = await deployContract(wallet, "WorldlineCompat", await registry.getAddress());
 
     // Wire compat facade

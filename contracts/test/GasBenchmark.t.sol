@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../src/zk/Groth16Verifier.sol";
 import "../src/zk/Groth16ZkAdapter.sol";
 import "../src/WorldlineRegistry.sol";
@@ -76,7 +77,12 @@ contract GasBenchmarkTest is Test {
 
     /// @notice Benchmark WorldlineRegistry circuit registration.
     function test_gas_registry_register() public {
-        WorldlineRegistry registry = new WorldlineRegistry(address(1));
+        WorldlineRegistry regImpl = new WorldlineRegistry();
+        ERC1967Proxy regProxy = new ERC1967Proxy(
+            address(regImpl),
+            abi.encodeCall(WorldlineRegistry.initialize, (address(1)))
+        );
+        WorldlineRegistry registry = WorldlineRegistry(address(regProxy));
         registry.registerCircuit(
             keccak256("circuit-1"),
             "Benchmark Circuit",
@@ -87,7 +93,12 @@ contract GasBenchmarkTest is Test {
 
     /// @notice Benchmark WorldlineRegistry plugin deprecation (setup: register circuit + plugin, measure deprecatePlugin).
     function test_gas_registry_deregister() public {
-        WorldlineRegistry registry = new WorldlineRegistry(address(1));
+        WorldlineRegistry regImpl2 = new WorldlineRegistry();
+        ERC1967Proxy regProxy2 = new ERC1967Proxy(
+            address(regImpl2),
+            abi.encodeCall(WorldlineRegistry.initialize, (address(1)))
+        );
+        WorldlineRegistry registry = WorldlineRegistry(address(regProxy2));
 
         bytes32 circuitId = keccak256("circuit-deregister");
         bytes32 pluginId = keccak256("plugin-deregister");
@@ -104,12 +115,12 @@ contract GasBenchmarkTest is Test {
         EchoMockAdapter mockAdapter = new EchoMockAdapter();
 
         bytes32 domainSep = keccak256("bench-domain");
-        WorldlineFinalizer finalizer = new WorldlineFinalizer(
-            address(mockAdapter),
-            domainSep,
-            7 days,
-            1
+        WorldlineFinalizer finImpl1 = new WorldlineFinalizer();
+        ERC1967Proxy finProxy1 = new ERC1967Proxy(
+            address(finImpl1),
+            abi.encodeCall(WorldlineFinalizer.initialize, (address(mockAdapter), domainSep, 7 days, 1, address(0)))
         );
+        WorldlineFinalizer finalizer = WorldlineFinalizer(address(finProxy1));
         finalizer.setPermissionless(true);
 
         uint256 l2Start = 1;
@@ -135,12 +146,12 @@ contract GasBenchmarkTest is Test {
         );
 
         bytes32 domainSep = keccak256("bench-domain");
-        WorldlineFinalizer finalizer = new WorldlineFinalizer(
-            address(zkAdapter),
-            domainSep,
-            7 days,
-            1
+        WorldlineFinalizer finImpl2 = new WorldlineFinalizer();
+        ERC1967Proxy finProxy2 = new ERC1967Proxy(
+            address(finImpl2),
+            abi.encodeCall(WorldlineFinalizer.initialize, (address(zkAdapter), domainSep, 7 days, 1, address(0)))
         );
+        WorldlineFinalizer finalizer = WorldlineFinalizer(address(finProxy2));
         finalizer.setPermissionless(true);
 
         uint256 l2Start = 1;
