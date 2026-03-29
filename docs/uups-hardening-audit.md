@@ -379,14 +379,14 @@ four contracts. All integration test helpers use the proxy path. **PASS.**
 
 **File:** `test/integration/upgrade.test.ts`
 
-| Contract                 | V1 deploy | State write | Upgrade to V2 | State preserved | Non-owner reverts |
-| ------------------------ | --------- | ----------- | ------------- | --------------- | ----------------- |
-| WorldlineFinalizer       | ✓         | ✓           | ✓             | ✓               | ✓                 |
-| ProofRouter              | ✓         | ✓           | ✓             | ✓               | ✓                 |
-| WorldlineRegistry        | ✓         | ✓           | ✗             | ✗               | ✗                 |
-| WorldlineOutputsRegistry | ✓         | ✓           | ✗             | ✗               | ✗                 |
+| Contract                 | V1 deploy | State write | Upgrade to V2 | State preserved | Non-owner reverts | Double-init revert | Impl locked |
+| ------------------------ | --------- | ----------- | ------------- | --------------- | ----------------- | ------------------ | ----------- |
+| WorldlineFinalizer       | ✓         | ✓           | ✓             | ✓               | ✓                 | ✓                  | ✓           |
+| ProofRouter              | ✓         | ✓           | ✓             | ✓               | ✓                 | ✓                  | ✓           |
+| WorldlineRegistry        | ✓         | ✓           | ✓             | ✓               | ✓                 | ✓                  | ✓           |
+| WorldlineOutputsRegistry | ✓         | ✓           | ✓             | ✓               | ✓                 | ✓                  | ✓           |
 
-Missing coverage — see **M-04**.
+All gaps resolved — see **M-04** resolution notes.
 
 No test verifies that `initialize()` reverts on a second call for any contract.
 No test verifies that the bare implementation contract cannot be directly initialized.
@@ -568,7 +568,7 @@ WorldlineOutputsRegistry, so items 1–2 require creating those test contracts.
 
 **Severity:** LOW
 **Files:** All four contracts
-**Status:** Open
+**Status:** RESOLVED — Chunk 4
 
 `_authorizeUpgrade(address)` is the internal hook called immediately before
 `upgradeTo`/`upgradeToAndCall` executes. The ERC1967 proxy mechanism does emit an
@@ -579,13 +579,15 @@ upgrade. This makes forensic attribution harder when reviewing contract history.
 
 This is LOW because the `Upgraded` event from the proxy is sufficient for most indexers.
 
+**Resolution (Chunk 4):** Added `event UpgradeAuthorized(address indexed newImplementation, address indexed authorizer)` to all four contracts. `_authorizeUpgrade(address newImpl)` now emits `UpgradeAuthorized(newImpl, msg.sender)` before returning. This provides explicit authorizer attribution at the application layer, complementing the ERC1967 `Upgraded` event.
+
 ---
 
 ### L-02 — `setCompatFacade` uses `FacadeTimelockActive(0)` as a "already set" guard
 
 **Severity:** LOW
 **File:** `contracts/src/WorldlineRegistry.sol:155`
-**Status:** Open
+**Status:** RESOLVED — Chunk 4
 
 ```solidity
 function setCompatFacade(address compat) external onlyOwner {
@@ -599,6 +601,8 @@ active; wait until `activationTime`". Using it with `activationTime = 0` when th
 facade is already set is misleading — there is no timelock here; the function is simply
 guarding against re-use. The revert reason should be a dedicated error like
 `FacadeAlreadySet()`.
+
+**Resolution (Chunk 4):** Added `error FacadeAlreadySet()` to `WorldlineRegistry` and updated `setCompatFacade()` to `revert FacadeAlreadySet()` when a facade is already configured.
 
 ---
 
@@ -642,5 +646,5 @@ The following audit checklist items were examined and found to have no issues:
 | M-02 | MEDIUM   | RESOLVED — Chunk 3   | Add `__gap` arrays to all four contracts                        |
 | M-03 | MEDIUM   | RESOLVED — Chunk 2   | Add ProofRouter deployment to `deploy.ts`                       |
 | M-04 | MEDIUM   | RESOLVED — Chunk 3   | Expand upgrade test suite                                       |
-| L-01 | LOW      | Chunk 4              | Add upgrade-authorization event (or document deferral)          |
-| L-02 | LOW      | Chunk 4              | Replace `FacadeTimelockActive(0)` with `FacadeAlreadySet` error |
+| L-01 | LOW      | RESOLVED — Chunk 4   | Add upgrade-authorization event (or document deferral)          |
+| L-02 | LOW      | RESOLVED — Chunk 4   | Replace `FacadeTimelockActive(0)` with `FacadeAlreadySet` error |

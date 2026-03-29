@@ -82,6 +82,9 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     event GenesisL2BlockChangeScheduled(uint256 genesisL2Block, uint256 activationTime);
     event GenesisL2BlockSet(uint256 genesisL2Block);
     event ProofRouterChangeScheduled(address indexed proofRouter, uint256 activationTime);
+    /// @notice Emitted when an upgrade is authorized. Complements the ERC1967 `Upgraded`
+    ///         event with explicit authorizer attribution (L-01 remediation).
+    event UpgradeAuthorized(address indexed newImplementation, address indexed authorizer);
 
     // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -195,7 +198,9 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
 
     // ── UUPS ────────────────────────────────────────────────────────────────────
 
-    function _authorizeUpgrade(address) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImpl) internal override onlyOwner {
+        emit UpgradeAuthorized(newImpl, msg.sender);
+    }
 
     // ── Modifiers ───────────────────────────────────────────────────────────────
 

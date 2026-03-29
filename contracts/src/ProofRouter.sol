@@ -66,6 +66,10 @@ contract ProofRouter is Initializable, Ownable2StepUpgradeable, UUPSUpgradeable 
     /// @notice Emitted when the adapter change delay is updated.
     event AdapterChangeDelaySet(uint256 delay);
 
+    /// @notice Emitted when an upgrade is authorized. Complements the ERC1967 `Upgraded`
+    ///         event with explicit authorizer attribution (L-01 remediation).
+    event UpgradeAuthorized(address indexed newImplementation, address indexed authorizer);
+
     // ── Storage ─────────────────────────────────────────────────────────────────
 
     /// @dev Maps proofSystemId to the registered adapter address.
@@ -103,7 +107,9 @@ contract ProofRouter is Initializable, Ownable2StepUpgradeable, UUPSUpgradeable 
 
     // ── UUPS ────────────────────────────────────────────────────────────────────
 
-    function _authorizeUpgrade(address) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImpl) internal override onlyOwner {
+        emit UpgradeAuthorized(newImpl, msg.sender);
+    }
 
     // ── Admin ───────────────────────────────────────────────────────────────────
 

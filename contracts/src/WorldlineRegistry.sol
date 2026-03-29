@@ -26,6 +26,9 @@ contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgrad
     error NoPendingFacade();
     error FacadeTimelockActive(uint256 activationTime);
     error FacadeDelayTooShort(uint256 required, uint256 given);
+    /// @notice Reverts when setCompatFacade() is called but a facade is already set.
+    ///         L-02 remediation: replaces the misleading FacadeTimelockActive(0) sentinel.
+    error FacadeAlreadySet();
 
     // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -57,6 +60,9 @@ contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgrad
     event CompatFacadeSet(address indexed compat);
     event CompatFacadeChangeScheduled(address indexed compat, uint256 activationTime);
     event FacadeChangeDelaySet(uint256 delay);
+    /// @notice Emitted when an upgrade is authorized. Complements the ERC1967 `Upgraded`
+    ///         event with explicit authorizer attribution (L-01 remediation).
+    event UpgradeAuthorized(address indexed newImplementation, address indexed authorizer);
 
     mapping(bytes32 => Circuit) private circuits;
     mapping(bytes32 => Driver) private drivers;
@@ -109,7 +115,9 @@ contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgrad
 
     // ── UUPS ────────────────────────────────────────────────────────────────────
 
-    function _authorizeUpgrade(address) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImpl) internal override onlyOwner {
+        emit UpgradeAuthorized(newImpl, msg.sender);
+    }
 
     // ── Modifiers ───────────────────────────────────────────────────────────────
 
@@ -156,7 +164,7 @@ contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgrad
     ///      Reverts if a facade is already set.
     /// @param compat Address of the compat facade to set.
     function setCompatFacade(address compat) external onlyOwner {
-        if (compatFacade != address(0)) revert FacadeTimelockActive(0);
+        if (compatFacade != address(0)) revert FacadeAlreadySet();
         compatFacade = compat;
         emit CompatFacadeSet(compat);
     }

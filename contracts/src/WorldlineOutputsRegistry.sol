@@ -34,6 +34,9 @@ contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUP
     );
 
     event MinTimelockSet(uint256 minTimelock);
+    /// @notice Emitted when an upgrade is authorized. Complements the ERC1967 `Upgraded`
+    ///         event with explicit authorizer attribution (L-01 remediation).
+    event UpgradeAuthorized(address indexed newImplementation, address indexed authorizer);
 
     // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -91,7 +94,9 @@ contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUP
 
     // ── UUPS ────────────────────────────────────────────────────────────────────
 
-    function _authorizeUpgrade(address) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImpl) internal override onlyOwner {
+        emit UpgradeAuthorized(newImpl, msg.sender);
+    }
 
     // ── Admin ───────────────────────────────────────────────────────────────────
 

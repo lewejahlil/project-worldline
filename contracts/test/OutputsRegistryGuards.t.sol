@@ -81,9 +81,7 @@ contract OutputsRegistryGuardsTest is Test {
     /// @notice setCompatFacade reverts after facade is already set.
     function test_setCompatFacade_revert_alreadySet() public {
         registry.setCompatFacade(address(compat));
-        vm.expectRevert(
-            abi.encodeWithSelector(WorldlineRegistry.FacadeTimelockActive.selector, 0)
-        );
+        vm.expectRevert(WorldlineRegistry.FacadeAlreadySet.selector);
         registry.setCompatFacade(address(0x1234));
     }
 
