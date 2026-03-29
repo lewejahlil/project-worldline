@@ -20,6 +20,8 @@ pub struct AggregatedProof {
     pub batch_commitment: [u8; 32],
     pub stf_commitment: [u8; 32],
     pub prover_set_digest: [u8; 32],
+    pub verified_count: u8,
+    pub verification_results: Vec<(u64, ProofSystemId, bool)>, // (prover_id, system, passed)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

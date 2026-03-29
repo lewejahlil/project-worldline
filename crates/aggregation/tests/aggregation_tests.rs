@@ -154,3 +154,16 @@ fn test_proof_count_and_valid_proof_count() {
     assert_eq!(agg.proof_count(), 2);
     assert_eq!(agg.valid_proof_count(), 2);
 }
+
+// Test 13: backward compatibility — aggregator with no verifiers registered behaves as before
+#[test]
+fn test_no_verifiers_registered_backward_compat() {
+    let mut agg = ProofAggregator::new(2, batch_commitment()).unwrap();
+    agg.add_proof(groth16_proof(1)).unwrap();
+    agg.add_proof(groth16_proof(2)).unwrap();
+    let result = agg.aggregate(AggregationStrategy::Independent).unwrap();
+    // No verifiers: verified_count = 0 (length-check only), but proofs still aggregated
+    assert_eq!(result.proofs.len(), 2);
+    assert_eq!(result.verified_count, 0);
+    assert!(result.verification_results.is_empty());
+}

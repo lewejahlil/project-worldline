@@ -63,6 +63,8 @@ fn test_wrap_empty_aggregated_proof_returns_empty_inner() {
         batch_commitment: batch_commitment(),
         stf_commitment: [1u8; 32],
         prover_set_digest: [2u8; 32],
+        verified_count: 0,
+        verification_results: vec![],
     };
     let result = verifier.wrap(empty, RecursionMode::Incremental);
     assert!(matches!(result, Err(RecursionError::EmptyInnerProof)));
@@ -135,6 +137,8 @@ fn test_verify_structure_zero_vkey_hash_returns_false() {
             batch_commitment: batch_commitment(),
             stf_commitment: [0u8; 32],
             prover_set_digest: [1u8; 32],
+            verified_count: 0,
+            verification_results: vec![],
         },
         recursion_depth: 1,
         outer_proof_data: vec![0u8; 32],
