@@ -7,7 +7,12 @@ description = "Proof recursion module for the Worldline multi-prover system"
 
 [dependencies]
 worldline-aggregation = { path = "../aggregation" }
+worldline-halo2-circuit = { path = "../halo2-circuit" }
+halo2curves = "0.6"
 thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+hex = { workspace = true }
 
 [dev-dependencies]
 worldline-aggregation = { path = "../aggregation" }
