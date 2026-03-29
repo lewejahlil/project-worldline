@@ -136,14 +136,14 @@ No rollup logic, no STF commitment, no prover set binding.
 
 ## Summary
 
-| #   | File                                        | Phase                          | Status         |
-| --- | ------------------------------------------- | ------------------------------ | -------------- |
-| 1   | `recursion.rs:111` — empty proof bytes      | Rust prover wiring             | Resolved       |
-| 2   | `recursion.rs:76-78` — TODO docstring       | Rust prover wiring             | Resolved       |
-| 3   | `recursion.rs:105-110` — TODO comment       | Rust prover wiring             | Resolved       |
-| 4   | `bench_recursion.rs:26` — placeholder bench | Rust prover wiring             | Resolved       |
-| 5   | `bench_verify.rs` — synthetic verify bench  | Rust prover wiring             | Resolved       |
-| 6   | `Groth16Verifier.sol` — stub verifier       | Solidity verifier contracts    | Resolved       |
-| 7   | `Verifier.sol` — dev verifier               | N/A                            | Dev-only, keep |
-| 8   | `deploy.ts` — production adapter wiring     | Solidity verifier contracts    | Resolved       |
-| 9   | `worldline.circom` — SquareHash demo        | Initial circuit design         | **Removed**    |
+| #   | File                                        | Phase                       | Status         |
+| --- | ------------------------------------------- | --------------------------- | -------------- |
+| 1   | `recursion.rs:111` — empty proof bytes      | Rust prover wiring          | Resolved       |
+| 2   | `recursion.rs:76-78` — TODO docstring       | Rust prover wiring          | Resolved       |
+| 3   | `recursion.rs:105-110` — TODO comment       | Rust prover wiring          | Resolved       |
+| 4   | `bench_recursion.rs:26` — placeholder bench | Rust prover wiring          | Resolved       |
+| 5   | `bench_verify.rs` — synthetic verify bench  | Rust prover wiring          | Resolved       |
+| 6   | `Groth16Verifier.sol` — stub verifier       | Solidity verifier contracts | Resolved       |
+| 7   | `Verifier.sol` — dev verifier               | N/A                         | Dev-only, keep |
+| 8   | `deploy.ts` — production adapter wiring     | Solidity verifier contracts | Resolved       |
+| 9   | `worldline.circom` — SquareHash demo        | Initial circuit design      | **Removed**    |

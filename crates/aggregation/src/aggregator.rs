@@ -1,6 +1,6 @@
 use crate::types::{
-    AggregatedProof, AggregationStrategy, IndividualProof, ProofSystemId,
-    GROTH16_PROOF_BYTE_SIZE, HALO2_PROOF_BYTE_SIZE, PLONK_PROOF_BYTE_SIZE,
+    AggregatedProof, AggregationStrategy, IndividualProof, ProofSystemId, GROTH16_PROOF_BYTE_SIZE,
+    HALO2_PROOF_BYTE_SIZE, PLONK_PROOF_BYTE_SIZE,
 };
 use std::collections::HashMap;
 use thiserror::Error;

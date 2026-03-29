@@ -166,12 +166,12 @@ Prioritized production-readiness improvements:
 
 ### A. Gas Comparison: Local Hardhat vs Mainnet Fork
 
-| Operation                       | Local Hardhat           | Mainnet Fork           | Notes                                |
-| ------------------------------- | ----------------------- | ---------------------- | ------------------------------------ |
-| Groth16Verifier.verifyProof     | ~1B gas (real pairing)  | N/A (mock used)        | Local uses real verifier in Forge    |
-| MockGroth16Verifier.verifyProof | ~25K gas                | ~25K gas               | Mock returns true, no precompile     |
-| submitZkValidityProof (mock)    | ~120K gas               | ~120K gas              | Dominated by storage writes + keccak |
-| registerDriver                  | ~95K gas                | ~95K gas               | Storage-write dominated              |
+| Operation                       | Local Hardhat          | Mainnet Fork    | Notes                                |
+| ------------------------------- | ---------------------- | --------------- | ------------------------------------ |
+| Groth16Verifier.verifyProof     | ~1B gas (real pairing) | N/A (mock used) | Local uses real verifier in Forge    |
+| MockGroth16Verifier.verifyProof | ~25K gas               | ~25K gas        | Mock returns true, no precompile     |
+| submitZkValidityProof (mock)    | ~120K gas              | ~120K gas       | Dominated by storage writes + keccak |
+| registerDriver                  | ~95K gas               | ~95K gas        | Storage-write dominated              |
 
 **Note:** Fork gas for `submitZkValidityProof` uses MockGroth16Verifier, so gas is expected to be lower than a real verifier deployment (~1B local reflects actual BN254 ecPairing precompile cost under Hardhat's JS implementation, not representative of mainnet precompile pricing which is ~113K gas).
 
