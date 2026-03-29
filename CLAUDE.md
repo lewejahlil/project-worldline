@@ -28,7 +28,8 @@ crates/registry/       → Rust prover registry
 crates/aggregation/    → Proof aggregation module
 crates/recursion/      → Proof recursion module
 crates/halo2-circuit/  → Halo2 STF circuit (KZG/BN254, circomlib-compatible Poseidon)
-crates/worldline-driver/ → CLI driver for aggregation, recursion, blob encoding (binary crate, uses anyhow)
+crates/worldline-driver/ → CLI driver for aggregation, recursion, blob encoding (binary + library crate, thiserror in lib, anyhow at binary boundary)
+crates/worldline-api/    → Prover API types, encoding, and ProvingService orchestrator (thiserror, no HTTP server)
 crates/worldline-registry/ → Extended registry with directory, selection, canonical hashing
 crates/worldline-compat/   → Compatibility facade
 crates/worldline-devnet/   → Devnet utilities
@@ -64,9 +65,9 @@ remappings.txt         → Forge import remappings (@openzeppelin → node_modul
 
 ## Test Counts
 
-- Hardhat: 220 tests
+- Hardhat: 228 tests (includes 8 prover-api-e2e integration tests)
 - Forge: 114 tests (10 suites, includes fuzz tests at 256 runs each)
-- Rust: 238 tests (12 ignored — require snarkjs/halo2-verify binaries)
+- Rust: 275 tests (5 ignored — require snarkjs/halo2-verify binaries)
 
 ## Commands
 

@@ -31,13 +31,9 @@ Proof Request → Prover Selection → Proving → Aggregation → Recursion →
 - **Dependencies:** None — halo2 range check gadgets are available in the current dependency tree.
 - **Category:** **Critical path** — soundness gap in the halo2 circuit.
 
-### 3. Recursion Witness Collection Stubbed
+### 3. ~~Recursion Witness Collection Stubbed~~ ✅ RESOLVED
 
-- **Component:** `crates/worldline-driver/src/recursion.rs` lines 105–111
-- **Current state:** `build_recursion_witness()` returns empty proof bytes (`inner_proofs: vec![]`). TODO comment: "Actual inner proof collection requires live prover connections."
-- **What complete looks like:** Function connects to prover endpoints (via HTTP/gRPC), collects inner proofs for a given window, validates them locally, and assembles the recursion witness.
-- **Dependencies:** Prover API definition (doesn't exist yet), network client, proof format serialization.
-- **Category:** **Critical path** — cannot perform proof recursion without inner proofs.
+- **Resolved in:** `crates/worldline-driver/src/recursion.rs` — `generate_proofs()` now invokes the real `MultiProverPipeline`, collects inner proofs from Groth16/Plonk/Halo2 provers, and builds a typed `RecursionWitness` with `stf_commitment`, `prover_set_digest`, and per-system proof labels. `execute_pipeline()` and `extract_inner_proofs()` provide lower-level access. All functions use typed `RecursionError` (thiserror).
 
 ### 4. Subprocess-Based Proof Verification (Not Integrated)
 
@@ -47,13 +43,9 @@ Proof Request → Prover Selection → Proving → Aggregation → Recursion →
 - **Dependencies:** Rust bindings for snarkjs verification OR native BN254 pairing verification. Halo2 verifier is already available via `halo2_proofs::plonk::verify_proof`.
 - **Category:** **Required before mainnet** — subprocess approach works for testing but is too fragile and slow for production.
 
-### 5. No Prover API / RPC Interface
+### 5. ~~No Prover API / RPC Interface~~ ✅ RESOLVED
 
-- **Component:** Does not exist
-- **Current state:** No API definition for provers to receive proving requests or submit completed proofs. The aggregator assumes proofs are available locally.
-- **What complete looks like:** gRPC or REST API service definition with endpoints: `RequestProof(windowId, inputs) → jobId`, `GetProofStatus(jobId) → status`, `GetProof(jobId) → proof`. Authentication, rate limiting, proof format validation.
-- **Dependencies:** API framework choice (tonic for gRPC, axum for REST), authentication scheme.
-- **Category:** **Critical path** — external provers cannot integrate without an API.
+- **Resolved in:** New `crates/worldline-api` crate. Provides `ProvingService` orchestrator with `prove(ProofRequest) → ProofResponse` covering all three proof systems (Groth16, Plonk, Halo2). Includes typed request/response surfaces (`ProofRequest`, `ProofResponse`, `ProofStatus`, `ProverHealth`), ABI-encoding layer matching on-chain Solidity verifiers (publicInputs with submissionBinding, Halo2 dynamic encoding), per-prover health tracking, partial-success fallback, and full serde roundtrip support. Error handling via `ApiError` (thiserror). Integration tested end-to-end in Rust (`tests/e2e_encoding.rs`) and on-chain via Hardhat (`test/integration/prover-api-e2e.test.ts`).
 
 ### 6. No Prover Orchestration / Job Queue
 
@@ -159,6 +151,6 @@ Proof Request → Prover Selection → Proving → Aggregation → Recursion →
 
 | Category                    | Gaps                                                                              |
 | --------------------------- | --------------------------------------------------------------------------------- |
-| **Critical path**           | #1 Poseidon digest, #2 batch size constraint, #3 recursion witness, #5 prover API |
+| **Critical path**           | #1 Poseidon digest, #2 batch size constraint, ~~#3 recursion witness~~ ✅, ~~#5 prover API~~ ✅ |
 | **Required before mainnet** | #4 native verifiers, #6 job queue, #7 key management, #8 monitoring, #11 ceremony |
 | **Enhancement**             | #9 indexer, #10 SDK, #12 devnet                                                   |

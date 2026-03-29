@@ -4,7 +4,7 @@
 //! by EIP-4844. Each 32-byte field element holds 31 bytes of data with the
 //! high byte set to 0x00 to guarantee values below the BLS12-381 field modulus.
 
-use anyhow::{anyhow, Result};
+use crate::error::BlobError;
 
 /// EIP-4844 constants
 pub const BYTES_PER_FIELD_ELEMENT: usize = 32;
@@ -21,13 +21,12 @@ pub const MAX_BLOB_DATA_BYTES: usize = FIELD_ELEMENTS_PER_BLOB * USABLE_BYTES_PE
 ///
 /// # Errors
 /// Returns an error if `data.len() > MAX_BLOB_DATA_BYTES`.
-pub fn encode_as_blob(data: &[u8]) -> Result<Vec<u8>> {
+pub fn encode_as_blob(data: &[u8]) -> Result<Vec<u8>, BlobError> {
     if data.len() > MAX_BLOB_DATA_BYTES {
-        return Err(anyhow!(
-            "Data too large for single blob: {} bytes exceeds max {}",
-            data.len(),
-            MAX_BLOB_DATA_BYTES
-        ));
+        return Err(BlobError::TooLarge {
+            size: data.len(),
+            max: MAX_BLOB_DATA_BYTES,
+        });
     }
 
     let mut blob = vec![0u8; BYTES_PER_BLOB];
@@ -48,13 +47,12 @@ pub fn encode_as_blob(data: &[u8]) -> Result<Vec<u8>> {
 ///
 /// # Errors
 /// Returns an error if `blob.len() != BYTES_PER_BLOB`.
-pub fn decode_blob(blob: &[u8], data_length: usize) -> Result<Vec<u8>> {
+pub fn decode_blob(blob: &[u8], data_length: usize) -> Result<Vec<u8>, BlobError> {
     if blob.len() != BYTES_PER_BLOB {
-        return Err(anyhow!(
-            "Blob must be exactly {} bytes, got {}",
-            BYTES_PER_BLOB,
-            blob.len()
-        ));
+        return Err(BlobError::InvalidBlobSize {
+            expected: BYTES_PER_BLOB,
+            actual: blob.len(),
+        });
     }
 
     let mut data = vec![0u8; data_length];
@@ -75,9 +73,12 @@ pub fn decode_blob(blob: &[u8], data_length: usize) -> Result<Vec<u8>> {
 /// Since our encoding always sets the high byte to 0x00, this check should always
 /// pass for blobs created by `encode_as_blob`. Use this to validate externally
 /// produced blobs.
-pub fn validate_blob_field_elements(blob: &[u8]) -> Result<()> {
+pub fn validate_blob_field_elements(blob: &[u8]) -> Result<(), BlobError> {
     if blob.len() != BYTES_PER_BLOB {
-        return Err(anyhow!("Blob must be exactly {BYTES_PER_BLOB} bytes"));
+        return Err(BlobError::InvalidBlobSize {
+            expected: BYTES_PER_BLOB,
+            actual: blob.len(),
+        });
     }
 
     // BLS modulus high byte check: the high byte of each field element must be 0x00
@@ -85,9 +86,10 @@ pub fn validate_blob_field_elements(blob: &[u8]) -> Result<()> {
     for i in 0..FIELD_ELEMENTS_PER_BLOB {
         let high_byte = blob[i * BYTES_PER_FIELD_ELEMENT];
         if high_byte != 0x00 {
-            return Err(anyhow!(
-                "Field element {i} has non-zero high byte 0x{high_byte:02x} — may exceed BLS modulus"
-            ));
+            return Err(BlobError::InvalidFieldElement {
+                index: i,
+                byte: high_byte,
+            });
         }
     }
 

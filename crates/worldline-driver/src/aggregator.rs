@@ -6,11 +6,12 @@
 
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
 use tracing::{info, warn};
 use worldline_registry::canonical::canonical_keccak;
 use worldline_registry::directory::{verify_directory_signature, SignedDirectory};
 use worldline_registry::selection::{select, Policy, SelectionEvent};
+
+use crate::error::AggregatorError;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -49,17 +50,16 @@ pub struct AggregatorOutput {
 /// 5. Run deterministic prover selection.
 /// 6. Write the canonical manifest to `output_manifest_path`.
 /// 7. Return [`AggregatorOutput`].
-pub fn run_aggregator(config: &AggregatorConfig) -> Result<AggregatorOutput> {
+pub fn run_aggregator(config: &AggregatorConfig) -> Result<AggregatorOutput, AggregatorError> {
     // ── Step 1: Load directory ────────────────────────────────────────────────
     info!(path = %config.directory_path.display(), "loading signed directory");
-    let dir_str = std::fs::read_to_string(&config.directory_path).with_context(|| {
-        format!(
-            "failed to read directory: {}",
-            config.directory_path.display()
-        )
-    })?;
-    let directory: SignedDirectory =
-        serde_json::from_str(&dir_str).with_context(|| "failed to parse directory JSON")?;
+    let dir_str =
+        std::fs::read_to_string(&config.directory_path).map_err(|e| AggregatorError::FileRead {
+            path: config.directory_path.display().to_string(),
+            reason: e.to_string(),
+        })?;
+    let directory: SignedDirectory = serde_json::from_str(&dir_str)
+        .map_err(|e| AggregatorError::ParseJson(format!("directory JSON: {e}")))?;
     info!(
         entries = directory.entries.len(),
         version = %directory.version,
@@ -82,20 +82,23 @@ pub fn run_aggregator(config: &AggregatorConfig) -> Result<AggregatorOutput> {
             );
         }
         Err(e) => {
-            return Err(anyhow::anyhow!(
+            return Err(AggregatorError::SignatureInvalid(format!(
                 "directory signature verification failed — aborting: {e}"
-            ));
+            )));
         }
     }
 
     // ── Step 3: Load policy ───────────────────────────────────────────────────
     info!(path = %config.policy_path.display(), "loading policy");
-    let policy_str = std::fs::read_to_string(&config.policy_path)
-        .with_context(|| format!("failed to read policy: {}", config.policy_path.display()))?;
-    let policy_value: serde_json::Value =
-        serde_json::from_str(&policy_str).with_context(|| "failed to parse policy JSON")?;
+    let policy_str =
+        std::fs::read_to_string(&config.policy_path).map_err(|e| AggregatorError::FileRead {
+            path: config.policy_path.display().to_string(),
+            reason: e.to_string(),
+        })?;
+    let policy_value: serde_json::Value = serde_json::from_str(&policy_str)
+        .map_err(|e| AggregatorError::ParseJson(format!("policy JSON: {e}")))?;
     let policy: Policy = serde_json::from_value(policy_value.clone())
-        .with_context(|| "failed to deserialise policy into Policy struct")?;
+        .map_err(|e| AggregatorError::ParseJson(format!("policy struct: {e}")))?;
     info!(
         min_count = policy.min_count,
         min_distinct_families = policy.min_distinct_families,
@@ -112,7 +115,7 @@ pub fn run_aggregator(config: &AggregatorConfig) -> Result<AggregatorOutput> {
     // ── Step 5: Run deterministic selection ───────────────────────────────────
     info!("running deterministic prover selection");
     let result = select(&directory.entries, &policy)
-        .with_context(|| "prover selection failed — no valid selection satisfies policy")?;
+        .map_err(|e| AggregatorError::SelectionFailed(e.to_string()))?;
     // Log selection events for observability.
     for event in &result.events {
         match event {
@@ -146,18 +149,10 @@ pub fn run_aggregator(config: &AggregatorConfig) -> Result<AggregatorOutput> {
 
     // ── Step 6: Write manifest to disk ────────────────────────────────────────
     if let Some(parent) = config.output_manifest_path.parent() {
-        std::fs::create_dir_all(parent).with_context(|| {
-            format!(
-                "failed to create manifest output directory: {}",
-                parent.display()
-            )
-        })?;
+        std::fs::create_dir_all(parent)?;
     }
-    std::fs::write(&config.output_manifest_path, &result.manifest_json).with_context(|| {
-        format!(
-            "failed to write manifest: {}",
-            config.output_manifest_path.display()
-        )
+    std::fs::write(&config.output_manifest_path, &result.manifest_json).map_err(|e| {
+        AggregatorError::ManifestWrite(format!("{}: {e}", config.output_manifest_path.display()))
     })?;
     info!(
         path = %config.output_manifest_path.display(),
