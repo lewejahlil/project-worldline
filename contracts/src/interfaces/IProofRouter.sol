@@ -9,7 +9,7 @@ interface IProofRouter {
     ///         and returns the full verification tuple consumed by WorldlineFinalizer.
     /// @param proofSystemId  Proof system to route to (1=Groth16, 2=Plonk, 3=Halo2).
     /// @param proof          Encoded proof bytes.
-    /// @param publicInputs   224-byte ABI-encoded public inputs.
+    /// @param publicInputs   256-byte ABI-encoded public inputs (8 words).
     function routeProofAggregated(
         uint8 proofSystemId,
         bytes calldata proof,

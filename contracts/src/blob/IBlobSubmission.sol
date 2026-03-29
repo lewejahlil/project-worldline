@@ -17,7 +17,7 @@ interface IBlobSubmission {
 
     /// @notice Submit a ZK validity proof carried in an EIP-4844 blob transaction.
     /// @param proof              Encoded proof bytes.
-    /// @param publicInputs       224-byte ABI-encoded public inputs.
+    /// @param publicInputs       256-byte ABI-encoded public inputs (8 words).
     /// @param expectedBlobHash   Expected versioned hash of blob at index 0.
     /// @param blobDataHash       Hash of the actual blob data payload (for indexer reference).
     function submitZkValidityProofWithBlob(
