@@ -12,12 +12,13 @@
 //! | `SnarkAccumulator`      | Accumulate inner proofs before producing the outer proof.  |
 //! | `SnarkMiniVerifier`     | Inline mini-verifier circuit verifies inner proofs.        |
 
-use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use worldline_recursion::{
     Halo2Prover, MultiProverPipeline, PipelineOutput, ProofSystemId, StfInputs,
 };
+
+use crate::error::RecursionError;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -160,16 +161,19 @@ mod hex_bytes_32 {
 // ── Pipeline construction ────────────────────────────────────────────────────
 
 /// Build a `MultiProverPipeline` from the requested proof systems.
-fn build_pipeline(systems: &RequestedSystems, quorum: u8) -> Result<MultiProverPipeline> {
-    let mut pipeline =
-        MultiProverPipeline::new(quorum, 4).context("failed to create multi-prover pipeline")?;
+fn build_pipeline(
+    systems: &RequestedSystems,
+    quorum: u8,
+) -> Result<MultiProverPipeline, RecursionError> {
+    let mut pipeline = MultiProverPipeline::new(quorum, 4)
+        .map_err(|e| RecursionError::PipelineCreate(e.to_string()))?;
 
     if let Some(ref artifacts) = systems.groth16 {
         let prover = worldline_recursion::Groth16Prover::new(
             artifacts.wasm_path.clone(),
             artifacts.zkey_path.clone(),
         )
-        .context("failed to create Groth16 prover")?;
+        .map_err(|e| RecursionError::ProverCreate(format!("Groth16: {e}")))?;
         pipeline.add_prover(Box::new(prover));
     }
 
@@ -178,12 +182,13 @@ fn build_pipeline(systems: &RequestedSystems, quorum: u8) -> Result<MultiProverP
             artifacts.wasm_path.clone(),
             artifacts.zkey_path.clone(),
         )
-        .context("failed to create Plonk prover")?;
+        .map_err(|e| RecursionError::ProverCreate(format!("Plonk: {e}")))?;
         pipeline.add_prover(Box::new(prover));
     }
 
     if systems.halo2 {
-        let prover = Halo2Prover::new().context("failed to create Halo2 prover")?;
+        let prover =
+            Halo2Prover::new().map_err(|e| RecursionError::ProverCreate(format!("Halo2: {e}")))?;
         pipeline.add_prover(Box::new(prover));
     }
 
@@ -231,7 +236,9 @@ fn count_requested_systems(systems: &RequestedSystems) -> usize {
 /// - Invalid recursion config (k_in_proof exceeds available provers or max_inner).
 /// - Pipeline construction failure (missing artifacts, invalid quorum).
 /// - Proof generation failure from any inner prover.
-pub fn generate_proofs(config: &ProofGenerationConfig) -> Result<Option<RecursionWitness>> {
+pub fn generate_proofs(
+    config: &ProofGenerationConfig,
+) -> Result<Option<RecursionWitness>, RecursionError> {
     if config.recursion.mode == RecursionMode::None {
         return Ok(None);
     }
@@ -241,13 +248,13 @@ pub fn generate_proofs(config: &ProofGenerationConfig) -> Result<Option<Recursio
     let max = config.recursion.max_inner as usize;
 
     if k > num_systems {
-        bail!(
-            "k_in_proof ({k}) exceeds number of requested proof systems ({num_systems}) — \
-             cannot request more inner proofs than provers configured"
-        );
+        return Err(RecursionError::KExceedsSystems {
+            k,
+            available: num_systems,
+        });
     }
     if k > max {
-        bail!("k_in_proof ({k}) exceeds max_inner ({max}) — configuration constraint violated");
+        return Err(RecursionError::KExceedsMax { k, max });
     }
 
     let pipeline = build_pipeline(&config.systems, config.quorum_count as u8)?;
@@ -255,7 +262,7 @@ pub fn generate_proofs(config: &ProofGenerationConfig) -> Result<Option<Recursio
 
     let output: PipelineOutput = pipeline
         .execute(&stf_inputs)
-        .context("multi-prover pipeline execution failed")?;
+        .map_err(|e| RecursionError::PipelineExec(e.to_string()))?;
 
     let inner_proofs: Vec<Vec<u8>> = output
         .inner_outputs
@@ -291,11 +298,11 @@ pub fn execute_pipeline(
     systems: &RequestedSystems,
     stf_inputs: &StfInputs,
     quorum: u8,
-) -> Result<PipelineOutput> {
+) -> Result<PipelineOutput, RecursionError> {
     let pipeline = build_pipeline(systems, quorum)?;
     let output = pipeline
         .execute(stf_inputs)
-        .context("multi-prover pipeline execution failed")?;
+        .map_err(|e| RecursionError::PipelineExec(e.to_string()))?;
     Ok(output)
 }
 

@@ -1,20 +1,20 @@
 //! Worldline driver — CLI orchestrator for aggregation, recursion, and blob encoding.
 //!
-//! This is a **binary crate** (see `[[bin]]` in Cargo.toml). It uses `anyhow::Result`
-//! throughout for ergonomic error context chaining, which is idiomatic for Rust CLIs.
-//! Library crates in this workspace (`aggregation`, `registry`, `recursion`) use
-//! `thiserror`-derived typed errors instead.
+//! Library modules use `thiserror`-derived typed errors. The binary entrypoint
+//! (`main.rs`) uses `anyhow` for ergonomic error context chaining at the boundary.
 
 pub mod aggregator;
 pub mod blob;
+pub mod error;
 pub mod recursion;
 
 use std::path::Path;
 
-use anyhow::{bail, Context, Result};
-use tracing::{info, warn};
+use tracing::info;
 use worldline_compat::{build_compat_snapshot, ensure_plugin_exists};
 use worldline_registry::{self as registry};
+
+use error::{RegistryError, SyncError};
 
 /// Maximum allowed response size for registry sync (2 MiB).
 const MAX_RESPONSE_BYTES: u64 = 2 * 1024 * 1024;
@@ -23,36 +23,35 @@ const MAX_RESPONSE_BYTES: u64 = 2 * 1024 * 1024;
 ///
 /// Enforces a response size limit to prevent resource exhaustion from
 /// unexpectedly large payloads.
-pub async fn sync_registry(url: &str, output: &Path) -> Result<()> {
+pub async fn sync_registry(url: &str, output: &Path) -> Result<(), SyncError> {
     info!(url = %url, "fetching remote registry");
 
-    let response = reqwest::get(url)
-        .await
-        .context("failed to fetch registry")?;
+    let response = reqwest::get(url).await?;
 
     // Check content-length before reading body
     if let Some(len) = response.content_length() {
         if len > MAX_RESPONSE_BYTES {
-            bail!("registry response too large ({len} bytes, max {MAX_RESPONSE_BYTES})");
+            return Err(SyncError::TooLarge {
+                size: len,
+                max: MAX_RESPONSE_BYTES,
+            });
         }
     }
 
-    let bytes = response
-        .bytes()
-        .await
-        .context("failed to read response body")?;
+    let bytes = response.bytes().await?;
 
     if bytes.len() as u64 > MAX_RESPONSE_BYTES {
-        bail!(
-            "registry response too large ({} bytes, max {MAX_RESPONSE_BYTES})",
-            bytes.len()
-        );
+        return Err(SyncError::TooLarge {
+            size: bytes.len() as u64,
+            max: MAX_RESPONSE_BYTES,
+        });
     }
 
-    let body = std::str::from_utf8(&bytes).context("response is not valid UTF-8")?;
+    let body = std::str::from_utf8(&bytes)
+        .map_err(|e| SyncError::InvalidUtf8(e.to_string()))?;
 
     let snapshot: registry::RegistrySnapshot =
-        serde_json::from_str(body).context("failed to parse remote registry JSON")?;
+        serde_json::from_str(body).map_err(|e| SyncError::ParseJson(e.to_string()))?;
 
     info!(
         circuits = snapshot.circuits.len(),
@@ -61,7 +60,8 @@ pub async fn sync_registry(url: &str, output: &Path) -> Result<()> {
         "parsed registry snapshot"
     );
 
-    registry::save(output, &snapshot).context("failed to save registry snapshot")?;
+    registry::save(output, &snapshot)
+        .map_err(|e| SyncError::Save(e.to_string()))?;
     info!(
         output = %output.display(),
         bytes = bytes.len(),
@@ -72,12 +72,13 @@ pub async fn sync_registry(url: &str, output: &Path) -> Result<()> {
 }
 
 /// Load a registry snapshot and export it as a JSON compat snapshot.
-pub fn export_compat(input: &Path) -> Result<String> {
+pub fn export_compat(input: &Path) -> Result<String, RegistryError> {
     info!(input = %input.display(), "exporting compat snapshot");
-    let snapshot = registry::load(input).context("failed to load registry")?;
+    let snapshot =
+        registry::load(input).map_err(|e| RegistryError::Load(e.to_string()))?;
     let compat = build_compat_snapshot(&snapshot);
-    let json =
-        serde_json::to_string_pretty(&compat).context("failed to serialize compat snapshot")?;
+    let json = serde_json::to_string_pretty(&compat)
+        .map_err(|e| RegistryError::Serialize(e.to_string()))?;
     info!(
         circuits = snapshot.circuits.len(),
         plugins = snapshot.plugins.len(),
@@ -87,14 +88,13 @@ pub fn export_compat(input: &Path) -> Result<String> {
 }
 
 /// Verify that a plugin exists in a local registry snapshot.
-pub fn check_plugin(input: &Path, plugin_id: &str) -> Result<()> {
+pub fn check_plugin(input: &Path, plugin_id: &str) -> Result<(), RegistryError> {
     info!(input = %input.display(), plugin_id = %plugin_id, "checking plugin existence");
-    let snapshot = registry::load(input).context("failed to load registry")?;
-    let result = ensure_plugin_exists(&snapshot, plugin_id);
-    if result.is_err() {
-        warn!(plugin_id = %plugin_id, "plugin not found in registry");
-    }
-    result
+    let snapshot =
+        registry::load(input).map_err(|e| RegistryError::Load(e.to_string()))?;
+    ensure_plugin_exists(&snapshot, plugin_id)
+        .map_err(|e| RegistryError::PluginNotFound(e.to_string()))?;
+    Ok(())
 }
 
 #[cfg(test)]
