@@ -52,7 +52,7 @@ remappings.txt         → Forge import remappings (@openzeppelin → node_modul
 - proverSetDigest = Poseidon(proverIds[], proofSystemIds[], quorumCount)
 - Proof sizes: Groth16=320 bytes, Plonk=832 bytes, Halo2=1472 bytes raw / 1600 bytes adapter envelope (BN254 KZG)
 - Groth16 circuit: 2^11 ptau, 1867 constraints, 1859 wires
-- Plonk circuit: 2^12 ptau (vkey domain 4096)
+- Plonk circuit: 2^12 ptau, 1804 constraints, 1805 wires
 - Halo2 circuit: k=8, 256 rows (BN254 KZG)
 
 ## RPC Endpoints
