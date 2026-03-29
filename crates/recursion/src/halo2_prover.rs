@@ -4,8 +4,8 @@
 //! entirely in-process via the `worldline-halo2-circuit` crate. This is the
 //! most mature proving path — no external dependencies required at runtime.
 //!
-//! Proof format: variable-length KZG proof bytes (measured at 1536 bytes for k=8).
-//! The adapter envelope adds metadata for on-chain submission.
+//! Proof format: variable-length KZG proof bytes (measured at 2016 bytes for k=8,
+//! Keccak256 transcript). The adapter envelope adds metadata for on-chain submission.
 
 use crate::prover_traits::{InnerProofOutput, InnerProver, ProverError, StfInputs};
 use crate::types::ProofSystemId;
@@ -15,15 +15,16 @@ use halo2_proofs::{
         commitment::{KZGCommitmentScheme, ParamsKZG},
         multiopen::ProverSHPLONK,
     },
-    transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer},
+    transcript::TranscriptWriterBuffer,
 };
+use halo2_solidity_verifier::Keccak256Transcript;
 use halo2curves::bn256::{Bn256, Fr, G1Affine};
 use halo2curves::group::ff::PrimeField;
 use rand::rngs::OsRng;
 use worldline_halo2_circuit::WorldlineStfCircuit;
 
-/// Measured proof byte length for Halo2 KZG proofs with k=8.
-pub const HALO2_PROOF_BYTES: usize = 1536;
+/// Measured proof byte length for Halo2 KZG proofs with k=8 (Keccak256 transcript).
+pub const HALO2_PROOF_BYTES: usize = 2016;
 
 /// Circuit parameter k (log2 of rows). k=8 → 256 rows.
 const K: u32 = 8;
@@ -121,7 +122,7 @@ impl InnerProver for Halo2Prover {
         let instances = [vec![stf_commitment, prover_set_digest]];
         let instances_ref: Vec<&[Fr]> = instances.iter().map(|v| v.as_slice()).collect();
 
-        let mut transcript = Blake2bWrite::<_, G1Affine, Challenge255<_>>::init(vec![]);
+        let mut transcript = Keccak256Transcript::<G1Affine, Vec<u8>>::init(vec![]);
         create_proof::<KZGCommitmentScheme<Bn256>, ProverSHPLONK<'_, Bn256>, _, _, _, _>(
             &self.params,
             &self.pk,

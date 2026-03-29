@@ -249,7 +249,7 @@ mod tests {
 
         assert_eq!(output.inner_outputs.len(), 1);
         assert_eq!(output.inner_outputs[0].proof_system, ProofSystemId::Halo2);
-        assert_eq!(output.inner_outputs[0].proof_data.len(), 1536);
+        assert_eq!(output.inner_outputs[0].proof_data.len(), 2016);
         assert_eq!(
             output.stf_commitment,
             output.inner_outputs[0].public_signals[0]
@@ -304,7 +304,7 @@ mod tests {
         let segments = parse_outer_proof_data(&output.recursive_proof.outer_proof_data).unwrap();
         assert_eq!(segments.len(), 1);
         assert_eq!(segments[0].0, ProofSystemId::Halo2 as u8);
-        assert_eq!(segments[0].1.len(), 1536);
+        assert_eq!(segments[0].1.len(), 2016);
         assert_eq!(segments[0].1, output.inner_outputs[0].proof_data);
     }
 
@@ -422,7 +422,7 @@ mod tests {
         // Proof sizes match expected
         assert_eq!(output.inner_outputs[0].proof_data.len(), 320);
         assert_eq!(output.inner_outputs[1].proof_data.len(), 832);
-        assert_eq!(output.inner_outputs[2].proof_data.len(), 1536);
+        assert_eq!(output.inner_outputs[2].proof_data.len(), 2016);
 
         // All public signals identical
         for i in 1..3 {

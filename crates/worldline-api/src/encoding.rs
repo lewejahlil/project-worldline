@@ -10,7 +10,7 @@
 //! |---------|----|----------------------------------------------------------------------|-------|
 //! | Groth16 | 1  | `abi.encode(uint256[2], uint256[2][2], uint256[2], uint256, uint256)` | 320   |
 //! | Plonk   | 2  | `abi.encode(uint256[24], uint256, uint256)`                           | 832   |
-//! | Halo2   | 3  | `abi.encode(bytes, uint256, uint256)`                                | ~1600 |
+//! | Halo2   | 3  | `abi.encode(bytes, uint256, uint256)`                                | ~2144 |
 //!
 //! # publicInputs layout (8 words / 256 bytes)
 //!
@@ -35,7 +35,7 @@ use worldline_recursion::ProofSystemId;
 /// Expected raw proof byte lengths per proof system.
 pub const GROTH16_PROOF_BYTES: usize = 320;
 pub const PLONK_PROOF_BYTES: usize = 832;
-pub const HALO2_RAW_PROOF_BYTES: usize = 1536;
+pub const HALO2_RAW_PROOF_BYTES: usize = 2016;
 
 /// Encode a 32-byte value as a left-padded ABI uint256/bytes32 word.
 ///
@@ -151,7 +151,7 @@ pub fn encode_plonk_proof(raw_proof: &[u8]) -> Result<Vec<u8>, EncodingError> {
 
 /// ABI-encode a Halo2 proof for `Halo2ZkAdapter.verify()`.
 ///
-/// Input: raw KZG proof bytes (~1536 bytes) + stfCommitment(32-byte LE) + proverSetDigest(32-byte LE).
+/// Input: raw KZG proof bytes (~2016 bytes) + stfCommitment(32-byte LE) + proverSetDigest(32-byte LE).
 /// These are provided separately because the raw proof does NOT contain the public signals.
 ///
 /// Output: ABI-encoded `(bytes, uint256, uint256)` with dynamic encoding:
@@ -322,7 +322,7 @@ mod tests {
 
     #[test]
     fn halo2_encoding_has_correct_structure() {
-        let raw_proof = vec![0xEFu8; 1536];
+        let raw_proof = vec![0xEFu8; 2016];
         let stf = [0x11u8; 32];
         let psd = [0x22u8; 32];
 
@@ -337,14 +337,14 @@ mod tests {
         // Word 2: proverSetDigest
         assert_eq!(&encoded[64..96], &psd);
 
-        // Word 3: length of bytes = 1536
-        assert_eq!(&encoded[96..128], &u64_to_abi_word(1536));
+        // Word 3: length of bytes = 2016
+        assert_eq!(&encoded[96..128], &u64_to_abi_word(2016));
 
         // Bytes data starts at offset 128
-        assert_eq!(&encoded[128..128 + 1536], &raw_proof[..]);
+        assert_eq!(&encoded[128..128 + 2016], &raw_proof[..]);
 
-        // 1536 is divisible by 32, so no padding needed
-        assert_eq!(encoded.len(), 128 + 1536);
+        // 2016 is divisible by 32, so no padding needed
+        assert_eq!(encoded.len(), 128 + 2016);
     }
 
     #[test]
@@ -379,9 +379,9 @@ mod tests {
         assert_eq!(encoded.len(), 832);
 
         // Halo2
-        let raw = vec![0u8; 1536];
+        let raw = vec![0u8; 2016];
         let encoded = encode_proof(ProofSystemId::Halo2, &raw, &stf, &psd).unwrap();
-        assert_eq!(encoded.len(), 128 + 1536); // ABI wrapper
+        assert_eq!(encoded.len(), 128 + 2016); // ABI wrapper
     }
 
     #[test]

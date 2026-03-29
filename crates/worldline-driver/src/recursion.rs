@@ -392,7 +392,7 @@ mod tests {
 
         // Real proof bytes — not empty
         assert!(!witness.inner_proofs[0].is_empty());
-        assert_eq!(witness.inner_proofs[0].len(), 1536); // Halo2 proof size
+        assert_eq!(witness.inner_proofs[0].len(), 2016); // Halo2 proof size (Keccak256 transcript)
 
         // stfCommitment and proverSetDigest are non-zero
         assert_ne!(witness.stf_commitment, [0u8; 32]);
@@ -484,7 +484,7 @@ mod tests {
 
         assert_eq!(output.inner_outputs.len(), 1);
         assert_eq!(output.inner_outputs[0].proof_system, ProofSystemId::Halo2);
-        assert_eq!(output.inner_outputs[0].proof_data.len(), 1536);
+        assert_eq!(output.inner_outputs[0].proof_data.len(), 2016);
         assert_ne!(output.stf_commitment, [0u8; 32]);
         assert_ne!(output.prover_set_digest, [0u8; 32]);
 
@@ -515,6 +515,6 @@ mod tests {
 
         assert_eq!(proofs.len(), 1);
         assert_eq!(proofs[0].0, ProofSystemLabel::Halo2);
-        assert_eq!(proofs[0].1.len(), 1536);
+        assert_eq!(proofs[0].1.len(), 2016);
     }
 }

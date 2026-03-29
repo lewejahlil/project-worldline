@@ -67,7 +67,7 @@ fn e2e_prove_completes_with_halo2() {
     let response = prove_halo2();
     assert_eq!(response.status, ProofStatus::Complete);
     assert!(response.proofs[&3].success);
-    assert_eq!(response.proofs[&3].proof_length, 1536);
+    assert_eq!(response.proofs[&3].proof_length, 2016);
 }
 
 #[test]
@@ -141,34 +141,34 @@ fn e2e_halo2_proof_abi_structure() {
     // Word 3: length of raw proof bytes.
     let raw_len = word_to_u64(&calldata[96..128]);
     assert_eq!(
-        raw_len, 1536,
-        "Halo2 ABI word 3 must indicate raw proof length = 1536"
+        raw_len, 2016,
+        "Halo2 ABI word 3 must indicate raw proof length = 2016"
     );
 
     // Rest: raw proof bytes padded to 32-byte boundary.
-    let proof_data = &calldata[128..128 + 1536];
+    let proof_data = &calldata[128..128 + 2016];
     assert_eq!(
         proof_data,
         &encoded.raw_proof[..],
         "Halo2 ABI proof data must match raw_proof"
     );
 
-    // 1536 is already 32-byte aligned, so total = 128 (header) + 1536 = 1664.
+    // 2016 is already 32-byte aligned, so total = 128 (header) + 2016 = 2144.
     assert_eq!(
         calldata.len(),
-        128 + 1536,
-        "Halo2 ABI total calldata length must be 1664"
+        128 + 2016,
+        "Halo2 ABI total calldata length must be 2144"
     );
 }
 
 #[test]
-fn e2e_halo2_raw_proof_is_1536_bytes() {
+fn e2e_halo2_raw_proof_is_2016_bytes() {
     let response = prove_halo2();
     let encoded = &response.encoded_proofs[&3];
     assert_eq!(
         encoded.raw_proof.len(),
-        1536,
-        "Halo2 KZG raw proof must be exactly 1536 bytes"
+        2016,
+        "Halo2 KZG raw proof must be exactly 2016 bytes (Keccak256 transcript)"
     );
 }
 

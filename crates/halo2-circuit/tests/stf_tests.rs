@@ -11,10 +11,9 @@ use halo2_proofs::{
         multiopen::{ProverSHPLONK, VerifierSHPLONK},
         strategy::SingleStrategy,
     },
-    transcript::{
-        Blake2bRead, Blake2bWrite, Challenge255, TranscriptReadBuffer, TranscriptWriterBuffer,
-    },
+    transcript::{TranscriptReadBuffer, TranscriptWriterBuffer},
 };
+use halo2_solidity_verifier::Keccak256Transcript;
 use halo2curves::bn256::{Bn256, Fr, G1Affine};
 use halo2curves::group::ff::Field;
 use rand::rngs::OsRng;
@@ -147,7 +146,7 @@ fn real_proof_generation_and_verification() {
     let instances = [vec![stf, digest]];
     let instances_ref: Vec<&[Fr]> = instances.iter().map(|v| v.as_slice()).collect();
 
-    let mut transcript = Blake2bWrite::<_, G1Affine, Challenge255<_>>::init(vec![]);
+    let mut transcript = Keccak256Transcript::<G1Affine, Vec<u8>>::init(vec![]);
     create_proof::<KZGCommitmentScheme<Bn256>, ProverSHPLONK<'_, Bn256>, _, _, _, _>(
         &params,
         &pk,
@@ -161,7 +160,7 @@ fn real_proof_generation_and_verification() {
     let proof_bytes = transcript.finalize();
 
     // Verify proof
-    let mut transcript = Blake2bRead::<_, G1Affine, Challenge255<_>>::init(proof_bytes.as_slice());
+    let mut transcript = Keccak256Transcript::<G1Affine, &[u8]>::init(proof_bytes.as_slice());
     let strategy = SingleStrategy::new(&params);
 
     let result = verify_proof::<KZGCommitmentScheme<Bn256>, VerifierSHPLONK<'_, Bn256>, _, _, _>(

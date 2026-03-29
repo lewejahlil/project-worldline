@@ -6,8 +6,9 @@ use halo2_proofs::{
     plonk::{create_proof, keygen_pk, keygen_vk},
     poly::kzg::commitment::ParamsKZG,
     poly::kzg::{commitment::KZGCommitmentScheme, multiopen::ProverSHPLONK},
-    transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer},
+    transcript::TranscriptWriterBuffer,
 };
+use halo2_solidity_verifier::Keccak256Transcript;
 use halo2curves::bn256::{Bn256, Fr, G1Affine};
 use halo2curves::group::ff::PrimeField;
 use rand::rngs::OsRng;
@@ -49,7 +50,7 @@ fn main() {
     let instances = [vec![stf, digest]];
     let instances_ref: Vec<&[Fr]> = instances.iter().map(|v| v.as_slice()).collect();
 
-    let mut transcript = Blake2bWrite::<_, G1Affine, Challenge255<_>>::init(vec![]);
+    let mut transcript = Keccak256Transcript::<G1Affine, Vec<u8>>::init(vec![]);
     create_proof::<KZGCommitmentScheme<Bn256>, ProverSHPLONK<'_, Bn256>, _, _, _, _>(
         &params,
         &pk,
