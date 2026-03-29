@@ -10,10 +10,56 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      always: ${{ steps.filter.outputs.always }}
+      solidity: ${{ steps.filter.outputs.solidity }}
+      rust: ${{ steps.filter.outputs.rust }}
+      circuits: ${{ steps.filter.outputs.circuits }}
+      typescript: ${{ steps.filter.outputs.typescript }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            always:
+              - '.github/workflows/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'Cargo.lock'
+            solidity:
+              - 'contracts/**'
+              - 'test/**'
+              - 'hardhat.config.ts'
+              - 'remappings.txt'
+              - 'scripts/**'
+            rust:
+              - 'crates/**'
+              - 'Cargo.toml'
+            circuits:
+              - 'circuits/**'
+            typescript:
+              - '*.ts'
+              - '*.js'
+              - 'tsconfig.json'
+              - 'scripts/**'
+              - 'schemas/**'
+
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.typescript == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,6 +76,7 @@ jobs:
     name: NPM Audit (INF-003)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,6 +93,11 @@ jobs:
     name: Rust
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.rust == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -70,7 +122,11 @@ jobs:
     name: Rust Benchmarks (compile-only)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [rust]
+    needs: [changes, rust]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.rust == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -91,6 +147,11 @@ jobs:
     name: Solidity
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.solidity == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -107,6 +168,12 @@ jobs:
     name: Canonical JSON Conformance
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.typescript == 'true' ||
+      needs.changes.outputs.rust == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -159,6 +226,11 @@ jobs:
     name: Foundry Fuzz Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.solidity == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -179,6 +251,11 @@ jobs:
     name: ZK Setup Verification
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.circuits == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -218,8 +295,12 @@ jobs:
   devnet-smoke:
     name: Devnet Smoke Test
     runs-on: ubuntu-latest
-    needs: [solidity]
+    needs: [changes, solidity]
     timeout-minutes: 15
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.solidity == 'true'
     steps:
       - uses: actions/checkout@v4
       - name: Install Foundry (Anvil)
@@ -257,6 +338,11 @@ jobs:
     name: Contracts (compile + test + gas)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.solidity == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -275,6 +361,11 @@ jobs:
     name: Circuits (mocha)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.circuits == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -289,6 +380,11 @@ jobs:
     name: Circuits — Plonk (mocha)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.circuits == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -303,6 +399,11 @@ jobs:
     name: Halo2 circuit (tests + clippy)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.rust == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -325,6 +426,11 @@ jobs:
     name: Rust workspace (test + clippy)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.rust == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -345,7 +451,11 @@ jobs:
     name: Fork simulation tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [contracts]
+    needs: [changes, contracts]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.solidity == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -360,7 +470,11 @@ jobs:
     name: Integration — Multi-prover quorum
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [contracts]
+    needs: [changes, contracts]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.solidity == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
