@@ -12,7 +12,7 @@ contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgrad
     // ── Errors ──────────────────────────────────────────────────────────────────
 
     error InvalidVerifier();
-    error NotAuthorised();
+    error NotAuthorized();
     error InvalidCircuitId();
     error CircuitExists();
     error CircuitMissing();
@@ -110,7 +110,7 @@ contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgrad
     // ── Modifiers ───────────────────────────────────────────────────────────────
 
     modifier onlyAdmin() {
-        if (msg.sender != owner() && msg.sender != compatFacade) revert NotAuthorised();
+        if (msg.sender != owner() && msg.sender != compatFacade) revert NotAuthorized();
         _;
     }
 

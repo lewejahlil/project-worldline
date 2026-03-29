@@ -165,7 +165,7 @@ describe("WorldlineRegistry", function () {
         registry
           .connect(stranger)
           .registerCircuit(CIRCUIT_ID, "test circuit", ethers.ZeroAddress, "")
-      ).to.be.revertedWithCustomError(registry, "NotAuthorised");
+      ).to.be.revertedWithCustomError(registry, "NotAuthorized");
     });
 
     it("reverts on duplicate circuit ID", async function () {
@@ -233,7 +233,7 @@ describe("WorldlineRegistry", function () {
       const { registry, stranger } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).registerDriver(DRIVER_ID, "1.0.0", "http://localhost:8545")
-      ).to.be.revertedWithCustomError(registry, "NotAuthorised");
+      ).to.be.revertedWithCustomError(registry, "NotAuthorized");
     });
 
     it("reverts on duplicate driver ID", async function () {
@@ -297,7 +297,7 @@ describe("WorldlineRegistry", function () {
       const { registry, stranger } = await loadFixture(deployFixture);
       await expect(
         registry.connect(stranger).registerPlugin(PLUGIN_ID, "1.0.0", stranger.address, CIRCUIT_ID)
-      ).to.be.revertedWithCustomError(registry, "NotAuthorised");
+      ).to.be.revertedWithCustomError(registry, "NotAuthorized");
     });
 
     it("reverts on duplicate plugin ID", async function () {
@@ -369,7 +369,7 @@ describe("WorldlineRegistry", function () {
       await withPlugin(registry, owner, stranger.address);
       await expect(
         registry.connect(stranger).deprecatePlugin(PLUGIN_ID)
-      ).to.be.revertedWithCustomError(registry, "NotAuthorised");
+      ).to.be.revertedWithCustomError(registry, "NotAuthorized");
     });
 
     it("reverts when deprecating a non-existent plugin", async function () {
