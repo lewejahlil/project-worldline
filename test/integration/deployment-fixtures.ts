@@ -415,6 +415,16 @@ export async function makeHalo2WindowFixture(
 }
 
 /**
+ * Enable permissionless mode on a finalizer contract.
+ * Replaces the inline `(finalizer as any).setPermissionless(true)` pattern.
+ */
+export async function enablePermissionless(
+  finalizer: Awaited<ReturnType<ContractFactory["deploy"]>>
+): Promise<void> {
+  await (await (finalizer as any).setPermissionless(true)).wait();
+}
+
+/**
  * Submit N sequential windows starting at l2Start=0, each 100 blocks wide.
  * Returns the tx receipts.
  */
