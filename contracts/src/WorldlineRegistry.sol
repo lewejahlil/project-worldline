@@ -162,12 +162,10 @@ contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgrad
     /// @param description Human-readable description (must be non-empty).
     /// @param verifier Per-circuit verifier override; address(0) falls back to defaultVerifier.
     /// @param abiURI URI pointing to the circuit ABI/artifact.
-    function registerCircuit(
-        bytes32 id,
-        string calldata description,
-        address verifier,
-        string calldata abiURI
-    ) external onlyAdmin {
+    function registerCircuit(bytes32 id, string calldata description, address verifier, string calldata abiURI)
+        external
+        onlyAdmin
+    {
         if (id == bytes32(0)) revert InvalidCircuitId();
         if (circuitExists[id]) revert CircuitExists();
 
@@ -209,24 +207,17 @@ contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgrad
     /// @param version Semver version string.
     /// @param implementation Address of the plugin contract (must be non-zero).
     /// @param circuitId ID of the circuit this plugin proves (must already exist).
-    function registerPlugin(
-        bytes32 id,
-        string calldata version,
-        address implementation,
-        bytes32 circuitId
-    ) external onlyAdmin {
+    function registerPlugin(bytes32 id, string calldata version, address implementation, bytes32 circuitId)
+        external
+        onlyAdmin
+    {
         if (id == bytes32(0)) revert InvalidPluginId();
         if (implementation == address(0)) revert InvalidImplementation();
         if (pluginExists[id]) revert PluginExists();
         if (!circuitExists[circuitId]) revert CircuitMissing();
 
-        plugins[id] = Plugin({
-            id: id,
-            version: version,
-            implementation: implementation,
-            circuitId: circuitId,
-            deprecated: false
-        });
+        plugins[id] =
+            Plugin({id: id, version: version, implementation: implementation, circuitId: circuitId, deprecated: false});
         pluginExists[id] = true;
 
         emit PluginRegistered(id, implementation);
@@ -248,5 +239,4 @@ contract WorldlineRegistry is Initializable, Ownable2StepUpgradeable, UUPSUpgrad
         if (!pluginExists[id]) revert PluginMissing();
         return plugins[id];
     }
-
 }

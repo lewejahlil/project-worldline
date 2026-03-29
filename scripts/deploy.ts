@@ -144,6 +144,32 @@ async function main() {
   const compatAddr = await compat.getAddress();
   console.log(`   WorldlineCompat: ${compatAddr}`);
 
+  // ── 7b. Deploy ProofRouter proxy (UUPS) ────────────────────────────────────
+  console.log("7b. Deploying ProofRouter (UUPS proxy)…");
+  const RouterFactory = await ethers.getContractFactory("ProofRouter");
+  const routerProxy = await upgrades.deployProxy(RouterFactory, [], {
+    kind: "uups"
+  });
+  await routerProxy.waitForDeployment();
+  const routerProxyAddr = await routerProxy.getAddress();
+  const routerImplAddr = await upgrades.erc1967.getImplementationAddress(routerProxyAddr);
+  console.log(`   ProofRouter proxy: ${routerProxyAddr}`);
+  console.log(`   ProofRouter impl:  ${routerImplAddr}`);
+
+  // ── 7c. Register Groth16ZkAdapter in ProofRouter ────────────────────────────
+  console.log("7c. Registering Groth16ZkAdapter in ProofRouter at proofSystemId=1…");
+  const router = await ethers.getContractAt("ProofRouter", routerProxyAddr);
+  const registerTx = await (router as any).registerAdapter(1, adapterAddr);
+  await registerTx.wait();
+  console.log(`   registerAdapter(1, ${adapterAddr}) tx: ${registerTx.hash}`);
+
+  // ── 7d. Wire ProofRouter to WorldlineFinalizer ──────────────────────────────
+  console.log("7d. Wiring ProofRouter to WorldlineFinalizer…");
+  const finalizer = await ethers.getContractAt("WorldlineFinalizer", finalizerProxyAddr);
+  const setRouterTx = await (finalizer as any).setProofRouter(routerProxyAddr);
+  await setRouterTx.wait();
+  console.log(`   setProofRouter tx: ${setRouterTx.hash}`);
+
   // ── 8. Wire compat facade to registry ───────────────────────────────────────
   console.log("8. Wiring WorldlineCompat facade to WorldlineRegistry…");
   const registry = await ethers.getContractAt("WorldlineRegistry", registryProxyAddr);
@@ -152,7 +178,6 @@ async function main() {
   console.log(`   setCompatFacade tx: ${wireTx.hash}`);
 
   // ── 9. Transfer ownership to multisig (INF-002 remediation) ────────────────
-  const finalizer = await ethers.getContractAt("WorldlineFinalizer", finalizerProxyAddr);
   const outputsRegistry = await ethers.getContractAt(
     "WorldlineOutputsRegistry",
     outputsRegistryProxyAddr
@@ -181,6 +206,11 @@ async function main() {
     console.log(
       `   WorldlineOutputsRegistry.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`
     );
+
+    // ProofRouter — two-step transfer (HI-003).
+    const routerTx = await (router as any).transferOwnership(MULTISIG_ADDRESS);
+    await routerTx.wait();
+    console.log(`   ProofRouter.transferOwnership → ${MULTISIG_ADDRESS} (pending acceptance)`);
 
     console.log(
       "   Multisig must call acceptOwnership() on each contract to complete the transfer."
@@ -266,6 +296,31 @@ async function main() {
   }
   console.log(`   WorldlineRegistry implementation: ${verifiedRegistryImpl}`);
 
+  // Verify ProofRouter implementation address is non-zero
+  const verifiedRouterImpl = await upgrades.erc1967.getImplementationAddress(routerProxyAddr);
+  if (verifiedRouterImpl === ethers.ZeroAddress) {
+    throw new Error("ProofRouter implementation address is zero");
+  }
+  console.log(`   ProofRouter implementation: ${verifiedRouterImpl}`);
+
+  // Verify Groth16 adapter is registered in ProofRouter
+  const routerAdapter = await (router as any).getAdapter(1);
+  if (routerAdapter !== adapterAddr) {
+    throw new Error(
+      `ProofRouter adapter[1] mismatch: expected ${adapterAddr}, got ${routerAdapter}`
+    );
+  }
+  console.log("   ProofRouter.getAdapter(1) matches deployed Groth16ZkAdapter");
+
+  // Verify ProofRouter is wired to WorldlineFinalizer
+  const currentRouter = await (finalizer as any).proofRouter();
+  if (currentRouter !== routerProxyAddr) {
+    throw new Error(
+      `WorldlineFinalizer.proofRouter mismatch: expected ${routerProxyAddr}, got ${currentRouter}`
+    );
+  }
+  console.log("   WorldlineFinalizer.proofRouter() matches deployed ProofRouter");
+
   const verifiedFinalizerImpl = await upgrades.erc1967.getImplementationAddress(finalizerProxyAddr);
   if (verifiedFinalizerImpl === ethers.ZeroAddress) {
     throw new Error("WorldlineFinalizer implementation address is zero");
@@ -304,6 +359,10 @@ async function main() {
         implementation: outputsRegistryImplAddr
       },
       WorldlineCompat: compatAddr,
+      ProofRouter: {
+        proxy: routerProxyAddr,
+        implementation: routerImplAddr
+      },
       BlobKzgVerifier: blobKzgVerifierAddr
     },
     config: {

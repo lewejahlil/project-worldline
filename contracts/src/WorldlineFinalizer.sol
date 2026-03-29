@@ -40,24 +40,19 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     error NoPendingBlobKzgVerifier();
     error NoPendingDomainSeparator();
     error NoPendingGenesisL2Block();
+    error ProofRouterAlreadySet();
+    error NoPendingProofRouter();
 
     // ── Events ──────────────────────────────────────────────────────────────────
 
     /// @notice Emitted when a window output is finalized.
     event OutputProposed(
-        uint256 indexed windowIndex,
-        bytes32 outputRoot,
-        uint256 l2Start,
-        uint256 l2End,
-        bytes32 stfCommitment
+        uint256 indexed windowIndex, bytes32 outputRoot, uint256 l2Start, uint256 l2End, bytes32 stfCommitment
     );
 
     /// @notice Emitted when a ZK proof is accepted for a window.
     event ZkProofAccepted(
-        uint256 indexed windowIndex,
-        bytes32 programVKey,
-        bytes32 policyHash,
-        bytes32 proverSetDigest
+        uint256 indexed windowIndex, bytes32 programVKey, bytes32 policyHash, bytes32 proverSetDigest
     );
 
     event PausedSet(bool paused);
@@ -86,6 +81,7 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     event DomainSeparatorSet(bytes32 domainSeparator);
     event GenesisL2BlockChangeScheduled(uint256 genesisL2Block, uint256 activationTime);
     event GenesisL2BlockSet(uint256 genesisL2Block);
+    event ProofRouterChangeScheduled(address indexed proofRouter, uint256 activationTime);
 
     // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -151,6 +147,11 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     uint256 public pendingGenesisL2Block;
     uint256 public pendingGenesisL2BlockActivation;
     bool public genesisL2BlockChangeScheduled;
+
+    // proofRouter timelock
+    bool public proofRouterChangeScheduled;
+    address public pendingProofRouter;
+    uint256 public pendingProofRouterActivation;
 
     // ── Constructor ─────────────────────────────────────────────────────────────
 
@@ -266,7 +267,9 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     /// @notice Activate a previously scheduled BlobKzgVerifier change.
     function activateBlobKzgVerifierChange() external onlyOwner {
         if (!blobKzgVerifierChangeScheduled) revert NoPendingBlobKzgVerifier();
-        if (block.timestamp < pendingBlobKzgVerifierActivation) revert TimelockActive(pendingBlobKzgVerifierActivation);
+        if (block.timestamp < pendingBlobKzgVerifierActivation) {
+            revert TimelockActive(pendingBlobKzgVerifierActivation);
+        }
         blobKzgVerifier = BlobKzgVerifier(pendingBlobKzgVerifier);
         emit BlobKzgVerifierSet(pendingBlobKzgVerifier);
         pendingBlobKzgVerifier = address(0);
@@ -285,7 +288,9 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     /// @notice Activate a previously scheduled domainSeparator change.
     function activateDomainSeparatorChange() external onlyOwner {
         if (!domainSeparatorChangeScheduled) revert NoPendingDomainSeparator();
-        if (block.timestamp < pendingDomainSeparatorActivation) revert TimelockActive(pendingDomainSeparatorActivation);
+        if (block.timestamp < pendingDomainSeparatorActivation) {
+            revert TimelockActive(pendingDomainSeparatorActivation);
+        }
         domainSeparator = pendingDomainSeparator;
         emit DomainSeparatorSet(pendingDomainSeparator);
         pendingDomainSeparator = bytes32(0);
@@ -312,13 +317,33 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
         genesisL2BlockChangeScheduled = false;
     }
 
-    /// @notice Set the ProofRouter for multi-proof-system routing.
-    ///         Once set, submitZkValidityProofRouted() dispatches through this router.
-    ///         Pass address(0) to disable routing (only submitZkValidityProof remains available).
-    /// @param _proofRouter Address of the ProofRouter contract.
+    /// @notice Wire the ProofRouter for the first time (first-time only, no timelock).
+    ///         Once set, use scheduleProofRouterChange / activateProofRouterChange.
     function setProofRouter(address _proofRouter) external onlyOwner {
+        if (address(proofRouter) != address(0)) revert ProofRouterAlreadySet();
+        if (_proofRouter == address(0)) revert ProofRouterZero();
         proofRouter = IProofRouter(_proofRouter);
         emit ProofRouterSet(_proofRouter);
+    }
+
+    /// @notice Schedule a timelocked ProofRouter change.
+    ///         Pass address(0) to schedule disabling the router.
+    function scheduleProofRouterChange(address _proofRouter) external onlyOwner {
+        pendingProofRouter = _proofRouter;
+        pendingProofRouterActivation = block.timestamp + adapterChangeDelay;
+        proofRouterChangeScheduled = true;
+        emit ProofRouterChangeScheduled(_proofRouter, pendingProofRouterActivation);
+    }
+
+    /// @notice Activate a previously scheduled ProofRouter change after the timelock.
+    function activateProofRouterChange() external onlyOwner {
+        if (!proofRouterChangeScheduled) revert NoPendingProofRouter();
+        if (block.timestamp < pendingProofRouterActivation) revert TimelockActive(pendingProofRouterActivation);
+        proofRouter = IProofRouter(pendingProofRouter);
+        emit ProofRouterSet(pendingProofRouter);
+        pendingProofRouter = address(0);
+        pendingProofRouterActivation = 0;
+        proofRouterChangeScheduled = false;
     }
 
     // ── Submission ──────────────────────────────────────────────────────────────
@@ -326,10 +351,7 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     /// @notice Submit a ZK validity proof for the next contiguous window.
     /// @param proof         Encoded proof bytes (format depends on the adapter).
     /// @param publicInputs  224-byte ABI-encoded public inputs.
-    function submitZkValidityProof(
-        bytes calldata proof,
-        bytes calldata publicInputs
-    ) external whenNotPaused {
+    function submitZkValidityProof(bytes calldata proof, bytes calldata publicInputs) external whenNotPaused {
         _submit(proof, publicInputs);
     }
 
@@ -356,11 +378,10 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     /// @param proofSystemId  Numeric identifier of the proof system (1=Groth16, 2=Plonk, 3=Halo2).
     /// @param proof          Encoded proof bytes (adapter-specific format).
     /// @param publicInputs   224-byte ABI-encoded public inputs.
-    function submitZkValidityProofRouted(
-        uint8 proofSystemId,
-        bytes calldata proof,
-        bytes calldata publicInputs
-    ) external whenNotPaused {
+    function submitZkValidityProofRouted(uint8 proofSystemId, bytes calldata proof, bytes calldata publicInputs)
+        external
+        whenNotPaused
+    {
         if (address(proofRouter) == address(0)) revert ProofRouterZero();
         _submitRouted(proofSystemId, proof, publicInputs);
     }
@@ -403,13 +424,7 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
         // Falls back to hash-only if verifier is not configured or commitment is absent/malformed.
         if (address(blobKzgVerifier) != address(0) && commitment.length == KZG_COMMITMENT_LENGTH) {
             blobKzgVerifier.verifyBlob(
-                blobIndex,
-                openingPoint,
-                claimedValue,
-                commitment,
-                kzgProof,
-                batchId,
-                maxBlobBaseFee
+                blobIndex, openingPoint, claimedValue, commitment, kzgProof, batchId, maxBlobBaseFee
             );
         } else {
             BlobVerifier.verifyBlobHash(blobIndex, expectedBlobHash);
@@ -435,9 +450,7 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
         bytes32 outputRoot;
     }
 
-    function _validateAndPrepare(
-        bytes calldata publicInputs
-    ) internal returns (ValidatedSubmission memory v) {
+    function _validateAndPrepare(bytes calldata publicInputs) internal returns (ValidatedSubmission memory v) {
         // Auth check
         if (!permissionless && !submitters[msg.sender] && msg.sender != owner()) {
             revert NotAuthorized();
@@ -453,18 +466,8 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
         bytes32 l1BlockHash;
         bytes32 inputDomainSeparator;
         uint256 windowCloseTimestamp;
-        (
-            v.stfCommitment,
-            l2Start,
-            l2End,
-            outputRoot,
-            l1BlockHash,
-            inputDomainSeparator,
-            windowCloseTimestamp
-        ) = abi.decode(
-            publicInputs,
-            (bytes32, uint256, uint256, bytes32, bytes32, bytes32, uint256)
-        );
+        (v.stfCommitment, l2Start, l2End, outputRoot, l1BlockHash, inputDomainSeparator, windowCloseTimestamp) =
+            abi.decode(publicInputs, (bytes32, uint256, uint256, bytes32, bytes32, bytes32, uint256));
 
         // ── Cheap validation first (comparisons before keccak/SLOAD) ────────
         // Domain binding — single SLOAD + comparison
@@ -521,20 +524,12 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
     }
 
     /// @dev Core submission logic. Returns the proverSetDigest for optional event emission.
-    function _submit(
-        bytes calldata proof,
-        bytes calldata publicInputs
-    ) internal returns (bytes32) {
+    function _submit(bytes calldata proof, bytes calldata publicInputs) internal returns (bytes32) {
         ValidatedSubmission memory v = _validateAndPrepare(publicInputs);
 
         // ── Interactions ──────────────────────────────────────────────────────
-        (
-            bool valid,
-            bytes32 verifiedStfCommitment,
-            bytes32 programVKey,
-            bytes32 policyHash,
-            bytes32 proverSetDigest
-        ) = adapter.verify(proof, publicInputs);
+        (bool valid, bytes32 verifiedStfCommitment, bytes32 programVKey, bytes32 policyHash, bytes32 proverSetDigest) =
+            adapter.verify(proof, publicInputs);
         if (!valid) revert ProofInvalid();
         if (verifiedStfCommitment != v.stfCommitment) revert StfMismatch();
 
@@ -544,21 +539,15 @@ contract WorldlineFinalizer is Initializable, Ownable2StepUpgradeable, UUPSUpgra
 
     /// @dev Routed submission logic. Dispatches verification through the ProofRouter
     ///      instead of calling the default adapter directly.
-    function _submitRouted(
-        uint8 proofSystemId,
-        bytes calldata proof,
-        bytes calldata publicInputs
-    ) internal returns (bytes32) {
+    function _submitRouted(uint8 proofSystemId, bytes calldata proof, bytes calldata publicInputs)
+        internal
+        returns (bytes32)
+    {
         ValidatedSubmission memory v = _validateAndPrepare(publicInputs);
 
         // ── Interactions: route through ProofRouter ───────────────────────────
-        (
-            bool valid,
-            bytes32 verifiedStfCommitment,
-            bytes32 programVKey,
-            bytes32 policyHash,
-            bytes32 proverSetDigest
-        ) = proofRouter.routeProofAggregated(proofSystemId, proof, publicInputs);
+        (bool valid, bytes32 verifiedStfCommitment, bytes32 programVKey, bytes32 policyHash, bytes32 proverSetDigest) =
+            proofRouter.routeProofAggregated(proofSystemId, proof, publicInputs);
         if (!valid) revert ProofInvalid();
         if (verifiedStfCommitment != v.stfCommitment) revert StfMismatch();
 

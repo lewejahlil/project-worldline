@@ -30,10 +30,8 @@ contract AccessControlTest is WorldlineTestBase {
         ownable = new OwnableHarness();
 
         WorldlineOutputsRegistry outImpl = new WorldlineOutputsRegistry();
-        ERC1967Proxy outProxy = new ERC1967Proxy(
-            address(outImpl),
-            abi.encodeCall(WorldlineOutputsRegistry.initialize, (1 days))
-        );
+        ERC1967Proxy outProxy =
+            new ERC1967Proxy(address(outImpl), abi.encodeCall(WorldlineOutputsRegistry.initialize, (1 days)));
         outputsRegistry = WorldlineOutputsRegistry(address(outProxy));
 
         ViewMockGroth16Verifier mock = new ViewMockGroth16Verifier();
@@ -112,28 +110,13 @@ contract AccessControlTest is WorldlineTestBase {
     /// @notice initialize reverts if timelock < 1 day.
     function test_outputsRegistry_constructor_revert_timelockTooShort() public {
         WorldlineOutputsRegistry impl = new WorldlineOutputsRegistry();
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                WorldlineOutputsRegistry.TimelockTooShort.selector,
-                1 days,
-                12 hours
-            )
-        );
-        new ERC1967Proxy(
-            address(impl),
-            abi.encodeCall(WorldlineOutputsRegistry.initialize, (12 hours))
-        );
+        vm.expectRevert(abi.encodeWithSelector(WorldlineOutputsRegistry.TimelockTooShort.selector, 1 days, 12 hours));
+        new ERC1967Proxy(address(impl), abi.encodeCall(WorldlineOutputsRegistry.initialize, (12 hours)));
     }
 
     /// @notice setMinTimelock(0.5 days) reverts with TimelockTooShort.
     function test_setMinTimelock_revert_belowFloor() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                WorldlineOutputsRegistry.TimelockTooShort.selector,
-                1 days,
-                12 hours
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(WorldlineOutputsRegistry.TimelockTooShort.selector, 1 days, 12 hours));
         outputsRegistry.setMinTimelock(12 hours);
     }
 
@@ -156,26 +139,17 @@ contract AccessControlTest is WorldlineTestBase {
     /// @notice scheduleAdapterChange + immediate activateAdapterChange reverts.
     function test_activateAdapter_revert_timelockActive() public {
         ViewMockGroth16Verifier newMock = new ViewMockGroth16Verifier();
-        Groth16ZkAdapter newAdapter = new Groth16ZkAdapter(
-            address(newMock), AC_PROGRAM_VKEY, AC_POLICY_HASH
-        );
+        Groth16ZkAdapter newAdapter = new Groth16ZkAdapter(address(newMock), AC_PROGRAM_VKEY, AC_POLICY_HASH);
         finalizer.scheduleAdapterChange(address(newAdapter));
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                WorldlineFinalizer.TimelockActive.selector,
-                block.timestamp + 1 days
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(WorldlineFinalizer.TimelockActive.selector, block.timestamp + 1 days));
         finalizer.activateAdapterChange();
     }
 
     /// @notice scheduleAdapterChange + warp past delay + activateAdapterChange succeeds.
     function test_activateAdapter_afterTimelock() public {
         ViewMockGroth16Verifier newMock = new ViewMockGroth16Verifier();
-        Groth16ZkAdapter newAdapter = new Groth16ZkAdapter(
-            address(newMock), AC_PROGRAM_VKEY, AC_POLICY_HASH
-        );
+        Groth16ZkAdapter newAdapter = new Groth16ZkAdapter(address(newMock), AC_PROGRAM_VKEY, AC_POLICY_HASH);
         finalizer.scheduleAdapterChange(address(newAdapter));
 
         vm.warp(block.timestamp + 1 days + 1);
@@ -198,13 +172,7 @@ contract AccessControlTest is WorldlineTestBase {
 
     /// @notice setAdapterChangeDelay reverts below MIN_ADAPTER_DELAY.
     function test_setAdapterDelay_revert_belowFloor() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                WorldlineFinalizer.AdapterDelayTooShort.selector,
-                1 days,
-                1 hours
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(WorldlineFinalizer.AdapterDelayTooShort.selector, 1 days, 1 hours));
         finalizer.setAdapterChangeDelay(1 hours);
     }
 
@@ -217,9 +185,76 @@ contract AccessControlTest is WorldlineTestBase {
     /// @notice Non-owner cannot schedule adapter change.
     function test_scheduleAdapter_revert_notOwner() public {
         vm.prank(stranger);
-        vm.expectRevert(
-            abi.encodeWithSelector(bytes4(keccak256("OwnableUnauthorizedAccount(address)")), stranger)
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("OwnableUnauthorizedAccount(address)")), stranger));
         finalizer.scheduleAdapterChange(address(adapter));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // H-01: Timelocked ProofRouter changes on WorldlineFinalizer
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /// @notice setProofRouter succeeds when no router is currently set.
+    function test_setProofRouter_firstTime_succeeds() public {
+        address dummyRouter = address(0x1234);
+        finalizer.setProofRouter(dummyRouter);
+        assertEq(address(finalizer.proofRouter()), dummyRouter);
+    }
+
+    /// @notice setProofRouter reverts when a router is already set.
+    function test_setProofRouter_alreadySet_reverts() public {
+        finalizer.setProofRouter(address(0x1234));
+        vm.expectRevert(WorldlineFinalizer.ProofRouterAlreadySet.selector);
+        finalizer.setProofRouter(address(0x5678));
+    }
+
+    /// @notice setProofRouter reverts with zero address.
+    function test_setProofRouter_zeroAddress_reverts() public {
+        vm.expectRevert(WorldlineFinalizer.ProofRouterZero.selector);
+        finalizer.setProofRouter(address(0));
+    }
+
+    /// @notice scheduleProofRouterChange + immediate activateProofRouterChange reverts.
+    function test_activateProofRouter_revert_timelockActive() public {
+        finalizer.setProofRouter(address(0x1234));
+        finalizer.scheduleProofRouterChange(address(0x5678));
+
+        vm.expectRevert(abi.encodeWithSelector(WorldlineFinalizer.TimelockActive.selector, block.timestamp + 1 days));
+        finalizer.activateProofRouterChange();
+    }
+
+    /// @notice scheduleProofRouterChange + warp past delay + activateProofRouterChange succeeds.
+    function test_activateProofRouter_afterTimelock_succeeds() public {
+        finalizer.setProofRouter(address(0x1234));
+        address newRouter = address(0x5678);
+        finalizer.scheduleProofRouterChange(newRouter);
+
+        vm.warp(block.timestamp + 1 days + 1);
+        finalizer.activateProofRouterChange();
+
+        assertEq(address(finalizer.proofRouter()), newRouter);
+    }
+
+    /// @notice activateProofRouterChange reverts when nothing is scheduled.
+    function test_activateProofRouter_revert_noPending() public {
+        vm.expectRevert(WorldlineFinalizer.NoPendingProofRouter.selector);
+        finalizer.activateProofRouterChange();
+    }
+
+    /// @notice scheduleProofRouterChange with address(0) disables router after timelock.
+    function test_scheduleProofRouter_zero_disablesRouter() public {
+        finalizer.setProofRouter(address(0x1234));
+        finalizer.scheduleProofRouterChange(address(0));
+
+        vm.warp(block.timestamp + 1 days + 1);
+        finalizer.activateProofRouterChange();
+
+        assertEq(address(finalizer.proofRouter()), address(0));
+    }
+
+    /// @notice Non-owner cannot schedule a ProofRouter change.
+    function test_scheduleProofRouter_nonOwner_reverts() public {
+        vm.prank(stranger);
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("OwnableUnauthorizedAccount(address)")), stranger));
+        finalizer.scheduleProofRouterChange(address(0x1234));
     }
 }

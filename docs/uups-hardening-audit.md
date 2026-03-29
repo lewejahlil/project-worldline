@@ -448,19 +448,13 @@ proof-submission path.
 
 **Severity:** MEDIUM
 **Files:** All four contracts
-**Status:** Open
+**Status:** CLOSED — Not Applicable (OZ v5)
 
-None of the four `initialize()` functions call `__UUPSUpgradeable_init()`. In OZ v5
-this function is a no-op (`onlyInitializing` guard + empty body), so there is no
-functional impact today. However, OZ recommends calling the full initialization chain,
-and a future OZ major-version upgrade may add logic to this function.
-
-**Affected lines:**
-
-- `WorldlineFinalizer.initialize()` (line 175)
-- `WorldlineRegistry.initialize()` (line 98)
-- `WorldlineOutputsRegistry.initialize()` (line 94)
-- `ProofRouter.initialize()` (line 68)
+**Resolution (Chunk 2 investigation):** In OpenZeppelin v5, `UUPSUpgradeable` is
+re-exported from `@openzeppelin/contracts` as a stateless contract
+(`@custom:stateless`). It has no `__UUPSUpgradeable_init()` function — the function
+does not exist in v5. The audit finding was based on OZ v4 conventions. No code change
+is required or possible; the init chain is complete as written.
 
 ---
 
@@ -608,13 +602,13 @@ The following audit checklist items were examined and found to have no issues:
 
 ## Resolution Plan
 
-| ID   | Severity | Planned Chunk | Description                                                       |
-| ---- | -------- | ------------- | ----------------------------------------------------------------- |
-| H-01 | HIGH     | Chunk 2       | Add timelock for `setProofRouter`                                 |
-| H-02 | HIGH     | Chunk 2       | Add timelock for `registerAdapter`/`removeAdapter` in ProofRouter |
-| M-01 | MEDIUM   | Chunk 2       | Add `__UUPSUpgradeable_init()` to all four `initialize()`         |
-| M-02 | MEDIUM   | Chunk 3       | Add `__gap` arrays to all four contracts                          |
-| M-03 | MEDIUM   | Chunk 2       | Add ProofRouter deployment to `deploy.ts`                         |
-| M-04 | MEDIUM   | Chunk 3       | Expand upgrade test suite                                         |
-| L-01 | LOW      | Chunk 4       | Add upgrade-authorization event (or document deferral)            |
-| L-02 | LOW      | Chunk 4       | Replace `FacadeTimelockActive(0)` with `FacadeAlreadySet` error   |
+| ID   | Severity | Status               | Description                                                     |
+| ---- | -------- | -------------------- | --------------------------------------------------------------- |
+| H-01 | HIGH     | RESOLVED — Chunk 2   | Add timelock for `setProofRouter`                               |
+| H-02 | HIGH     | RESOLVED — Chunk 2   | Add timelock for `removeAdapter` in ProofRouter                 |
+| M-01 | MEDIUM   | CLOSED — N/A (OZ v5) | `__UUPSUpgradeable_init()` does not exist in OZ v5              |
+| M-02 | MEDIUM   | Chunk 3              | Add `__gap` arrays to all four contracts                        |
+| M-03 | MEDIUM   | RESOLVED — Chunk 2   | Add ProofRouter deployment to `deploy.ts`                       |
+| M-04 | MEDIUM   | Chunk 3              | Expand upgrade test suite                                       |
+| L-01 | LOW      | Chunk 4              | Add upgrade-authorization event (or document deferral)          |
+| L-02 | LOW      | Chunk 4              | Replace `FacadeTimelockActive(0)` with `FacadeAlreadySet` error |
