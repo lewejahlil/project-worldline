@@ -157,8 +157,8 @@ Proof Request → Prover Selection → Proving → Aggregation → Recursion →
 
 ## Summary by Category
 
-| Category | Gaps |
-|----------|------|
-| **Critical path** | #1 Poseidon digest, #2 batch size constraint, #3 recursion witness, #5 prover API |
+| Category                    | Gaps                                                                              |
+| --------------------------- | --------------------------------------------------------------------------------- |
+| **Critical path**           | #1 Poseidon digest, #2 batch size constraint, #3 recursion witness, #5 prover API |
 | **Required before mainnet** | #4 native verifiers, #6 job queue, #7 key management, #8 monitoring, #11 ceremony |
-| **Enhancement** | #9 indexer, #10 SDK, #12 devnet |
+| **Enhancement**             | #9 indexer, #10 SDK, #12 devnet                                                   |

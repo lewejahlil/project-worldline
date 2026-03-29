@@ -121,24 +121,28 @@ Every production source file was read across Solidity (`contracts/src/`, `contra
 ## Items Assessed but Not Recommended for This Pass
 
 ### Timelocked parameter pattern consolidation (WorldlineFinalizer)
+
 The 4 timelocked parameters (adapter, blobKzgVerifier, domainSeparator, genesisL2Block) follow an identical schedule/activate pattern. A `TimelockManager` library could deduplicate ~300 lines. **Not recommended now** because: (a) high effort — requires generic type handling across address/bytes32/uint256 values, (b) changes contract storage layout interaction, (c) audit reports reference the current pattern. Better as a v2 architectural change.
 
 ### Trait extraction for Rust aggregation strategies
+
 `Independent` and `Sequential` strategies duplicate ~40 lines of verification logic. Could extract a `StrategyExecutor` trait. **Deferred** — the duplication is small and the strategies may diverge further as the system matures.
 
 ### `as any` elimination in TypeScript tests (245 instances)
+
 Would require properly typing all contract interactions through typechain. **Deferred** — high effort, low risk-of-regression from the current state. Worth doing incrementally.
 
 ### Blob verification helper extraction (WorldlineFinalizer)
+
 The KZG vs hash-only routing in `submitZkValidityProofWithBlob()` could be extracted to `_verifyBlob()`. **Deferred** — the function is only 33 lines and the conditional is straightforward.
 
 ---
 
 ## Automated Analysis Summary
 
-| Tool | Finding |
-|------|---------|
-| `cargo machete` | 0 unused Rust dependencies |
-| `cargo clippy --pedantic` | 30 warnings (25 auto-fixable), mostly doc_markdown in halo2-circuit |
-| `depcheck` | 4 potentially unused npm deps: `circomlib`, `@openzeppelin/contracts`, `@openzeppelin/contracts-upgradeable`, `circomlibjs` — these are used by Forge remappings and circuit tests, likely false positives |
-| `solhint` | Not configured (no `.solhint.json`) |
+| Tool                      | Finding                                                                                                                                                                                                    |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cargo machete`           | 0 unused Rust dependencies                                                                                                                                                                                 |
+| `cargo clippy --pedantic` | 30 warnings (25 auto-fixable), mostly doc_markdown in halo2-circuit                                                                                                                                        |
+| `depcheck`                | 4 potentially unused npm deps: `circomlib`, `@openzeppelin/contracts`, `@openzeppelin/contracts-upgradeable`, `circomlibjs` — these are used by Forge remappings and circuit tests, likely false positives |
+| `solhint`                 | Not configured (no `.solhint.json`)                                                                                                                                                                        |
