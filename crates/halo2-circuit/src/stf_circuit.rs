@@ -20,11 +20,13 @@
 
 use halo2_proofs::{
     circuit::{Layouter, SimpleFloorPlanner, Value},
-    plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Fixed, Instance, Selector},
+    plonk::{
+        Advice, Circuit, Column, ConstraintSystem, Error, Expression, Fixed, Instance, Selector,
+    },
     poly::Rotation,
 };
 use halo2curves::bn256::Fr;
-use halo2curves::group::ff::Field;
+use halo2curves::group::ff::{Field, PrimeField};
 
 use crate::poseidon_compat::{
     poseidon_compress_3, poseidon_compress_7, PoseidonCompatChip, PoseidonCompatConfig,
@@ -57,6 +59,10 @@ pub struct WorldlineStfConfig {
     pub instance: Column<Instance>,
     /// Selector for range checks and constraints.
     pub selector: Selector,
+    /// Selector for bit decomposition rows (boolean + running sum accumulation).
+    pub decompose_selector: Selector,
+    /// Selector for the reconstruction equality check (batchSize = reconstructed + 1).
+    pub recon_selector: Selector,
     /// Fixed column for constants.
     pub fixed: Column<Fixed>,
     /// Poseidon chip configuration (circomlib-compatible).
@@ -167,10 +173,41 @@ impl Circuit<Fr> for WorldlineStfCircuit {
             vec![s * (val * check - expected)]
         });
 
+        // Bit decomposition gate: at each active row, enforce:
+        //   1. bit is boolean: bit * (1 - bit) = 0
+        //   2. running sum accumulation: running[next] = 2 * running[cur] + bit
+        // Uses advice[2] for bits, advice[3] for running sum accumulator.
+        let decompose_selector = meta.selector();
+        meta.create_gate("bit_decompose", |meta| {
+            let s = meta.query_selector(decompose_selector);
+            let bit = meta.query_advice(advice[2], Rotation::cur());
+            let running_cur = meta.query_advice(advice[3], Rotation::cur());
+            let running_next = meta.query_advice(advice[3], Rotation::next());
+            vec![
+                // bit ∈ {0, 1}
+                s.clone() * bit.clone() * (Expression::Constant(Fr::ONE) - bit.clone()),
+                // running[i+1] = 2 * running[i] + bit
+                s * (running_next - Expression::Constant(Fr::from(2)) * running_cur - bit),
+            ]
+        });
+
+        // Reconstruction equality gate: enforce batchSize = reconstructed + 1.
+        // Uses advice[2] for batchSize (copy-constrained), advice[3] for reconstructed
+        // (copy-constrained from the final running sum cell).
+        let recon_selector = meta.selector();
+        meta.create_gate("reconstruction_check", |meta| {
+            let s = meta.query_selector(recon_selector);
+            let batch_size = meta.query_advice(advice[2], Rotation::cur());
+            let reconstructed = meta.query_advice(advice[3], Rotation::cur());
+            vec![s * (batch_size - reconstructed - Expression::Constant(Fr::ONE))]
+        });
+
         WorldlineStfConfig {
             advice,
             instance,
             selector,
+            decompose_selector,
+            recon_selector,
             fixed,
             poseidon_config,
         }
@@ -323,31 +360,75 @@ impl Circuit<Fr> for WorldlineStfCircuit {
             },
         )?;
 
-        // batchSize ≤ 1024: enforce (batchSize - 1) fits in 10 bits
-        // (batchSize - 1) must be in [0, 1023], so batchSize in [1, 1024].
-        // We check: batchSize * (1025 - batchSize) > 0, i.e., both factors nonzero,
-        // meaning batchSize ∈ [1, 1024].
-        // Actually, for a field element this doesn't directly work.
-        // Instead: enforce (MAX_BATCH_SIZE + 1 - batchSize) * inverse = 1
-        // This proves (1025 - batchSize) != 0, i.e., batchSize != 1025.
-        // Combined with batchSize >= 1 and the fact that batchSize is assigned from
-        // a u64, this suffices for our range [1, 1024].
-        //
-        // For full soundness, we decompose (batchSize - 1) into 10 bits.
-        layouter.assign_region(
-            || "batch_upper_bound",
+        // batchSize ≤ 1024: decompose (batchSize - 1) into 10 bits.
+        // If batchSize ∈ [1, 1024] then (batchSize - 1) ∈ [0, 1023] fits in 10 bits.
+        // The running sum gate constrains: running[i+1] = 2 * running[i] + bit[i],
+        // with running[0] = 0 and each bit ∈ {0, 1}. After 10 rows,
+        // running[10] = sum(bit_i * 2^i) ∈ [0, 1023].
+        // The reconstruction gate then constrains: batchSize = running[10] + 1.
+        let final_running_cell = layouter.assign_region(
+            || "batch_bit_decompose",
             |mut region| {
-                config.selector.enable(&mut region, 0)?;
+                // Extract 10 bits of (batchSize - 1), MSB first for running sum.
+                let bits: Value<[bool; 10]> = self.inputs.batch_size.map(|bs| {
+                    let val = bs - Fr::ONE;
+                    let repr = val.to_repr();
+                    let mut b = [false; 10];
+                    for i in 0..10 {
+                        b[i] = (repr[i / 8] >> (i % 8)) & 1 == 1;
+                    }
+                    b
+                });
 
-                let diff = self
-                    .inputs
-                    .batch_size
-                    .map(|b| Fr::from(MAX_BATCH_SIZE + 1) - b);
-                let diff_inv = diff.map(|d| d.invert().unwrap_or(Fr::ZERO));
+                // running[0] = 0
+                let mut running_cell = region.assign_advice(
+                    || "running_0",
+                    config.advice[3],
+                    0,
+                    || Value::known(Fr::ZERO),
+                )?;
 
-                region.assign_advice(|| "1025-batch", config.advice[2], 0, || diff)?;
-                region.assign_advice(|| "diff_inv", config.advice[3], 0, || diff_inv)?;
-                region.assign_fixed(|| "one", config.fixed, 0, || Value::known(Fr::ONE))?;
+                for i in 0..10 {
+                    config.decompose_selector.enable(&mut region, i)?;
+                    let bit_idx = 9 - i; // MSB first
+                    let bit_val = bits.map(|b| if b[bit_idx] { Fr::ONE } else { Fr::ZERO });
+                    region.assign_advice(
+                        || format!("bit_{bit_idx}"),
+                        config.advice[2],
+                        i,
+                        || bit_val,
+                    )?;
+
+                    // running[i+1] = 2 * running[i] + bit
+                    let next_val = running_cell
+                        .value()
+                        .copied()
+                        .and_then(|r| bit_val.map(|b| Fr::from(2) * r + b));
+                    running_cell = region.assign_advice(
+                        || format!("running_{}", i + 1),
+                        config.advice[3],
+                        i + 1,
+                        || next_val,
+                    )?;
+                }
+
+                Ok(running_cell)
+            },
+        )?;
+
+        // Reconstruction check: batchSize = running[10] + 1
+        // Both cells are copy-constrained from their original assignments.
+        layouter.assign_region(
+            || "batch_recon_check",
+            |mut region| {
+                config.recon_selector.enable(&mut region, 0)?;
+                batch_size_cell.copy_advice(|| "batch_size", &mut region, config.advice[2], 0)?;
+                final_running_cell.copy_advice(
+                    || "reconstructed",
+                    &mut region,
+                    config.advice[3],
+                    0,
+                )?;
                 Ok(())
             },
         )?;
@@ -635,5 +716,50 @@ mod tests {
         let public_inputs = vec![vec![Fr::from(999u64), Fr::from(888u64)]];
         let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
         assert!(prover.verify().is_err(), "Wrong public outputs should fail");
+    }
+
+    // ── Soundness tests: batch size out-of-range values ─────────────────
+
+    #[test]
+    fn test_invalid_batch_size_2000() {
+        // This was the soundness gap: the old constraint only checked != 1025.
+        // With proper 10-bit decomposition, any value > 1024 must fail.
+        let (psr, posr, bc, _, pids, psids, qc) = valid_inputs();
+        let bs = Fr::from(2000u64);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
+        assert!(prover.verify().is_err(), "batchSize=2000 should fail");
+    }
+
+    #[test]
+    fn test_invalid_batch_size_65536() {
+        let (psr, posr, bc, _, pids, psids, qc) = valid_inputs();
+        let bs = Fr::from(65536u64);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
+        assert!(prover.verify().is_err(), "batchSize=65536 should fail");
+    }
+
+    #[test]
+    fn test_invalid_batch_size_max_u64() {
+        let (psr, posr, bc, _, pids, psids, qc) = valid_inputs();
+        let bs = Fr::from(u64::MAX);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
+        assert!(prover.verify().is_err(), "batchSize=u64::MAX should fail");
+    }
+
+    #[test]
+    fn test_valid_batch_size_512() {
+        // Mid-range value should pass
+        let (psr, posr, bc, _, pids, psids, qc) = valid_inputs();
+        let bs = Fr::from(512u64);
+        let (circuit, public_inputs) =
+            make_circuit_and_instances(psr, posr, bc, bs, pids, psids, qc);
+        let prover = MockProver::run(K, &circuit, public_inputs).unwrap();
+        prover.assert_satisfied();
     }
 }
