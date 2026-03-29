@@ -313,20 +313,12 @@ describe("UUPS Upgrade Tests", () => {
     });
 
     it("V2: version() returns 2", async () => {
-      const outputsV2 = await ethers.getContractAt(
-        "WorldlineOutputsRegistryV2",
-        proxyAddr,
-        owner
-      );
+      const outputsV2 = await ethers.getContractAt("WorldlineOutputsRegistryV2", proxyAddr, owner);
       expect(await outputsV2.version()).to.equal(2);
     });
 
     it("V2: all V1 state preserved (minTimelock, active entry)", async () => {
-      const outputsV2 = await ethers.getContractAt(
-        "WorldlineOutputsRegistryV2",
-        proxyAddr,
-        owner
-      );
+      const outputsV2 = await ethers.getContractAt("WorldlineOutputsRegistryV2", proxyAddr, owner);
       expect(await outputsV2.minTimelock()).to.equal(MIN_TIMELOCK);
       expect(await outputsV2.isActive(dKey)).to.be.true;
     });
@@ -336,11 +328,7 @@ describe("UUPS Upgrade Tests", () => {
       const newImpl = await V2.deploy();
       await newImpl.waitForDeployment();
 
-      const proxy = await ethers.getContractAt(
-        "WorldlineOutputsRegistryV2",
-        proxyAddr,
-        nonOwner
-      );
+      const proxy = await ethers.getContractAt("WorldlineOutputsRegistryV2", proxyAddr, nonOwner);
       await expect((proxy as any).upgradeToAndCall(await newImpl.getAddress(), "0x")).to.be
         .reverted;
     });
@@ -354,13 +342,29 @@ describe("UUPS Upgrade Tests", () => {
       const FinalizerFactory = await ethers.getContractFactory("WorldlineFinalizer", owner);
       const proxy = await upgrades.deployProxy(
         FinalizerFactory,
-        [await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress],
+        [
+          await adapter.getAddress(),
+          DOMAIN,
+          MAX_ACCEPTANCE_DELAY,
+          GENESIS_L2_BLOCK,
+          ethers.ZeroAddress
+        ],
         { kind: "uups", initializer: "initialize" }
       );
       await proxy.waitForDeployment();
-      const finalizer = await ethers.getContractAt("WorldlineFinalizer", await proxy.getAddress(), owner);
+      const finalizer = await ethers.getContractAt(
+        "WorldlineFinalizer",
+        await proxy.getAddress(),
+        owner
+      );
       await expect(
-        finalizer.initialize(await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress)
+        finalizer.initialize(
+          await adapter.getAddress(),
+          DOMAIN,
+          MAX_ACCEPTANCE_DELAY,
+          GENESIS_L2_BLOCK,
+          ethers.ZeroAddress
+        )
       ).to.be.reverted;
     });
 
@@ -377,9 +381,15 @@ describe("UUPS Upgrade Tests", () => {
       const verifier = await MockVerifier.deploy();
       await verifier.waitForDeployment();
       const RegistryFactory = await ethers.getContractFactory("WorldlineRegistry", owner);
-      const proxy = await upgrades.deployProxy(RegistryFactory, [await verifier.getAddress()], { kind: "uups" });
+      const proxy = await upgrades.deployProxy(RegistryFactory, [await verifier.getAddress()], {
+        kind: "uups"
+      });
       await proxy.waitForDeployment();
-      const registry = await ethers.getContractAt("WorldlineRegistry", await proxy.getAddress(), owner);
+      const registry = await ethers.getContractAt(
+        "WorldlineRegistry",
+        await proxy.getAddress(),
+        owner
+      );
       await expect(registry.initialize(await verifier.getAddress())).to.be.reverted;
     });
 
@@ -387,7 +397,11 @@ describe("UUPS Upgrade Tests", () => {
       const OutputsFactory = await ethers.getContractFactory("WorldlineOutputsRegistry", owner);
       const proxy = await upgrades.deployProxy(OutputsFactory, [MIN_TIMELOCK], { kind: "uups" });
       await proxy.waitForDeployment();
-      const outputs = await ethers.getContractAt("WorldlineOutputsRegistry", await proxy.getAddress(), owner);
+      const outputs = await ethers.getContractAt(
+        "WorldlineOutputsRegistry",
+        await proxy.getAddress(),
+        owner
+      );
       await expect(outputs.initialize(MIN_TIMELOCK)).to.be.reverted;
     });
   });
@@ -401,7 +415,13 @@ describe("UUPS Upgrade Tests", () => {
       const impl = await FinalizerFactory.deploy();
       await impl.waitForDeployment();
       await expect(
-        impl.initialize(await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, GENESIS_L2_BLOCK, ethers.ZeroAddress)
+        impl.initialize(
+          await adapter.getAddress(),
+          DOMAIN,
+          MAX_ACCEPTANCE_DELAY,
+          GENESIS_L2_BLOCK,
+          ethers.ZeroAddress
+        )
       ).to.be.reverted;
     });
 

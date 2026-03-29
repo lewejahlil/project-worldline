@@ -454,7 +454,7 @@ proof-submission path.
 `registerAdapter()` can only register into **empty slots** — it reverts with
 `AdapterAlreadyRegistered` if the slot is already occupied. Registering into an empty
 slot is purely additive: it adds new routing capability without disrupting any existing
-routing path. The security-critical operation is *replacing* an existing adapter (slot A →
+routing path. The security-critical operation is _replacing_ an existing adapter (slot A →
 slot B), which requires completing the timelocked `removeAdapter` flow first (at least 1
 day of observable warning via `AdapterRemovalScheduled`), then re-registering into the
 now-empty slot (observable via `AdapterRegistered`). The timelock on removal is the
@@ -555,6 +555,7 @@ WorldlineFinalizerV2 and ProofRouterV2 test contracts exist in
 WorldlineOutputsRegistry, so items 1–2 require creating those test contracts.
 
 **Resolution (Chunk 3):**
+
 - Created `contracts/src/test/WorldlineRegistryV2.sol` with `@custom:oz-upgrades-from WorldlineRegistry`
 - Created `contracts/src/test/WorldlineOutputsRegistryV2.sol` with `@custom:oz-upgrades-from WorldlineOutputsRegistry`
 - Added WorldlineRegistry v1→v2 upgrade test block: deploy, write state, upgrade, version check, state preservation, non-owner revert

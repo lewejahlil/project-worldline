@@ -93,12 +93,14 @@ See `docs/coding-standards.md` for full conventions. Key rules:
 ## UUPS Proxy Architecture
 
 **Proxied contracts** (ERC-1967 UUPS, upgradeable):
+
 - `WorldlineFinalizer` — accepts ZK proofs, enforces domain/contiguity/staleness
 - `ProofRouter` — dispatches proofs to registered adapters by proof system ID
 - `WorldlineRegistry` — stores circuit/driver/plugin metadata with timelocked facade
 - `WorldlineOutputsRegistry` — timelocked registry for programVKey/policyHash/oracle tuples
 
 All four proxied contracts:
+
 - Use `_disableInitializers()` in constructors
 - Have `__gap` storage reservations sized to 50 total slots per contract
 - Emit `UpgradeAuthorized(newImpl, authorizer)` from `_authorizeUpgrade()`
@@ -106,6 +108,7 @@ All four proxied contracts:
 - Store ownership via OZ v5 EIP-7201 namespaced storage (no sequential slot conflicts)
 
 **Non-proxied contracts** (immutable, not upgradeable):
+
 - `Groth16ZkAdapter`, `PlonkAdapter`, `Halo2ZkAdapter` — ZK adapters (constructor-set params)
 - `BlobVerifier`, `BlobKzgVerifier` — EIP-4844 blob verification utilities
 - All verifier contracts under `contracts/src/zk/`
