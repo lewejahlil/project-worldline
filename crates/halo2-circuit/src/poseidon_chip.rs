@@ -13,9 +13,10 @@ use halo2curves::bn256::Fr;
 use halo2curves::group::ff::Field;
 use poseidon::Poseidon;
 
-/// Circomlib-compatible Poseidon parameters for BN254.
-/// circomlib Poseidon(3) uses t=4, `R_F=8`, `R_P=56`.
-/// circomlib Poseidon(7) uses t=8, `R_F=8`, `R_P=57`.
+/// PSE sponge-mode Poseidon parameters for BN254.
+/// PSE sponge Poseidon(3) uses t=4, `R_F=8`, `R_P=56`.
+/// PSE sponge Poseidon(7) uses t=8, `R_F=8`, `R_P=57`.
+/// Note: circomlib compression-mode uses `R_P=64` for t=8 — see `poseidon_compat.rs`.
 pub const R_F: usize = 8;
 pub const R_P_T4: usize = 56;
 pub const R_P_T8: usize = 57;
