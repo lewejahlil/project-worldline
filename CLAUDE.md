@@ -64,17 +64,17 @@ remappings.txt         → Forge import remappings (@openzeppelin → node_modul
 
 ## Test Counts
 
-- Hardhat: 203 tests
-- Forge: 97 tests (10 suites, includes fuzz tests at 256 runs each)
+- Hardhat: 219 tests
+- Forge: 113 tests (10 suites, includes fuzz tests at 256 runs each)
 - Rust: 238 tests (12 ignored — require snarkjs/halo2-verify binaries)
 
 ## Commands
 
 ```bash
 cd circuits && npx mocha test/ --timeout 10000   # circuit tests
-npx hardhat test                                   # solidity tests (203 tests)
+npx hardhat test                                   # solidity tests (219 tests)
 REPORT_GAS=true npx hardhat test                   # gas report
-forge test                                         # forge unit + fuzz tests (97 tests)
+forge test                                         # forge unit + fuzz tests (113 tests)
 cargo test --workspace                             # rust tests (238 tests)
 cargo bench                                        # criterion benchmarks
 ```
@@ -89,6 +89,29 @@ See `docs/coding-standards.md` for full conventions. Key rules:
 - TypeScript tests: use shared helpers from `test/integration/deployment-fixtures.ts` (`enablePermissionless()`, `computeStfCommitment()`, `encodeProof()`, `findEventLog()`)
 - Forge tests: inherit from `WorldlineTestBase.t.sol` when testing finalizer + Groth16 adapter setup
 - Commits: `scope: description` (e.g., `contracts: add Plonk adapter`)
+
+## UUPS Proxy Architecture
+
+**Proxied contracts** (ERC-1967 UUPS, upgradeable):
+
+- `WorldlineFinalizer` — accepts ZK proofs, enforces domain/contiguity/staleness
+- `ProofRouter` — dispatches proofs to registered adapters by proof system ID
+- `WorldlineRegistry` — stores circuit/driver/plugin metadata with timelocked facade
+- `WorldlineOutputsRegistry` — timelocked registry for programVKey/policyHash/oracle tuples
+
+All four proxied contracts:
+
+- Use `_disableInitializers()` in constructors
+- Have `__gap` storage reservations sized to 50 total slots per contract
+- Emit `UpgradeAuthorized(newImpl, authorizer)` from `_authorizeUpgrade()`
+- Enforce `onlyOwner` on `_authorizeUpgrade()`
+- Store ownership via OZ v5 EIP-7201 namespaced storage (no sequential slot conflicts)
+
+**Non-proxied contracts** (immutable, not upgradeable):
+
+- `Groth16ZkAdapter`, `PlonkAdapter`, `Halo2ZkAdapter` — ZK adapters (constructor-set params)
+- `BlobVerifier`, `BlobKzgVerifier` — EIP-4844 blob verification utilities
+- All verifier contracts under `contracts/src/zk/`
 
 ## Key Internal Patterns
 

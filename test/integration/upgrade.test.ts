@@ -196,28 +196,32 @@ describe("UUPS Upgrade Tests", () => {
 
   // ── WorldlineRegistry ───────────────────────────────────────────────────────
 
-  describe("WorldlineRegistry upgrade (verify proxy works)", () => {
+  describe("WorldlineRegistry upgrade", () => {
+    let proxyAddr: string;
     let registry: any;
+    let verifierAddr: string;
+    let circuitId: string;
 
     it("deploys behind proxy", async () => {
       const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier", owner);
       const verifier = await MockVerifier.deploy();
       await verifier.waitForDeployment();
+      verifierAddr = await verifier.getAddress();
 
       const RegistryFactory = await ethers.getContractFactory("WorldlineRegistry", owner);
-      const proxy = await upgrades.deployProxy(RegistryFactory, [await verifier.getAddress()], {
+      const proxy = await upgrades.deployProxy(RegistryFactory, [verifierAddr], {
         kind: "uups"
       });
       await proxy.waitForDeployment();
 
-      registry = await ethers.getContractAt("WorldlineRegistry", await proxy.getAddress(), owner);
-      expect(await registry.getAddress()).to.be.properAddress;
-      // defaultVerifier should be set from initialize
-      expect(await registry.defaultVerifier()).to.equal(await verifier.getAddress());
+      proxyAddr = await proxy.getAddress();
+      registry = await ethers.getContractAt("WorldlineRegistry", proxyAddr, owner);
+      expect(proxyAddr).to.be.properAddress;
+      expect(await registry.defaultVerifier()).to.equal(verifierAddr);
     });
 
     it("can register circuit through proxy", async () => {
-      const circuitId = ethers.keccak256(ethers.toUtf8Bytes("test-circuit-id"));
+      circuitId = ethers.keccak256(ethers.toUtf8Bytes("test-circuit-id"));
       await (
         await registry.registerCircuit(circuitId, "Test circuit", ethers.ZeroAddress, "ipfs://test")
       ).wait();
@@ -225,49 +229,224 @@ describe("UUPS Upgrade Tests", () => {
       const circuit = await registry.getCircuit(circuitId);
       expect(circuit.id).to.equal(circuitId);
     });
+
+    it("upgrades to V2", async () => {
+      const V2Factory = await ethers.getContractFactory("WorldlineRegistryV2", owner);
+      const upgraded = await upgrades.upgradeProxy(proxyAddr, V2Factory, {
+        kind: "uups",
+        unsafeAllow: ["missing-initializer"]
+      });
+      await upgraded.waitForDeployment();
+
+      expect(await upgraded.getAddress()).to.equal(proxyAddr);
+    });
+
+    it("V2: version() returns 2", async () => {
+      const registryV2 = await ethers.getContractAt("WorldlineRegistryV2", proxyAddr, owner);
+      expect(await registryV2.version()).to.equal(2);
+    });
+
+    it("V2: all V1 state preserved (defaultVerifier, registered circuit)", async () => {
+      const registryV2 = await ethers.getContractAt("WorldlineRegistryV2", proxyAddr, owner);
+      expect(await registryV2.defaultVerifier()).to.equal(verifierAddr);
+      const circuit = await registryV2.getCircuit(circuitId);
+      expect(circuit.id).to.equal(circuitId);
+    });
+
+    it("non-owner cannot upgrade — reverts", async () => {
+      const V2 = await ethers.getContractFactory("WorldlineRegistryV2", nonOwner);
+      const newImpl = await V2.deploy();
+      await newImpl.waitForDeployment();
+
+      const proxy = await ethers.getContractAt("WorldlineRegistryV2", proxyAddr, nonOwner);
+      await expect((proxy as any).upgradeToAndCall(await newImpl.getAddress(), "0x")).to.be
+        .reverted;
+    });
   });
 
   // ── WorldlineOutputsRegistry ────────────────────────────────────────────────
 
-  describe("WorldlineOutputsRegistry upgrade (verify proxy works)", () => {
+  describe("WorldlineOutputsRegistry upgrade", () => {
+    let proxyAddr: string;
     let outputsRegistry: any;
+    let dKey: string;
 
     it("deploys behind proxy", async () => {
       const OutputsFactory = await ethers.getContractFactory("WorldlineOutputsRegistry", owner);
       const proxy = await upgrades.deployProxy(OutputsFactory, [MIN_TIMELOCK], { kind: "uups" });
       await proxy.waitForDeployment();
 
-      outputsRegistry = await ethers.getContractAt(
-        "WorldlineOutputsRegistry",
-        await proxy.getAddress(),
-        owner
-      );
-      expect(await outputsRegistry.getAddress()).to.be.properAddress;
+      proxyAddr = await proxy.getAddress();
+      outputsRegistry = await ethers.getContractAt("WorldlineOutputsRegistry", proxyAddr, owner);
+      expect(proxyAddr).to.be.properAddress;
       expect(await outputsRegistry.minTimelock()).to.equal(MIN_TIMELOCK);
     });
 
     it("can schedule and activate output entry through proxy", async () => {
       const chainIdHash = ethers.keccak256(ethers.toUtf8Bytes("chain-1"));
       const domainTag = ethers.keccak256(ethers.toUtf8Bytes("domain-tag-1"));
-      const dKey = await outputsRegistry.domainKey(chainIdHash, domainTag);
+      dKey = await outputsRegistry.domainKey(chainIdHash, domainTag);
 
       const programVKey = ethers.keccak256(ethers.toUtf8Bytes("program-vkey"));
       const policyHash = ethers.keccak256(ethers.toUtf8Bytes("policy-hash"));
-      // Use a dummy non-zero oracle address
       const oracle = ethers.Wallet.createRandom().address;
 
-      // Schedule the entry
       await (await outputsRegistry.schedule(dKey, programVKey, policyHash, oracle)).wait();
 
-      // Fast-forward past the timelock by mining blocks with time increase
       await ethers.provider.send("evm_increaseTime", [Number(MIN_TIMELOCK) + 1]);
       await ethers.provider.send("evm_mine", []);
 
-      // Activate the entry
       await (await outputsRegistry.activate(dKey)).wait();
 
-      // Verify it's active
       expect(await outputsRegistry.isActive(dKey)).to.be.true;
+    });
+
+    it("upgrades to V2", async () => {
+      const V2Factory = await ethers.getContractFactory("WorldlineOutputsRegistryV2", owner);
+      const upgraded = await upgrades.upgradeProxy(proxyAddr, V2Factory, {
+        kind: "uups",
+        unsafeAllow: ["missing-initializer"]
+      });
+      await upgraded.waitForDeployment();
+
+      expect(await upgraded.getAddress()).to.equal(proxyAddr);
+    });
+
+    it("V2: version() returns 2", async () => {
+      const outputsV2 = await ethers.getContractAt("WorldlineOutputsRegistryV2", proxyAddr, owner);
+      expect(await outputsV2.version()).to.equal(2);
+    });
+
+    it("V2: all V1 state preserved (minTimelock, active entry)", async () => {
+      const outputsV2 = await ethers.getContractAt("WorldlineOutputsRegistryV2", proxyAddr, owner);
+      expect(await outputsV2.minTimelock()).to.equal(MIN_TIMELOCK);
+      expect(await outputsV2.isActive(dKey)).to.be.true;
+    });
+
+    it("non-owner cannot upgrade — reverts", async () => {
+      const V2 = await ethers.getContractFactory("WorldlineOutputsRegistryV2", nonOwner);
+      const newImpl = await V2.deploy();
+      await newImpl.waitForDeployment();
+
+      const proxy = await ethers.getContractAt("WorldlineOutputsRegistryV2", proxyAddr, nonOwner);
+      await expect((proxy as any).upgradeToAndCall(await newImpl.getAddress(), "0x")).to.be
+        .reverted;
+    });
+  });
+
+  // ── Double-initialize reverts (all 4 contracts) ──────────────────────────────
+
+  describe("double-initialize reverts", () => {
+    it("WorldlineFinalizer: second initialize() reverts", async () => {
+      const { adapter } = await deployAdapterStack(owner);
+      const FinalizerFactory = await ethers.getContractFactory("WorldlineFinalizer", owner);
+      const proxy = await upgrades.deployProxy(
+        FinalizerFactory,
+        [
+          await adapter.getAddress(),
+          DOMAIN,
+          MAX_ACCEPTANCE_DELAY,
+          GENESIS_L2_BLOCK,
+          ethers.ZeroAddress
+        ],
+        { kind: "uups", initializer: "initialize" }
+      );
+      await proxy.waitForDeployment();
+      const finalizer = await ethers.getContractAt(
+        "WorldlineFinalizer",
+        await proxy.getAddress(),
+        owner
+      );
+      await expect(
+        finalizer.initialize(
+          await adapter.getAddress(),
+          DOMAIN,
+          MAX_ACCEPTANCE_DELAY,
+          GENESIS_L2_BLOCK,
+          ethers.ZeroAddress
+        )
+      ).to.be.reverted;
+    });
+
+    it("ProofRouter: second initialize() reverts", async () => {
+      const RouterFactory = await ethers.getContractFactory("ProofRouter", owner);
+      const proxy = await upgrades.deployProxy(RouterFactory, [], { kind: "uups" });
+      await proxy.waitForDeployment();
+      const router = await ethers.getContractAt("ProofRouter", await proxy.getAddress(), owner);
+      await expect(router.initialize()).to.be.reverted;
+    });
+
+    it("WorldlineRegistry: second initialize() reverts", async () => {
+      const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier", owner);
+      const verifier = await MockVerifier.deploy();
+      await verifier.waitForDeployment();
+      const RegistryFactory = await ethers.getContractFactory("WorldlineRegistry", owner);
+      const proxy = await upgrades.deployProxy(RegistryFactory, [await verifier.getAddress()], {
+        kind: "uups"
+      });
+      await proxy.waitForDeployment();
+      const registry = await ethers.getContractAt(
+        "WorldlineRegistry",
+        await proxy.getAddress(),
+        owner
+      );
+      await expect(registry.initialize(await verifier.getAddress())).to.be.reverted;
+    });
+
+    it("WorldlineOutputsRegistry: second initialize() reverts", async () => {
+      const OutputsFactory = await ethers.getContractFactory("WorldlineOutputsRegistry", owner);
+      const proxy = await upgrades.deployProxy(OutputsFactory, [MIN_TIMELOCK], { kind: "uups" });
+      await proxy.waitForDeployment();
+      const outputs = await ethers.getContractAt(
+        "WorldlineOutputsRegistry",
+        await proxy.getAddress(),
+        owner
+      );
+      await expect(outputs.initialize(MIN_TIMELOCK)).to.be.reverted;
+    });
+  });
+
+  // ── Implementation contract locked (_disableInitializers) ────────────────────
+
+  describe("implementation contract locked", () => {
+    it("WorldlineFinalizer implementation cannot be initialized", async () => {
+      const { adapter } = await deployAdapterStack(owner);
+      const FinalizerFactory = await ethers.getContractFactory("WorldlineFinalizer", owner);
+      const impl = await FinalizerFactory.deploy();
+      await impl.waitForDeployment();
+      await expect(
+        impl.initialize(
+          await adapter.getAddress(),
+          DOMAIN,
+          MAX_ACCEPTANCE_DELAY,
+          GENESIS_L2_BLOCK,
+          ethers.ZeroAddress
+        )
+      ).to.be.reverted;
+    });
+
+    it("ProofRouter implementation cannot be initialized", async () => {
+      const RouterFactory = await ethers.getContractFactory("ProofRouter", owner);
+      const impl = await RouterFactory.deploy();
+      await impl.waitForDeployment();
+      await expect(impl.initialize()).to.be.reverted;
+    });
+
+    it("WorldlineRegistry implementation cannot be initialized", async () => {
+      const MockVerifier = await ethers.getContractFactory("MockGroth16Verifier", owner);
+      const verifier = await MockVerifier.deploy();
+      await verifier.waitForDeployment();
+      const RegistryFactory = await ethers.getContractFactory("WorldlineRegistry", owner);
+      const impl = await RegistryFactory.deploy();
+      await impl.waitForDeployment();
+      await expect(impl.initialize(await verifier.getAddress())).to.be.reverted;
+    });
+
+    it("WorldlineOutputsRegistry implementation cannot be initialized", async () => {
+      const OutputsFactory = await ethers.getContractFactory("WorldlineOutputsRegistry", owner);
+      const impl = await OutputsFactory.deploy();
+      await impl.waitForDeployment();
+      await expect(impl.initialize(MIN_TIMELOCK)).to.be.reverted;
     });
   });
 });

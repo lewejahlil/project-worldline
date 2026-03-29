@@ -24,29 +24,19 @@ contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUP
     // ── Events ──────────────────────────────────────────────────────────────────
 
     event OutputScheduled(
-        bytes32 indexed domainKey,
-        bytes32 programVKey,
-        bytes32 policyHash,
-        address oracle,
-        uint256 activationTime
+        bytes32 indexed domainKey, bytes32 programVKey, bytes32 policyHash, address oracle, uint256 activationTime
     );
 
-    event OutputActivated(
-        bytes32 indexed domainKey,
-        bytes32 programVKey,
-        bytes32 policyHash,
-        address oracle
-    );
+    event OutputActivated(bytes32 indexed domainKey, bytes32 programVKey, bytes32 policyHash, address oracle);
 
     event OutputRescheduled(
-        bytes32 indexed domainKey,
-        bytes32 programVKey,
-        bytes32 policyHash,
-        address oracle,
-        uint256 activationTime
+        bytes32 indexed domainKey, bytes32 programVKey, bytes32 policyHash, address oracle, uint256 activationTime
     );
 
     event MinTimelockSet(uint256 minTimelock);
+    /// @notice Emitted when an upgrade is authorized. Complements the ERC1967 `Upgraded`
+    ///         event with explicit authorizer attribution (L-01 remediation).
+    event UpgradeAuthorized(address indexed newImplementation, address indexed authorizer);
 
     // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -80,6 +70,10 @@ contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUP
     /// @notice Pending entries awaiting activation.
     mapping(bytes32 => PendingEntry) public pendingEntries;
 
+    /// @dev Storage gap to allow future upgrades to add variables without shifting slots.
+    ///      Slots 0–2 are used (3 total); gap fills to 50.
+    uint256[47] private __gap;
+
     // ── Constructor ─────────────────────────────────────────────────────────────
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -100,7 +94,9 @@ contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUP
 
     // ── UUPS ────────────────────────────────────────────────────────────────────
 
-    function _authorizeUpgrade(address) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImpl) internal override onlyOwner {
+        emit UpgradeAuthorized(newImpl, msg.sender);
+    }
 
     // ── Admin ───────────────────────────────────────────────────────────────────
 
@@ -116,10 +112,7 @@ contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUP
     // ── Domain key helper ───────────────────────────────────────────────────────
 
     /// @notice Compute the domain key from chain ID hash and domain tag.
-    function domainKey(
-        bytes32 chainIdHash,
-        bytes32 domainTag
-    ) public pure returns (bytes32) {
+    function domainKey(bytes32 chainIdHash, bytes32 domainTag) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(chainIdHash, domainTag));
     }
 
@@ -132,12 +125,7 @@ contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUP
     /// @param policyHash  Hash of the canonical policy JSON (must be non-zero).
     /// @param oracle      Address of the oracle/adapter for this domain (must be non-zero).
     /// @dev MED-003 remediation: rejects zero-value oracle, programVKey, and policyHash.
-    function schedule(
-        bytes32 _domainKey,
-        bytes32 programVKey,
-        bytes32 policyHash,
-        address oracle
-    ) external onlyOwner {
+    function schedule(bytes32 _domainKey, bytes32 programVKey, bytes32 policyHash, address oracle) external onlyOwner {
         if (oracle == address(0)) revert OracleZero();
         if (programVKey == bytes32(0)) revert VKeyZero();
         if (policyHash == bytes32(0)) revert PolicyHashZero();
@@ -173,12 +161,8 @@ contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUP
         bytes32 policy = pending.policyHash;
         address oracleAddr = pending.oracle;
 
-        activeEntries[_domainKey] = OutputEntry({
-            programVKey: vkey,
-            policyHash: policy,
-            oracle: oracleAddr,
-            active: true
-        });
+        activeEntries[_domainKey] =
+            OutputEntry({programVKey: vkey, policyHash: policy, oracle: oracleAddr, active: true});
 
         delete pendingEntries[_domainKey];
 
@@ -193,9 +177,7 @@ contract WorldlineOutputsRegistry is Initializable, Ownable2StepUpgradeable, UUP
     }
 
     /// @notice Get the active entry for a domain.
-    function getActiveEntry(
-        bytes32 _domainKey
-    ) external view returns (OutputEntry memory) {
+    function getActiveEntry(bytes32 _domainKey) external view returns (OutputEntry memory) {
         if (!activeEntries[_domainKey].active) revert NoActiveEntry();
         return activeEntries[_domainKey];
     }
