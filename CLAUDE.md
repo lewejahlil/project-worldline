@@ -64,8 +64,8 @@ remappings.txt         → Forge import remappings (@openzeppelin → node_modul
 
 ## Test Counts
 
-- Hardhat: 219 tests
-- Forge: 113 tests (10 suites, includes fuzz tests at 256 runs each)
+- Hardhat: 220 tests
+- Forge: 114 tests (10 suites, includes fuzz tests at 256 runs each)
 - Rust: 238 tests (12 ignored — require snarkjs/halo2-verify binaries)
 
 ## Commands
