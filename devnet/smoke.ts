@@ -306,9 +306,14 @@ async function main(): Promise<void> {
       PROGRAM_VKEY,
       POLICY_HASH
     );
-    const finalizer = await deployProxy(wallet, "WorldlineFinalizer", [
-      "function initialize(address _adapter, bytes32 _domainSeparator, uint256 _maxAcceptanceDelay, uint256 _genesisL2Block, address _blobKzgVerifier) external"
-    ], [await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, 0, ethers.ZeroAddress]);
+    const finalizer = await deployProxy(
+      wallet,
+      "WorldlineFinalizer",
+      [
+        "function initialize(address _adapter, bytes32 _domainSeparator, uint256 _maxAcceptanceDelay, uint256 _genesisL2Block, address _blobKzgVerifier) external"
+      ],
+      [await adapter.getAddress(), DOMAIN, MAX_ACCEPTANCE_DELAY, 0, ethers.ZeroAddress]
+    );
     const outputsRegistry = await deployProxy(
       wallet,
       "WorldlineOutputsRegistry",
