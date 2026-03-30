@@ -6,16 +6,8 @@
     "postStateRoot": "9876543210",
     "batchCommitment": "5555555555",
     "batchSize": "100",
-    "proverIds": [
-      "101",
-      "102",
-      "103"
-    ],
-    "proofSystemIds": [
-      "1",
-      "2",
-      "3"
-    ],
+    "proverIds": ["101", "102", "103"],
+    "proofSystemIds": ["1", "2", "3"],
     "quorumCount": "3"
   },
   "publicOutputs": {
