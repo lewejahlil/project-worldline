@@ -65,18 +65,18 @@ remappings.txt         → Forge import remappings (@openzeppelin → node_modul
 
 ## Test Counts
 
-- Hardhat: 228 tests (includes 8 prover-api-e2e integration tests)
-- Forge: 114 tests (10 suites, includes fuzz tests at 256 runs each)
+- Hardhat: 239 tests (includes 8 prover-api-e2e + 11 real-verifier integration tests)
+- Forge: 138 tests (13 suites, includes fuzz tests at 256 runs each + 24 real-verifier tests)
 - Rust: 275 tests (5 ignored — require snarkjs/halo2-verify binaries)
 
 ## Commands
 
 ```bash
 cd circuits && npx mocha test/ --timeout 10000   # circuit tests
-npx hardhat test                                   # solidity tests (219 tests)
+npx hardhat test                                   # solidity tests (239 tests)
 REPORT_GAS=true npx hardhat test                   # gas report
-forge test                                         # forge unit + fuzz tests (113 tests)
-cargo test --workspace                             # rust tests (238 tests)
+forge test                                         # forge unit + fuzz tests (138 tests)
+cargo test --workspace                             # rust tests (275 tests)
 cargo bench                                        # criterion benchmarks
 ```
 
