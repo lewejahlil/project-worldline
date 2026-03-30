@@ -474,6 +474,7 @@ jobs:
           circom --version
       - name: Compile circuits (produces WASM artifacts)
         run: |
+          mkdir -p circuits/build
           circom circuits/stf/worldline_stf.circom --wasm --r1cs --output circuits/build
           circom circuits/src/worldline_stf_plonk.circom --wasm --r1cs --output circuits/build
       - uses: dtolnay/rust-toolchain@stable
