@@ -6,12 +6,12 @@ _Generated: 2026-03-29. Counterpart to `docs/feature-completeness-gap-analysis.m
 
 ## Baseline
 
-| Test suite        | Count   | Notes                                       |
-| ----------------- | ------- | ------------------------------------------- |
-| Hardhat (TS)      | 228     | Includes 8 prover-api-e2e integration tests |
-| Forge (Solidity)  | 114     | 10 test suites, fuzz at 256 runs            |
-| Rust (cargo test) | 275     | 2 ignored (require snarkjs / halo2-verify)  |
-| **Total**         | **617** |                                             |
+| Test suite        | Count   | Notes                                                          |
+| ----------------- | ------- | -------------------------------------------------------------- |
+| Hardhat (TS)      | 239     | Includes 8 prover-api-e2e + 11 real-verifier integration tests |
+| Forge (Solidity)  | 138     | 13 test suites, fuzz at 256 runs, +24 real-verifier tests      |
+| Rust (cargo test) | 275     | 2 ignored (require snarkjs / halo2-verify)                     |
+| **Total**         | **652** |                                                                |
 
 ---
 
@@ -101,24 +101,24 @@ This is the most significant coverage gap in the codebase.
 
 #### Groth16Verifier
 
-| Path                                                 | Tested?           | How                                                                                                                                                                                            |
-| ---------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BN254 pairing check (real circuit proof)             | **No — gas only** | `GasBenchmark.t.sol::test_gas_groth16_verify`: deploys real Groth16Verifier, calls `verifyProof` on a zero/invalid proof to measure gas; asserts nothing about the return value or correctness |
-| End-to-end: snarkjs proof → Groth16Verifier on-chain | No                | No such test exists in Hardhat, Forge, or CI                                                                                                                                                   |
+| Path                                                 | Tested? | How                                                                                                                                                                    |
+| ---------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BN254 pairing check (real circuit proof)             | **Yes** | `Groth16RealVerifier.t.sol` (8 tests): real verifier accepts valid proof, rejects corrupted proof/wrong stf/wrong digest; adapter agg+thin paths; `GasBenchmark.t.sol` |
+| End-to-end: snarkjs proof → Groth16Verifier on-chain | **Yes** | `groth16-real-verifier.test.ts` (3 tests): adapter round-trip, corrupted proof rejection, full stack through finalizer with `submitZkValidityProof`                    |
 
 #### PlonkVerifierV2
 
-| Path                                 | Tested? | How                                                                                                                                                                                                            |
-| ------------------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PlonkVerifierV2 deployed in any test | **No**  | The contract is never instantiated in Forge tests. `worldline_stf_plonk.test.js` test 12 attempts on-chain verification but only runs if a local Hardhat node is live and the artifact exists — not part of CI |
-| KZG commitment verification          | **No**  | Zero coverage                                                                                                                                                                                                  |
+| Path                                        | Tested? | How                                                                                                                                                  |
+| ------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PlonkVerifierV2 real pairing check          | **Yes** | `PlonkRealVerifier.t.sol` (8 tests): real verifier accepts valid proof, rejects corrupted proof/wrong stf/wrong digest; adapter agg+thin paths       |
+| End-to-end: snarkjs proof → PlonkVerifierV2 | **Yes** | `plonk-real-verifier.test.ts` (3 tests): adapter round-trip, corrupted proof rejection, full stack through router + finalizer with routed submission |
 
 #### Halo2Verifier
 
-| Path                                  | Tested? | How                                                                                          |
-| ------------------------------------- | ------- | -------------------------------------------------------------------------------------------- |
-| Halo2Verifier (real, production mode) | **No**  | `Halo2Verifier.t.sol` deploys the contract with `mockMode=true`; real pairing never executes |
-| Halo2ZkAdapter with real verifier     | **No**  | All Halo2ZkAdapter tests use MockHalo2Verifier                                               |
+| Path                                  | Tested? | How                                                                                                                                                  |
+| ------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Halo2Verifier (real, production mode) | **Yes** | `Halo2RealVerifier.t.sol` (8 tests): real verifier accepts valid SHPLONK proof, rejects corrupted proof/wrong stf/wrong digest; adapter agg+thin     |
+| Halo2ZkAdapter with real verifier     | **Yes** | `halo2-real-verifier.test.ts` (5 tests): adapter round-trip, corrupted proof rejection, full stack through router + finalizer with routed submission |
 
 ### Stage 5 — Adapter and router layers
 
@@ -165,11 +165,11 @@ Proof format decoding, length validation, public signal binding, proofSystemId c
 
 ### Verifier contracts (Groth16Verifier, PlonkVerifierV2, Halo2Verifier)
 
-| Contract        | Forge coverage                                                        | Hardhat coverage                                                            |
-| --------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Groth16Verifier | Gas measurement only (`GasBenchmark.t.sol`), no correctness assertion | Conditionally in circuit tests (artifact-gated, not CI)                     |
-| PlonkVerifierV2 | **None**                                                              | Conditionally in `worldline_stf_plonk.test.js` test 12 (node-gated, not CI) |
-| Halo2Verifier   | Mock mode only (`Halo2Verifier.t.sol`)                                | None                                                                        |
+| Contract        | Forge coverage                                                                                | Hardhat coverage                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Groth16Verifier | **Real proof tests** (`Groth16RealVerifier.t.sol`, 8 tests) + gas (`GasBenchmark.t.sol`)      | **Real proof tests** (`groth16-real-verifier.test.ts`, 3 tests) + conditional circuit tests |
+| PlonkVerifierV2 | **Real proof tests** (`PlonkRealVerifier.t.sol`, 8 tests)                                     | **Real proof tests** (`plonk-real-verifier.test.ts`, 3 tests) + conditional circuit tests   |
+| Halo2Verifier   | **Real proof tests** (`Halo2RealVerifier.t.sol`, 8 tests) + mock mode (`Halo2Verifier.t.sol`) | **Real proof tests** (`halo2-real-verifier.test.ts`, 5 tests)                               |
 
 ---
 
@@ -188,15 +188,19 @@ Proof format decoding, length validation, public signal binding, proofSystemId c
 - **Blocking test:** No test validates that a proof generated by the Groth16 or Plonk circuit produces the same `stfCommitment` as the Halo2 circuit for the same inputs.
 - **Category: Critical path**
 
-#### Gap 2 — Real verifier pairing untested end-to-end
+#### Gap 2 — Real verifier pairing untested end-to-end — CLOSED
 
 - **Location:** `contracts/src/zk/Groth16Verifier.sol`, `PlonkVerifierV2.sol`, `Halo2Verifier.sol`
-- **Finding:** No test in any suite exercises real on-chain pairing verification in a correctness context:
-  - `GasBenchmark.t.sol` deploys the real `Groth16Verifier` and calls it with an invalid proof to measure gas. The return value is `false`. No assertion confirms that a real, correctly-structured proof returns `true`.
-  - `PlonkVerifierV2` is never instantiated in Forge. The circuit test `worldline_stf_plonk.test.js::12` attempts on-chain PlonkVerifierV2 verification but is gated on a live local Hardhat node and compiled artifacts — absent from standard CI.
-  - `Halo2Verifier` is always deployed with `mockMode=true` in Forge tests. The real pairing branch never executes under test.
-- **Impact:** Any regression in the verifier contracts (ABI mismatch, wrong curve arithmetic, incorrect public signal binding) would be undetected. External integrators cannot rely on test results as evidence that real proofs are accepted.
-- **Category: Critical path**
+- **Status: CLOSED** (2026-03-30, branch `claude/crypto-hardening-U52T7`)
+- **Resolution:** All three proof systems now have real verifier round-trip tests using genuine BN254 proof fixtures:
+  - **Groth16:** `Groth16RealVerifier.t.sol` (8 Forge tests) + `groth16-real-verifier.test.ts` (3 Hardhat tests) — real `Groth16Verifier` accepts valid proof, rejects corrupted proof/wrong instances, full stack through finalizer
+  - **Plonk:** `PlonkRealVerifier.t.sol` (8 Forge tests) + `plonk-real-verifier.test.ts` (3 Hardhat tests) — real `PlonkVerifierV2` with genuine pairing check, full stack through router + finalizer
+  - **Halo2:** `Halo2RealVerifier.t.sol` (8 Forge tests) + `halo2-real-verifier.test.ts` (5 Hardhat tests) — real `Halo2Verifier` with SHPLONK KZG verification, full stack through router + finalizer
+  - Fixture generators committed: `scripts/generate-groth16-fixture.mjs`, `scripts/generate-plonk-fixture.mjs`, `crates/halo2-circuit/examples/generate_fixture.rs`
+  - Verifier contracts regenerated from current zkeys to fix stale VK constants discovered during this work
+  - Total new tests: +24 Forge, +11 Hardhat
+- **Original finding:** No test in any suite exercised real on-chain pairing verification in a correctness context. `GasBenchmark.t.sol` deployed the real `Groth16Verifier` but only measured gas on an invalid proof. `PlonkVerifierV2` was never instantiated in Forge. `Halo2Verifier` was always deployed with `mockMode=true`.
+- **Category: Critical path — RESOLVED**
 
 #### Gap 3 — Subprocess verifiers not exercised in CI
 
@@ -266,19 +270,19 @@ Proof format decoding, length validation, public signal binding, proofSystemId c
 
 ## Summary by Priority
 
-| #   | Gap                                                                                                                               | Category          |
-| --- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| 1   | Poseidon cross-system conformance unresolved (PSE sponge ≠ circomlib compression)                                                 | **Critical path** |
-| 2   | Real verifier pairing untested end-to-end (Groth16 correctness only via gas benchmark; Plonk zero coverage; Halo2 mock mode only) | **Critical path** |
-| 3   | Subprocess verifiers not exercised in CI (Groth16/Halo2 ignored; Plonk absent)                                                    | **Critical path** |
-| 4   | ProvingService Groth16 and Plonk paths untested (snarkjs dependency, no e2e)                                                      | Required          |
-| 5   | Circuit tests artifact-gated, not in CI (Circom Groth16 + Plonk suites)                                                           | Required          |
-| 6   | BlobVerifier E2E structurally deferred (no Cancun-enabled test environment)                                                       | Required          |
-| 7   | Driver proof submission subcommand not tested                                                                                     | Required          |
-| 8   | Multi-proof-system quorum at single-window level not tested                                                                       | Enhancement       |
-| 9   | Registry → Finalizer domain binding flow not tested end-to-end                                                                    | Enhancement       |
-| 10  | Permissioned submission path under-covered in integration suite                                                                   | Enhancement       |
-| 11  | UUPS storage gap not verified at slot level                                                                                       | Enhancement       |
+| #   | Gap                                                                                                                                  | Category                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
+| 1   | Poseidon cross-system conformance unresolved (PSE sponge ≠ circomlib compression)                                                    | **Critical path**              |
+| 2   | ~~Real verifier pairing untested end-to-end~~ — **CLOSED** (all 3 systems have real proof round-trip tests, +24 Forge / +11 Hardhat) | ~~Critical path~~ **Resolved** |
+| 3   | Subprocess verifiers not exercised in CI (Groth16/Halo2 ignored; Plonk absent)                                                       | **Critical path**              |
+| 4   | ProvingService Groth16 and Plonk paths untested (snarkjs dependency, no e2e)                                                         | Required                       |
+| 5   | Circuit tests artifact-gated, not in CI (Circom Groth16 + Plonk suites)                                                              | Required                       |
+| 6   | BlobVerifier E2E structurally deferred (no Cancun-enabled test environment)                                                          | Required                       |
+| 7   | Driver proof submission subcommand not tested                                                                                        | Required                       |
+| 8   | Multi-proof-system quorum at single-window level not tested                                                                          | Enhancement                    |
+| 9   | Registry → Finalizer domain binding flow not tested end-to-end                                                                       | Enhancement                    |
+| 10  | Permissioned submission path under-covered in integration suite                                                                      | Enhancement                    |
+| 11  | UUPS storage gap not verified at slot level                                                                                          | Enhancement                    |
 
 ---
 

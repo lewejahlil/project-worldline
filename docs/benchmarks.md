@@ -1,6 +1,6 @@
 # Worldline v1.0 — Benchmark Report
 
-**Date generated:** 2026-03-21
+**Date generated:** 2026-03-21 (updated 2026-03-30 with real verifier gas data)
 **Environment:**
 
 | Property          | Value                               |
@@ -8,7 +8,7 @@
 | OS                | Linux 6.18.5                        |
 | Node.js           | v22.22.0                            |
 | Rust / rustc      | 1.93.1 (2026-02-11)                 |
-| Solidity compiler | 0.8.20 (via IR, optimizer 200 runs) |
+| Solidity compiler | 0.8.34 (via IR, optimizer 200 runs) |
 | Hardhat           | hardhat-gas-reporter                |
 | Criterion         | 0.5.1                               |
 
@@ -16,49 +16,55 @@
 
 ## 1. On-Chain Gas Costs
 
-Gas measured via `REPORT_GAS=true npx hardhat test` against a local Hardhat network (block limit 60,000,000 gas). All 110 tests pass. Optimizer is enabled with 200 runs.
+Gas measured via `REPORT_GAS=true npx hardhat test` against a local Hardhat network (block limit 60,000,000 gas). All 239 tests pass. Optimizer is enabled with 200 runs.
 
 ### Method Gas Usage
 
-| Contract                     | Function                | Min Gas | Avg Gas | Max Gas | # Calls |
-| ---------------------------- | ----------------------- | ------: | ------: | ------: | ------: |
-| **WorldlineFinalizer**       | `submitZkValidityProof` |  57,885 |  85,366 |  92,431 |      12 |
-| **WorldlineRegistry**        | `verify`                |       — |       — |       — |       — |
-| **WorldlineRegistry**        | `registerCircuit`       |  98,911 | 112,318 | 139,594 |      23 |
-| **WorldlineRegistry**        | `registerDriver`        | 117,211 | 117,348 | 117,415 |       5 |
-| **WorldlineRegistry**        | `registerPlugin`        | 142,715 | 142,739 | 142,895 |      10 |
-| **WorldlineRegistry**        | `deprecatePlugin`       |  49,267 |  49,272 |  49,291 |       5 |
-| **WorldlineRegistry**        | `setCompatFacade`       |  25,189 |  42,894 |  47,329 |      10 |
-| **WorldlineRegistry**        | `transferOwnership`     |       — |  28,536 |       — |       3 |
-| **WorldlineOutputsRegistry** | `schedule`              |  47,068 | 117,502 | 140,980 |       8 |
-| **WorldlineOutputsRegistry** | `activate`              |       — |  92,530 |       — |       4 |
-| **WorldlineOutputsRegistry** | `setMinTimelock`        |       — |  29,693 |       — |       2 |
-| **WorldlineCompat**          | `registerCircuit`       | 107,145 | 121,597 | 147,795 |       7 |
-| **WorldlineCompat**          | `registerDriver`        | 125,269 | 125,317 | 125,365 |       2 |
-| **WorldlineCompat**          | `registerPlugin`        | 150,665 | 150,695 | 150,785 |       4 |
-| **WorldlineCompat**          | `deprecatePlugin`       |       — |  56,811 |       — |       1 |
-| **WorldlineFinalizer**       | `setAdapter`            |       — |  30,256 |       — |       2 |
-| **WorldlineFinalizer**       | `setMaxAcceptanceDelay` |       — |  29,853 |       — |       2 |
-| **WorldlineFinalizer**       | `setPaused`             |       — |  46,813 |       — |       3 |
-| **WorldlineFinalizer**       | `setPermissionless`     |       — |  46,870 |       — |       3 |
-| **WorldlineFinalizer**       | `setSubmitter`          |  47,762 |  47,766 |  47,774 |       3 |
+| Contract                     | Function                      | Min Gas | Avg Gas | Max Gas | # Calls |
+| ---------------------------- | ----------------------------- | ------: | ------: | ------: | ------: |
+| **WorldlineFinalizer**       | `submitZkValidityProof`       |  69,046 |  93,702 | 303,119 |     100 |
+| **WorldlineFinalizer**       | `submitZkValidityProofRouted` |  85,183 | 132,810 | 476,049 |      58 |
+| **ProofRouter**              | `routeProof`                  |  43,625 |  65,703 | 106,540 |       6 |
+| **ProofRouter**              | `registerAdapter`             |  56,196 |  56,228 |  56,229 |     186 |
+| **WorldlineRegistry**        | `setCompatFacade`             |  52,585 |  52,590 |  52,597 |      10 |
+| **WorldlineOutputsRegistry** | `schedule`                    |  52,169 | 131,633 | 146,081 |      13 |
+| **WorldlineOutputsRegistry** | `activate`                    |       — |  96,623 |       — |       9 |
+| **WorldlineOutputsRegistry** | `setMinTimelock`              |       — |  34,629 |       — |       2 |
+| **WorldlineCompat**          | `registerCircuit`             | 103,947 | 120,985 | 152,886 |      27 |
+| **WorldlineCompat**          | `registerDriver`              | 122,121 | 133,902 | 167,371 |      25 |
+| **WorldlineCompat**          | `registerPlugin`              | 147,693 | 150,001 | 155,801 |      14 |
+| **WorldlineCompat**          | `deprecatePlugin`             |  54,342 |  55,608 |  61,912 |       6 |
+| **WorldlineFinalizer**       | `activateAdapterChange`       |       — |  36,355 |       — |       5 |
+| **WorldlineFinalizer**       | `scheduleAdapterChange`       |       — |  77,099 |       — |       5 |
+| **WorldlineFinalizer**       | `setMaxAcceptanceDelay`       |       — |  35,440 |       — |       2 |
+| **WorldlineFinalizer**       | `setPaused`                   |       — |  51,734 |       — |       3 |
+| **WorldlineFinalizer**       | `setPermissionless`           |       — |  52,209 |       — |      94 |
+| **WorldlineFinalizer**       | `setProofRouter`              |  52,350 |  52,361 |  52,362 |      82 |
+| **WorldlineFinalizer**       | `setSubmitter`                |  31,338 |  50,450 |  53,250 |      47 |
 
 > **Key hot-path notes:**
 >
-> - `WorldlineRegistry.verify` delegates to an external `IZkAggregatorVerifier` — its cost depends entirely on the prover adapter. The gas reporter shows no direct method calls because the function is exercised through the verifier contract and counted under the `Verifier` deployment.
-> - `WorldlineOutputsRegistry.schedule` has a wide range (47k–141k) because the first SSTORE on a new slot costs ~94k extra vs. overwriting an existing pending entry.
-> - `WorldlineFinalizer.submitZkValidityProof` is the primary finalization hot-path; its average of ~85k includes the ZK proof verification call.
+> - `submitZkValidityProof` max of **303,119 gas** includes real Groth16 BN254 pairing verification (ecPairing precompile). The min of ~69k is mock-verifier paths.
+> - `submitZkValidityProofRouted` max of **476,049 gas** includes real Plonk/Halo2 verification through the ProofRouter. Plonk pairing is more expensive than Groth16 due to 9 G1 point evaluations; Halo2 SHPLONK is the most expensive.
+> - `WorldlineOutputsRegistry.schedule` has a wide range (52k–146k) because the first SSTORE on a new slot costs extra vs. overwriting an existing pending entry.
+> - The increase in call counts (100 calls for `submitZkValidityProof`, 58 for routed) reflects the addition of real-verifier integration tests.
 
 ### Deployment Gas (constructor + code upload)
 
 | Contract                 | Deployment Gas (avg) | % of Block Limit (60M) |
 | ------------------------ | -------------------: | ---------------------: |
-| WorldlineRegistry        |            1,215,343 |                   2.0% |
-| WorldlineCompat          |              786,374 |                   1.3% |
-| WorldlineFinalizer       |              728,610 |                   1.2% |
-| WorldlineOutputsRegistry |              534,906 |                   0.9% |
-| Groth16ZkAdapter         |              231,403 |                   0.4% |
-| Verifier                 |               91,891 |                   0.2% |
+| Halo2Verifier            |            2,168,554 |                   3.6% |
+| WorldlineFinalizer       |            1,903,200 |                   3.2% |
+| WorldlineRegistry        |            1,669,050 |                   2.8% |
+| PlonkVerifierV2          |            1,237,065 |                   2.1% |
+| ProofRouter              |            1,008,149 |                   1.7% |
+| WorldlineOutputsRegistry |              923,411 |                   1.5% |
+| WorldlineCompat          |              769,532 |                   1.3% |
+| Groth16ZkAdapter         |              419,055 |                   0.7% |
+| Halo2ZkAdapter           |              398,762 |                   0.7% |
+| PlonkZkAdapter           |              374,089 |                   0.6% |
+| Groth16Verifier          |              331,714 |                   0.6% |
+| BlobKzgVerifier          |              228,908 |                   0.4% |
 
 ---
 
@@ -77,7 +83,7 @@ Deployed bytecode extracted from Hardhat compilation artifacts (`artifacts/contr
 | IZkAggregatorVerifier    |                         0 |             0.0% | Interface — no deployable bytecode                                 |
 | Ownable                  |                         0 |             0.0% | Abstract base — no standalone artifact                             |
 
-> All contracts are well within the 24 KB EVM limit. `WorldlineRegistry` is the largest at 21.4% of the limit, leaving significant room for future feature additions. Note that the `Verifier` stub used in testing is a simplified implementation; a production Groth16 verifier generated by `snarkjs` will be substantially larger (typically 8–14 KB).
+> All contracts are well within the 24 KB EVM limit. `Halo2Verifier` is the largest verifier at 3.6% of the block gas limit for deployment. `PlonkVerifierV2` at 1.2M gas is moderate. `Groth16Verifier` is the cheapest verifier to deploy at 332k gas. All three ZK adapters are similarly sized (~370–420k gas).
 
 ---
 
@@ -169,4 +175,4 @@ The following metrics require access to a live proving infrastructure and are re
 | Verifier key generation time           | TBD   | One-time cost during setup ceremony                            |
 | Witness generation time                | TBD   | wasm-based witness generation for the worldline circuit        |
 
-> These metrics are pending prover infrastructure access. The on-chain verification cost (via `WorldlineFinalizer.submitZkValidityProof`, avg **85,366 gas**) is already captured in Section 1 and will remain constant regardless of off-chain proving time.
+> These metrics are pending prover infrastructure access. The on-chain verification costs are captured in Section 1: `submitZkValidityProof` avg **93,702 gas** (max **303,119** with real Groth16 pairing), `submitZkValidityProofRouted` avg **132,810 gas** (max **476,049** with real Plonk/Halo2 pairing).
