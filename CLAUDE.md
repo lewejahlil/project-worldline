@@ -48,13 +48,14 @@ remappings.txt         → Forge import remappings (@openzeppelin → node_modul
 - Proof systems: Groth16=1, Plonk=2, Halo2=3
 - Quorum: 1–3 (N=3 max provers)
 - Batch size: 1–1024
-- Public outputs: stfCommitment, proverSetDigest
+- Circuit public outputs (2 signals): stfCommitment, proverSetDigest
+- On-chain publicInputs: 256 bytes / 8 words — stfCommitment, l2Start, l2End, outputRoot, l1BlockHash, domainSeparator, windowCloseTimestamp, submissionBinding
 - stfCommitment = Poseidon(preStateRoot, postStateRoot, batchCommitment)
 - proverSetDigest = Poseidon(proverIds[], proofSystemIds[], quorumCount)
-- Proof sizes: Groth16=320 bytes, Plonk=832 bytes, Halo2=1536 bytes (BN254 KZG)
-- Groth16 circuit: 2^11 ptau, 773 constraints, 775 wires (circomlib 2.0.5)
-- Plonk circuit: 2^14 ptau, 731 R1CS constraints / 12,217 Plonk gates, 736 wires (circomlib 2.0.5)
-- Halo2 circuit: k=8, 256 rows (BN254 KZG)
+- Proof sizes: Groth16=320 bytes, Plonk=832 bytes, Halo2: raw proof ~2016 bytes; adapter ABI envelope 2144 bytes (BN254 KZG, Keccak256 transcript)
+- Groth16 circuit: 2^11 ptau, 1867 total constraints (789 non-linear + 1078 linear), 1859 wires (circomlib 2.0.5)
+- Plonk circuit: 2^14 ptau, 731 R1CS constraints / 12,217 Plonk gates, 736 wires (circomlib 2.0.5) — constraint/wire counts from prior compilation; no current compilation report in repo to confirm
+- Halo2 circuit: k=8, 256 rows (BN254 KZG, Keccak256 transcript)
 - Quorum digest asymmetry: the circuit's proverSetDigest is always computed over all 3 prover slots (zero-padded), while the aggregation layer's prover_set_digest is computed only from submitted proofs — these may differ when fewer than 3 provers are active
 
 ## RPC Endpoints
@@ -62,12 +63,13 @@ remappings.txt         → Forge import remappings (@openzeppelin → node_modul
 - Mainnet (fork sim): `https://ethereum-rpc.publicnode.com` (free, no key) — fallback: `https://eth.llamarpc.com`
 - Testnet (deploy): Sepolia (chain ID 11155111) — active, sunsetting Sept 2026
 - Sepolia RPC: `https://sepolia-rpc.publicnode.com`
+- Note: `package.json` and `hardhat.config.ts` contain a `holesky` network config and `deploy:holesky` script — these are dead artifacts from the pre-September-2025 Holesky testnet shutdown and should not be used
 
 ## Test Counts
 
 - Hardhat: 239 tests (includes 8 prover-api-e2e + 11 real-verifier integration tests)
 - Forge: 138 tests (13 suites, includes fuzz tests at 256 runs each + 24 real-verifier tests)
-- Rust: 275 tests (5 ignored — require snarkjs/halo2-verify binaries)
+- Rust: 287 tests (12 ignored — require snarkjs/halo2-verify binaries)
 
 ## Commands
 
@@ -76,7 +78,7 @@ cd circuits && npx mocha test/ --timeout 10000   # circuit tests
 npx hardhat test                                   # solidity tests (239 tests)
 REPORT_GAS=true npx hardhat test                   # gas report
 forge test                                         # forge unit + fuzz tests (138 tests)
-cargo test --workspace                             # rust tests (275 tests)
+cargo test --workspace                             # rust tests (287 tests)
 cargo bench                                        # criterion benchmarks
 ```
 
@@ -110,9 +112,17 @@ All four proxied contracts:
 
 **Non-proxied contracts** (immutable, not upgradeable):
 
-- `Groth16ZkAdapter`, `PlonkAdapter`, `Halo2ZkAdapter` — ZK adapters (constructor-set params)
+- `Groth16ZkAdapter`, `PlonkZkAdapter`, `Halo2ZkAdapter` — ZK adapters (constructor-set params)
+- `WorldlineCompat` — Ownable compatibility facade; delegates to WorldlineRegistry via stable method signatures
 - `BlobVerifier`, `BlobKzgVerifier` — EIP-4844 blob verification utilities
 - All verifier contracts under `contracts/src/zk/`
+
+## Gas Benchmarks
+
+Real pairing-based verification (from `docs/gas-report-post-eip4844.md`, updated 2026-03-30):
+
+- `submitZkValidityProof` (Groth16 direct): avg ~94k gas, max **~303k gas** (ecPairing precompile)
+- `submitZkValidityProofRouted` (Plonk/Halo2 via ProofRouter): avg ~133k gas, max **~476k gas** (Plonk 9×G1 + Halo2 SHPLONK are most expensive)
 
 ## Key Internal Patterns
 
