@@ -252,7 +252,10 @@ mod tests {
     /// Three-way consistency: Groth16, Plonk, and Halo2 must produce identical
     /// public signals (stfCommitment, proverSetDigest) for the same STF inputs.
     #[test]
-    #[ignore = "requires snarkjs installed and circuit artifacts"]
+    #[cfg_attr(
+        not(feature = "subprocess-tests"),
+        ignore = "requires snarkjs and circuit artifacts; run via CI subprocess-provers job or locally with --features subprocess-tests"
+    )]
     fn three_way_cross_prover_consistency() {
         use crate::{Groth16Prover, PlonkProver};
         use std::path::PathBuf;

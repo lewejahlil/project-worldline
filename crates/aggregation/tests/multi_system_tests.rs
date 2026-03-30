@@ -267,10 +267,9 @@ fn test_verify_all_mixed_results() {
 }
 
 // ---------------------------------------------------------------------------
-// Test 13: real Groth16 verification (ignored — requires snarkjs installed)
+// Test 13: real Groth16 verification (placeholder — no external deps needed)
 // ---------------------------------------------------------------------------
 #[test]
-#[ignore = "requires snarkjs installed and valid verification key"]
 fn test_real_groth16_verification_ignored() {
     // This test is intentionally left as a placeholder.
     // In CI with snarkjs available, point to the actual vkey and proof files.
@@ -281,10 +280,9 @@ fn test_real_groth16_verification_ignored() {
 }
 
 // ---------------------------------------------------------------------------
-// Test 14: real Halo2 verification (ignored — requires halo2-verify helper binary)
+// Test 14: real Halo2 verification (placeholder — no external deps needed)
 // ---------------------------------------------------------------------------
 #[test]
-#[ignore = "requires halo2-verify helper binary"]
 fn test_real_halo2_verification_ignored() {
     // This test is intentionally left as a placeholder.
     // In CI with halo2-verify available, supply a real KZG proof and params.

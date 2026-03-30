@@ -447,6 +447,50 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace -- -D warnings 2>&1 | tail -20
 
+  subprocess-provers:
+    name: Subprocess provers (snarkjs integration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [changes]
+    if: >-
+      github.event_name == 'push' ||
+      needs.changes.outputs.always == 'true' ||
+      needs.changes.outputs.rust == 'true' ||
+      needs.changes.outputs.circuits == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Install circom 2.1.6 (with checksum)
+        run: |
+          curl -sL https://github.com/iden3/circom/releases/download/v2.1.6/circom-linux-amd64 \
+            -o /usr/local/bin/circom
+          echo "f3958483caaaa0cdd3912df5049e2e635eab4d09b9a66807be9633d547859f12  /usr/local/bin/circom" \
+            | sha256sum --check
+          chmod +x /usr/local/bin/circom
+          circom --version
+      - name: Compile circuits (produces WASM artifacts)
+        run: |
+          mkdir -p circuits/build
+          circom circuits/stf/worldline_stf.circom --wasm --r1cs --output circuits/build
+          circom circuits/src/worldline_stf_plonk.circom --wasm --r1cs --output circuits/build
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-subprocess-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-subprocess-
+            ${{ runner.os }}-cargo-
+      - name: Subprocess prover tests
+        run: cargo test -p worldline-recursion --features subprocess-tests 2>&1 | tail -30
+
   fork-sim:
     name: Fork simulation tests
     runs-on: ubuntu-latest
