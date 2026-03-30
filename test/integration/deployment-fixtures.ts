@@ -22,8 +22,8 @@ export const GENESIS_L2_BLOCK = 0n;
 export const GROTH16_PROOF_BYTE_SIZE = 320;
 /** Plonk proof byte size: uint256[24] proofWords + stfCommitment + proverSetDigest */
 export const PLONK_PROOF_BYTE_SIZE = 832;
-/** Halo2 raw proof byte size (KZG/BN254 commitment scheme) */
-export const HALO2_RAW_PROOF_BYTE_SIZE = 1472;
+/** Halo2 raw proof byte size (KZG/BN254, Keccak256 transcript) */
+export const HALO2_RAW_PROOF_BYTE_SIZE = 2016;
 /** Maximum batch size enforced by circuit constraints */
 export const MAX_BATCH_SIZE = 1024;
 
@@ -387,12 +387,12 @@ export async function makePlonkWindowFixture(
 
 /**
  * Encode a Halo2 proof envelope:
- *   bytes   proofBytes       — 1472 bytes of dummy data (MockHalo2Verifier accepts any)
+ *   bytes   proofBytes       — 2016 bytes of dummy data (MockHalo2Verifier accepts any)
  *   uint256 stfCommitment    — embedded stfCommitment (extracted by Halo2ZkAdapter)
  *   uint256 proverSetDigest  — embedded proverSetDigest
  *
- * ABI encoding: 32(offset) + 32(uint256) + 32(uint256) + 32(length) + 1472(data) = 1600 bytes
- * which exactly meets the Halo2ZkAdapter HALO2_PROOF_MIN_LEN = 1600 floor.
+ * ABI encoding: 32(offset) + 32(uint256) + 32(uint256) + 32(length) + 2016(data) = 2144 bytes
+ * which exactly meets the Halo2ZkAdapter HALO2_PROOF_MIN_LEN = 2144 floor.
  */
 export function encodeHalo2Proof(
   l2Start: bigint,
@@ -402,7 +402,7 @@ export function encodeHalo2Proof(
   proverSetDigest: string = PROVER_SET_DIGEST
 ): string {
   const stfCommitment = computeStfCommitment(l2Start, l2End, windowCloseTimestamp, domain);
-  const rawProofBytes = new Uint8Array(HALO2_RAW_PROOF_BYTE_SIZE); // 1472 zero bytes; mock verifier accepts any input
+  const rawProofBytes = new Uint8Array(HALO2_RAW_PROOF_BYTE_SIZE); // 2016 zero bytes; mock verifier accepts any input
   return ethers.AbiCoder.defaultAbiCoder().encode(
     ["bytes", "uint256", "uint256"],
     [rawProofBytes, BigInt(stfCommitment), BigInt(proverSetDigest)]

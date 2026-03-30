@@ -49,16 +49,16 @@ contract Halo2VerifierTest is Test {
     // ── 1. Deploy Halo2Verifier — succeeds ──────────────────────────────────
 
     function test_deployHalo2Verifier() public {
-        Halo2Verifier verifier = new Halo2Verifier(true);
-        assertEq(verifier.mockMode(), true);
-        assertEq(verifier.MIN_PROOF_LENGTH(), 1472);
-        assertEq(verifier.NUM_INSTANCES(), 2);
+        Halo2Verifier verifier = new Halo2Verifier();
+        // The generated verifier has no constructor args and exposes verifyProof.
+        // Verify deployment succeeded by checking code exists.
+        assertTrue(address(verifier).code.length > 0, "Verifier should have code");
     }
 
     // ── 2. Deploy Halo2ZkAdapter with verifier address — succeeds ───────────
 
     function test_deployHalo2ZkAdapter() public {
-        Halo2Verifier verifier = new Halo2Verifier(true);
+        Halo2Verifier verifier = new Halo2Verifier();
         Halo2ZkAdapter adapter = new Halo2ZkAdapter(
             address(verifier), PROGRAM_VKEY, POLICY_HASH
         );
@@ -71,9 +71,9 @@ contract Halo2VerifierTest is Test {
     // ── 3. Adapter reports proofSystemId=3 ──────────────────────────────────
 
     function test_adapterReportsProofSystemId3() public {
-        Halo2Verifier verifier = new Halo2Verifier(true);
+        MockHalo2Verifier mock = new MockHalo2Verifier(true);
         Halo2ZkAdapter adapter = new Halo2ZkAdapter(
-            address(verifier), PROGRAM_VKEY, POLICY_HASH
+            address(mock), PROGRAM_VKEY, POLICY_HASH
         );
         assertEq(adapter.proofSystemId(), 3);
     }
@@ -81,12 +81,12 @@ contract Halo2VerifierTest is Test {
     // ── 4. Adapter reports correct expectedProofLength ──────────────────────
 
     function test_adapterReportsExpectedProofLength() public {
-        Halo2Verifier verifier = new Halo2Verifier(true);
+        MockHalo2Verifier mock = new MockHalo2Verifier(true);
         Halo2ZkAdapter adapter = new Halo2ZkAdapter(
-            address(verifier), PROGRAM_VKEY, POLICY_HASH
+            address(mock), PROGRAM_VKEY, POLICY_HASH
         );
-        assertEq(adapter.expectedProofLength(), 1600);
-        assertEq(adapter.HALO2_PROOF_MIN_LEN(), 1600);
+        assertEq(adapter.expectedProofLength(), 2144);
+        assertEq(adapter.HALO2_PROOF_MIN_LEN(), 2144);
     }
 
     // ── 5. Adapter rejects proof with wrong length ──────────────────────────
@@ -103,7 +103,7 @@ contract Halo2VerifierTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(
                 Halo2ZkAdapter.ProofTooShort.selector,
-                1600,
+                2144,
                 shortProof.length
             )
         );
@@ -113,15 +113,15 @@ contract Halo2VerifierTest is Test {
     // ── 6. Adapter conforms to IZkAdapter interface ─────────────────────────
 
     function test_adapterConformsToIZkAdapter() public {
-        Halo2Verifier verifier = new Halo2Verifier(true);
+        MockHalo2Verifier mock = new MockHalo2Verifier(true);
         Halo2ZkAdapter adapter = new Halo2ZkAdapter(
-            address(verifier), PROGRAM_VKEY, POLICY_HASH
+            address(mock), PROGRAM_VKEY, POLICY_HASH
         );
 
         // Test through the IZkAdapter interface
         IZkAdapter iAdapter = IZkAdapter(address(adapter));
         assertEq(iAdapter.proofSystemId(), 3);
-        assertEq(iAdapter.expectedProofLength(), 1600);
+        assertEq(iAdapter.expectedProofLength(), 2144);
     }
 
     // ── 7. Valid proof envelope — succeeds via IZkAggregatorVerifier ────────
@@ -134,7 +134,7 @@ contract Halo2VerifierTest is Test {
 
         uint256 stfVal = uint256(keccak256("stf-halo2"));
         uint256 digestVal = uint256(keccak256("digest-halo2"));
-        bytes memory envelope = _makeProofEnvelope(1472, stfVal, digestVal);
+        bytes memory envelope = _makeProofEnvelope(2016, stfVal, digestVal);
 
         (bool valid, bytes32 stf, bytes32 vkey, bytes32 policy, bytes32 digest) =
             adapter.verify(envelope, new bytes(0));
@@ -156,7 +156,7 @@ contract Halo2VerifierTest is Test {
 
         uint256 stfVal = uint256(keccak256("stf"));
         uint256 digestVal = uint256(keccak256("digest"));
-        bytes memory envelope = _makeProofEnvelope(1472, stfVal, digestVal);
+        bytes memory envelope = _makeProofEnvelope(2016, stfVal, digestVal);
 
         vm.expectRevert(Halo2ZkAdapter.ProofInvalid.selector);
         adapter.verify(envelope, new bytes(0));
@@ -172,50 +172,64 @@ contract Halo2VerifierTest is Test {
 
         uint256 stfVal = uint256(keccak256("stf-thin"));
         uint256 digestVal = uint256(keccak256("digest-thin"));
-        bytes memory envelope = _makeProofEnvelope(1472, stfVal, digestVal);
+        bytes memory envelope = _makeProofEnvelope(2016, stfVal, digestVal);
 
         bytes32[] memory pubInputs = new bytes32[](0);
         bool valid = IZkAdapter(address(adapter)).verify(envelope, pubInputs);
         assertTrue(valid);
     }
 
-    // ── 10. Halo2Verifier rejects short raw proof ───────────────────────────
+    // ── 10. Real Halo2Verifier rejects invalid proof data ───────────────────
+    // Note: The real verifier performs full KZG pairing verification.
+    // Submitting random bytes will cause the pairing check to fail (revert).
+    // This is correct behavior — a real valid proof is needed.
+    // The hardening session will add tests with real proofs.
 
-    function test_verifierRejectsShortRawProof() public {
-        Halo2Verifier verifier = new Halo2Verifier(true);
+    function test_realVerifierRejectsInvalidProof() public {
+        Halo2Verifier verifier = new Halo2Verifier();
 
-        bytes memory shortProof = new bytes(100);
+        bytes memory proof = new bytes(2016);
         uint256[] memory instances = new uint256[](2);
         instances[0] = 1;
         instances[1] = 2;
 
-        bool valid = verifier.verifyProof(shortProof, instances);
-        assertFalse(valid, "Short proof should be rejected");
+        // The real verifier will revert on invalid proof data
+        vm.expectRevert();
+        verifier.verifyProof(proof, instances);
     }
 
-    // ── 11. Halo2Verifier rejects wrong instance count ──────────────────────
+    // ── 11. Adapter with real verifier rejects invalid proof envelope ───────
 
-    function test_verifierRejectsWrongInstanceCount() public {
-        Halo2Verifier verifier = new Halo2Verifier(true);
+    function test_adapterWithRealVerifierRejectsInvalid() public {
+        Halo2Verifier verifier = new Halo2Verifier();
+        Halo2ZkAdapter adapter = new Halo2ZkAdapter(
+            address(verifier), PROGRAM_VKEY, POLICY_HASH
+        );
 
-        bytes memory proof = new bytes(1472);
-        uint256[] memory instances = new uint256[](3); // wrong count
+        uint256 stfVal = uint256(keccak256("stf"));
+        uint256 digestVal = uint256(keccak256("digest"));
+        bytes memory envelope = _makeProofEnvelope(2016, stfVal, digestVal);
 
-        bool valid = verifier.verifyProof(proof, instances);
-        assertFalse(valid, "Wrong instance count should be rejected");
+        // The real verifier will reject invalid proof data via the adapter
+        vm.expectRevert();
+        adapter.verify(envelope, new bytes(0));
     }
 
-    // ── 12. Halo2Verifier accepts valid proof in mock mode ──────────────────
+    // ── 12. Adapter with real verifier via IZkAdapter rejects invalid ───────
 
-    function test_verifierAcceptsValidProofMockMode() public {
-        Halo2Verifier verifier = new Halo2Verifier(true);
+    function test_thinVerifyWithRealVerifierRejectsInvalid() public {
+        Halo2Verifier verifier = new Halo2Verifier();
+        Halo2ZkAdapter adapter = new Halo2ZkAdapter(
+            address(verifier), PROGRAM_VKEY, POLICY_HASH
+        );
 
-        bytes memory proof = new bytes(1472);
-        uint256[] memory instances = new uint256[](2);
-        instances[0] = uint256(keccak256("stf"));
-        instances[1] = uint256(keccak256("digest"));
+        uint256 stfVal = uint256(keccak256("stf-thin"));
+        uint256 digestVal = uint256(keccak256("digest-thin"));
+        bytes memory envelope = _makeProofEnvelope(2016, stfVal, digestVal);
 
-        bool valid = verifier.verifyProof(proof, instances);
-        assertTrue(valid);
+        bytes32[] memory pubInputs = new bytes32[](0);
+        // The real verifier will reject — no valid proof
+        vm.expectRevert();
+        IZkAdapter(address(adapter)).verify(envelope, pubInputs);
     }
 }

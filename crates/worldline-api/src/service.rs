@@ -556,7 +556,7 @@ mod tests {
         assert_eq!(response.status, ProofStatus::Complete);
         assert_eq!(response.proofs.len(), 1);
         assert!(response.proofs[&3].success);
-        assert_eq!(response.proofs[&3].proof_length, 1536);
+        assert_eq!(response.proofs[&3].proof_length, 2016);
         assert_ne!(response.stf_commitment, [0u8; 32]);
         assert_ne!(response.prover_set_digest, [0u8; 32]);
         assert_eq!(response.encoded_public_inputs.len(), 256);
@@ -574,9 +574,9 @@ mod tests {
         assert!(response.encoded_proofs.contains_key(&3));
         let encoded = &response.encoded_proofs[&3];
         assert_eq!(encoded.proof_system_id, 3);
-        // Halo2 ABI encoding: 128 + 1536 = 1664 bytes
-        assert_eq!(encoded.calldata.len(), 128 + 1536);
-        assert_eq!(encoded.raw_proof.len(), 1536);
+        // Halo2 ABI encoding: 128 + 2016 = 2144 bytes
+        assert_eq!(encoded.calldata.len(), 128 + 2016);
+        assert_eq!(encoded.raw_proof.len(), 2016);
     }
 
     #[test]

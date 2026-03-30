@@ -10,6 +10,7 @@ worldline-aggregation = { path = "../aggregation" }
 worldline-halo2-circuit = { path = "../halo2-circuit" }
 halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v0.3.0", features = ["circuit-params"] }
 halo2curves = "0.6"
+halo2_solidity_verifier = { git = "https://github.com/privacy-scaling-explorations/halo2-solidity-verifier" }
 rand = "0.8"
 thiserror = { workspace = true }
 serde = { workspace = true }
