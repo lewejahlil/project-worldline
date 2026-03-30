@@ -551,7 +551,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires snarkjs installed and circuit artifacts"]
+    #[cfg_attr(
+        not(feature = "subprocess-tests"),
+        ignore = "requires snarkjs and circuit artifacts; run via CI subprocess-provers job or locally with --features subprocess-tests"
+    )]
     fn groth16_prove_real() {
         use halo2curves::bn256::Fr;
         use halo2curves::group::ff::PrimeField;
@@ -604,7 +607,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires snarkjs installed and circuit artifacts"]
+    #[cfg_attr(
+        not(feature = "subprocess-tests"),
+        ignore = "requires snarkjs and circuit artifacts; run via CI subprocess-provers job or locally with --features subprocess-tests"
+    )]
     fn groth16_prove_boundary_batch_size() {
         use halo2curves::bn256::Fr;
         use halo2curves::group::ff::PrimeField;

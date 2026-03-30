@@ -312,7 +312,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires snarkjs installed and circuit artifacts"]
+    #[cfg_attr(
+        not(feature = "subprocess-tests"),
+        ignore = "requires snarkjs and circuit artifacts; run via CI subprocess-provers job or locally with --features subprocess-tests"
+    )]
     fn plonk_prove_real() {
         use halo2curves::bn256::Fr;
         use halo2curves::group::ff::PrimeField;
@@ -366,7 +369,10 @@ mod tests {
     /// Cross-prover consistency: Groth16 and Plonk must produce identical
     /// public signals for the same STF inputs.
     #[test]
-    #[ignore = "requires snarkjs installed and circuit artifacts"]
+    #[cfg_attr(
+        not(feature = "subprocess-tests"),
+        ignore = "requires snarkjs and circuit artifacts; run via CI subprocess-provers job or locally with --features subprocess-tests"
+    )]
     fn groth16_plonk_cross_prover_consistency() {
         use crate::Groth16Prover;
         use halo2curves::bn256::Fr;

@@ -168,7 +168,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires snarkjs installed"]
     fn verify_real_proof() {
         let v = make_verifier();
         let proof = vec![0u8; 320];

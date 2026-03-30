@@ -373,7 +373,10 @@ mod tests {
     // ── Three-prover tests (requires snarkjs for Groth16 + Plonk) ────────
 
     #[test]
-    #[ignore = "requires snarkjs installed and circuit artifacts"]
+    #[cfg_attr(
+        not(feature = "subprocess-tests"),
+        ignore = "requires snarkjs and circuit artifacts; run via CI subprocess-provers job or locally with --features subprocess-tests"
+    )]
     fn pipeline_all_three_provers_full_attestation() {
         use crate::{Groth16Prover, PlonkProver};
         use std::path::PathBuf;
@@ -452,7 +455,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires snarkjs installed and circuit artifacts"]
+    #[cfg_attr(
+        not(feature = "subprocess-tests"),
+        ignore = "requires snarkjs and circuit artifacts; run via CI subprocess-provers job or locally with --features subprocess-tests"
+    )]
     fn pipeline_two_of_three_quorum() {
         use crate::Groth16Prover;
         use std::path::PathBuf;

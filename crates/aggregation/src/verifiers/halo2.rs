@@ -160,7 +160,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires halo2-verify helper binary"]
     fn verify_real_proof() {
         let v = make_verifier();
         let proof = vec![0u8; 2016];
